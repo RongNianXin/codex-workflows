@@ -323,7 +323,7 @@ internal sealed class RepairForm : Form
 
         var bulkLabel = new Label
         {
-            Text = "功能一：扫描当前全部未归档任务，只修复检测到的已知路径异常。执行修复前请完全退出 Codex。",
+            Text = "功能一：Codex 运行时也可先做只读扫描；只有发现异常并准备修复时，才需要完全退出 Codex。",
             AutoSize = false,
             Left = 16,
             Top = 48,
@@ -389,16 +389,42 @@ internal sealed class RepairForm : Form
 
     private void StartBulkRepair()
     {
-        DialogResult choice = MessageBox.Show(this,
-            "将扫描所有未归档任务，并且只修复已确认的 Windows 路径异常。\r\n\r\n不会归档、删除或移动任何任务。请先完全退出 Codex（包括系统托盘进程），再点击“是”。",
-            "确认只修复路径", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-        if (choice != DialogResult.Yes) return;
-
-        RunAsync(true, null, false, "正在扫描并修复已知路径异常……请勿启动 Codex。",
+        RunAsync(true, null, true, "正在进行在线只读扫描……此时不需要退出 Codex。",
             delegate(RunResult result)
             {
-                ShowResult(result,
-                    result.ExitCode == 0 ? "扫描与修复流程已结束；没有归档任何任务。" : "操作失败，未完成的修改会自动回滚。请查看输出。");
+                outputBox.Text = string.IsNullOrWhiteSpace(result.Output)
+                    ? "扫描已结束，但没有返回文本输出。"
+                    : result.Output;
+                if (result.ExitCode != 0)
+                {
+                    MessageBox.Show(this, "只读扫描失败，未修改任何数据。请查看输出。", "扫描失败",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                if (result.Output.IndexOf("RESULT_CODE=BULK_NO_CHANGES", StringComparison.Ordinal) >= 0)
+                {
+                    MessageBox.Show(this, "扫描完成，没有发现本工具能够安全修复的已知路径异常。",
+                        "扫描完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                if (result.Output.IndexOf("RESULT_CODE=BULK_FAULTS_FOUND", StringComparison.Ordinal) < 0)
+                {
+                    MessageBox.Show(this, "扫描返回了无法识别的结果。为安全起见，未执行修复。",
+                        "结果无法确认", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                DialogResult choice = MessageBox.Show(this,
+                    "只读扫描发现了已知路径异常，当前尚未修改任何数据。\r\n\r\n是否继续修复？请先完全退出 Codex（包括系统托盘进程），再点击“是”。工具会重新扫描，不会沿用可能过期的在线扫描结果。",
+                    "发现可修复异常", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (choice != DialogResult.Yes) return;
+
+                RunAsync(true, null, false, "正在重新扫描并修复已知路径异常……请勿启动 Codex。",
+                    delegate(RunResult repairResult)
+                    {
+                        ShowResult(repairResult,
+                            repairResult.ExitCode == 0 ? "重新扫描与修复流程已结束；没有归档任何任务。" : "修复失败，未完成的修改会自动回滚。请查看输出。");
+                    });
             });
     }
 

@@ -101,8 +101,7 @@ function getRow(id = taskId) {
 function allRows() {
   return db.prepare('SELECT id, rollout_path, archived FROM threads').all();
 }
-function collectAffectedRows() {
-  const rows = allRows();
+function collectAffectedRows(rows = allRows()) {
   const owners = new Map();
   for (const row of rows) {
     if (typeof row.rollout_path !== 'string') continue;
@@ -140,11 +139,19 @@ function readPlan(planPath) {
 }
 
 if (action === 'inspect-all') {
-  const integrity = db.prepare('PRAGMA integrity_check').get().integrity_check;
-  if (integrity !== 'ok') throw new Error(`integrity-check-failed:${integrity}`);
-  const affected = collectAffectedRows();
-  const unarchivedCount = allRows().filter((row) => Number(row.archived) === 0).length;
-  emit({ ok: true, integrity, unarchivedCount, count: affected.length, rows: affected });
+  db.exec('BEGIN');
+  try {
+    const integrity = db.prepare('PRAGMA integrity_check').get().integrity_check;
+    if (integrity !== 'ok') throw new Error(`integrity-check-failed:${integrity}`);
+    const rows = allRows();
+    const affected = collectAffectedRows(rows);
+    const unarchivedCount = rows.filter((row) => Number(row.archived) === 0).length;
+    db.exec('COMMIT');
+    emit({ ok: true, integrity, unarchivedCount, count: affected.length, rows: affected });
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
 } else if (action === 'inspect') {
   const integrity = db.prepare('PRAGMA integrity_check').get().integrity_check;
   if (integrity !== 'ok') throw new Error(`integrity-check-failed:${integrity}`);
@@ -400,8 +407,14 @@ try {
         $inspection = Invoke-SqliteHelper -Action inspect-all -DatabasePath $stateDatabase
         Write-Host "扫描完成：未归档任务 $($inspection.unarchivedCount) 个；已知扩展路径异常 $($inspection.count) 个；数据库完整性：$($inspection.integrity)。"
         if ($DryRun) {
-            Write-Host 'RESULT_CODE=BULK_SCAN_ONLY'
-            Write-Host '只读扫描完成：未修改数据库。'
+            if ($inspection.count -eq 0) {
+                Write-Host 'RESULT_CODE=BULK_NO_CHANGES'
+                Write-Host '只读扫描完成：没有需要修复的已知路径异常，未修改数据库。'
+            }
+            else {
+                Write-Host 'RESULT_CODE=BULK_FAULTS_FOUND'
+                Write-Host '只读扫描发现已知路径异常：正式修复前请完全退出 Codex。当前未修改数据库。'
+            }
             return
         }
         if ($inspection.count -eq 0) {
@@ -431,6 +444,7 @@ try {
         }
         $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $bulkManifestPath -Encoding utf8NoBOM
 
+        Assert-CodexStopped
         $normalized = Invoke-SqliteHelper -Action normalize-all -DatabasePath $stateDatabase -Argument1 $bulkManifestPath
         if (-not $normalized.ok -or $normalized.changes -ne $inspection.count) {
             throw '批量条件更新数量与扫描结果不一致。'
@@ -440,6 +454,7 @@ try {
         if (-not $verification.ok) {
             throw "批量修复回读失败：remaining=$($verification.remainingExtended), integrity=$($verification.integrity)"
         }
+        Assert-CodexStopped
 
         $manifest.status = 'success'
         $manifest.completedAtUtc = [DateTime]::UtcNow.ToString('o')
@@ -498,11 +513,13 @@ try {
     }
     $manifest | ConvertTo-Json | Set-Content -LiteralPath $manifestPath -Encoding utf8NoBOM
 
+    Assert-CodexStopped
     $normalized = Invoke-SqliteHelper -Action normalize -DatabasePath $stateDatabase -Id $resolvedTaskId -Argument1 $targetInspection.sourcePath -Argument2 $targetInspection.normalizedPath
     if (-not $normalized.ok -or $normalized.changes -ne 1) { throw '目标任务条件更新失败。' }
     $targetNormalized = $true
     $verification = Invoke-SqliteHelper -Action verify -DatabasePath $stateDatabase -Id $resolvedTaskId -Argument1 $targetInspection.normalizedPath
     if (-not $verification.ok) { throw "目标任务修复回读失败：integrity=$($verification.integrity)" }
+    Assert-CodexStopped
 
     $manifest.status = 'success'
     $manifest.completedAtUtc = [DateTime]::UtcNow.ToString('o')
