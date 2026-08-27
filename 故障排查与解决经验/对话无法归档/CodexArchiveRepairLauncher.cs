@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 
@@ -295,6 +296,11 @@ internal sealed class RunResult
 
 internal sealed class RepairForm : Form
 {
+    private const int EmSetCueBanner = 0x1501;
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern IntPtr SendMessage(IntPtr hWnd, int message, IntPtr wParam, string lParam);
+
     private readonly Button bulkRepairButton;
     private readonly Button analyzeButton;
     private readonly TextBox queryBox;
@@ -354,7 +360,12 @@ internal sealed class RepairForm : Form
             Top = 178,
             Width = 520,
             Height = 28,
-            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+            AccessibleName = "任务 ID 或完整标题"
+        };
+        queryBox.HandleCreated += delegate
+        {
+            SendMessage(queryBox.Handle, EmSetCueBanner, IntPtr.Zero, "请输入任务 ID 或任务的完整标题名称");
         };
         analyzeButton = new Button
         {

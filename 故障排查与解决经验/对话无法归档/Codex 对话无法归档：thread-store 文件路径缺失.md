@@ -98,6 +98,7 @@ RESULT_CODE=BULK_NO_CHANGES
 操作：
 
 1. 在输入框粘贴 UUID 格式任务 ID，或任务窗口的**完整标题**。
+   输入框为空时会显示灰色提示“请输入任务 ID 或任务的完整标题名称”；提示文字不是实际输入，不会被提交查询。
 2. 点击“分析指定任务”。这一步只读，不修改数据库。
 3. 如果命中已知异常，程序会显示确认框。
 4. 完全退出 Codex 后，再在确认框点击“是”，只修复该任务。
@@ -108,7 +109,7 @@ RESULT_CODE=BULK_NO_CHANGES
 
 - 唯一命中已知故障：先显示 `RESULT_CODE=KNOWN_PATH_FAULT`，确认后显示 `RESULT_CODE=TASK_REPAIRED`。
 - 路径正常：显示 `RESULT_CODE=NO_KNOWN_FAULT`，不修改。
-- 标题重复：拒绝修改并列出候选 ID；改用目标任务 ID。
+- 标题重复：如果两个或更多未归档任务的完整标题完全相同，工具不会擅自选择第一个或最新任务，而是拒绝修改并列出候选 ID；改用目标任务 ID 后重新分析。
 - 只有片段匹配：拒绝修改；复制完整标题或改用 ID。
 
 标题查询依据官方 `thread/list` 的 `searchTerm` 和返回字段 `thread.name`。由于官方搜索是区分大小写的标题片段搜索，工具还会在本地做完整标题相等校验，避免误修同名或近似标题任务。参见 [OpenAI Codex App Server 文档](https://developers.openai.com/codex/app-server)。
