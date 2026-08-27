@@ -71,6 +71,30 @@ function Test-PowerShellFiles {
     Write-Host 'PowerShell syntax: PASS'
 }
 
+function Test-CommanderRuleVersion {
+    $relativePaths = @(
+        '总指挥工作流/第二代总指挥的工作模式/00-第二代工作流总览.md',
+        '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md',
+        '总指挥工作流/第二代总指挥的工作模式/10-自动状态索引规范.md',
+        '总指挥工作流/第二代总指挥的工作模式/总指挥轻量交接启动配置.md'
+    )
+    $versions = [Collections.Generic.List[string]]::new()
+
+    foreach ($relativePath in $relativePaths) {
+        $content = Get-Content -LiteralPath (Join-Path $repoRoot $relativePath) -Raw
+        $match = [regex]::Match($content, '(?m)^版本：(?<version>\d{4}-\d{2}-\d{2}\.\d+)\s*$')
+        if (-not $match.Success) {
+            throw "规则入口缺少有效版本：$relativePath"
+        }
+        $versions.Add($match.Groups['version'].Value)
+    }
+
+    if (($versions | Sort-Object -Unique).Count -ne 1) {
+        throw "第二代总指挥规则入口版本不一致：$($versions -join ', ')"
+    }
+    Write-Host "Commander rule version $($versions[0]): PASS"
+}
+
 function Get-CSharpCompiler {
     $command = Get-Command csc.exe -ErrorAction SilentlyContinue
     if ($null -ne $command) { return $command.Source }
@@ -152,5 +176,6 @@ function Test-ArchiveRepairLauncher {
 
 Test-MarkdownFiles
 Test-PowerShellFiles
+Test-CommanderRuleVersion
 Test-ArchiveRepairLauncher
 Write-Host 'Repository quality checks: PASS'
