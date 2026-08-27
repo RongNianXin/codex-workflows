@@ -9,6 +9,7 @@
 - [CC Switch 切换账号后旧对话无法继续](<CC switch切换账号后，旧的对话无法继续/Codex 切换账号后旧对话无法继续.md>)
 - [历史任务批量迁移工具](<CC switch切换账号后，旧的对话无法继续/codex-bulk-session-migration/README.md>)
 - [Codex 对话无法归档：Windows 扩展路径兼容性故障](<对话无法归档/Codex 对话无法归档：thread-store 文件路径缺失.md>)
+- [Codex `thread not found` 恢复方案](<thread not found/thread-not-found-恢复方案.md>)
 - [相关项目、许可证与差异说明](<相关项目、许可证与差异说明.md>)
 
 ## 先判断是哪一类问题
@@ -19,6 +20,7 @@
 | 任务仍能看到，但继续时出现 `invalid_encrypted_content`、`could not be verified` 或组织不匹配 | 旧账号、模型或上游绑定的加密推理/压缩状态无法重放 | [切换账号后旧对话无法继续](<CC switch切换账号后，旧的对话无法继续/Codex 切换账号后旧对话无法继续.md>) |
 | 长任务打开、恢复或输入明显变慢 | 先区分本地会话体积/压缩累积、网络代理、进程资源和具体版本回归 | [Codex 会话交接评估](<../实用小工具/Codex会话交接评估/README.md>) |
 | Windows 上归档返回 `thread-store` / `os error 2`，但会话文件实际存在 | `state_5.sqlite` 中的 `rollout_path` 可能带 `\\?\` 扩展路径前缀 | [对话无法归档](<对话无法归档/Codex 对话无法归档：thread-store 文件路径缺失.md>) |
+| 任务记录仍存在，但原窗口显示 `thread not found` | 先检查归档状态，再通过任务 ID 发送无副作用验证消息以重新加载任务 | [`thread not found` 恢复方案](<thread not found/thread-not-found-恢复方案.md>) |
 | CC Switch 切换时希望长期避免跨供应商续接失败 | 需要切换前进程门禁、备份、候选转换、验证、原子提交和回滚事务 | [历史任务批量迁移工具](<CC switch切换账号后，旧的对话无法继续/codex-bulk-session-migration/README.md>) |
 
 “历史列表能看见”和“旧任务能够跨供应商继续”不是同一问题。统一 `model_provider` 可以修复可见性，但不能转换其他账号、组织或上游生成的密文。
