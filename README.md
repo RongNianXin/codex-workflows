@@ -1,6 +1,24 @@
 # Codex Workflows
 
+> Codex Desktop 工作流、故障排查经验与本地实用工具。
+>
+> Practical Codex Desktop workflows, troubleshooting guides, and local utilities.
+
+[![Repository quality](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml)
+
 这是一个面向 Codex Desktop 的个人工作流仓库，用于整理总指挥规则、故障排查经验、技巧性提示词和本地辅助工具。公开内容应可下载、可审查，不包含本机身份、真实任务 ID、凭据或私人提示词。
+
+## 30 秒开始
+
+1. 点击 GitHub 页面右上方的 `Code → Download ZIP`，下载并解压本仓库。
+2. 打开 [01-操作者操作手册.md](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md)；日常使用主要看这一份。
+3. 在真正要处理的项目中新建 Codex 任务，把下面这段话中的路径换成你解压后的规则目录，然后发送：
+
+   ```text
+   请把 <第二代总指挥规则目录> 作为本项目的总指挥工作流规则目录。先阅读 01-操作者操作手册.md，再根据我的目标按需读取其他规则并开始工作。
+   ```
+
+只想查故障时，从 [故障排查与解决经验](故障排查与解决经验/) 开始；只想使用小工具时，直接进入 [实用小工具](实用小工具/)。
 
 ## 目录架构
 
