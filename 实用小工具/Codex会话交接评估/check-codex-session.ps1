@@ -171,6 +171,121 @@ function Get-DetailedReportPath {
     return Join-Path $reportDirectory "$CurrentTaskId-详细分析报告.md"
 }
 
+function Get-TaskNameFromLocalIndex {
+    param(
+        [Parameter(Mandatory)]
+        [string]$CurrentTaskId
+    )
+
+    $fallbackName = '未取得（本地任务索引未记录）'
+    $codexHome = Join-Path $env:USERPROFILE '.codex'
+    $indexPath = Join-Path $codexHome 'session_index.jsonl'
+
+    if (-not (Test-Path -LiteralPath $indexPath -PathType Leaf)) {
+        return [pscustomobject]@{
+            TaskName = $fallbackName
+            IndexFound = $false
+            ParseWarnings = 0
+        }
+    }
+
+    $taskName = $fallbackName
+    $indexFound = $false
+    $parseWarnings = 0
+    $stream = $null
+    $reader = $null
+
+    try {
+        $stream = [IO.File]::Open(
+            $indexPath,
+            [IO.FileMode]::Open,
+            [IO.FileAccess]::Read,
+            [IO.FileShare]::ReadWrite
+        )
+        $reader = [IO.StreamReader]::new(
+            $stream,
+            [Text.UTF8Encoding]::new($false),
+            $true,
+            65536
+        )
+
+        while (($line = $reader.ReadLine()) -ne $null) {
+            if ([string]::IsNullOrWhiteSpace($line)) {
+                continue
+            }
+            if ($line.IndexOf(
+                $CurrentTaskId,
+                [StringComparison]::OrdinalIgnoreCase
+            ) -lt 0) {
+                continue
+            }
+
+            try {
+                $entry = $line | ConvertFrom-Json -ErrorAction Stop
+            }
+            catch {
+                $parseWarnings++
+                continue
+            }
+
+            $entryId = ''
+            foreach ($idField in @('id', 'thread_id', 'session_id')) {
+                $property = $entry.PSObject.Properties[$idField]
+                if ($null -ne $property -and $null -ne $property.Value) {
+                    $entryId = [string]$property.Value
+                    break
+                }
+            }
+            if (-not [string]::Equals(
+                $entryId,
+                $CurrentTaskId,
+                [StringComparison]::OrdinalIgnoreCase
+            )) {
+                continue
+            }
+
+            foreach ($nameField in @('thread_name', 'title', 'name')) {
+                $property = $entry.PSObject.Properties[$nameField]
+                if (
+                    $null -ne $property -and
+                    -not [string]::IsNullOrWhiteSpace([string]$property.Value)
+                ) {
+                    $singleLineName = (
+                        [string]$property.Value -replace '[\x00-\x1F\x7F]+', ' '
+                    ).Trim()
+                    if (-not [string]::IsNullOrWhiteSpace($singleLineName)) {
+                        # 索引可能包含同一任务的多条更新记录，以最后一条有效名称为准。
+                        $taskName = $singleLineName
+                        $indexFound = $true
+                    }
+                    break
+                }
+            }
+        }
+    }
+    catch {
+        return [pscustomobject]@{
+            TaskName = '未取得（读取本地任务索引失败）'
+            IndexFound = $false
+            ParseWarnings = $parseWarnings
+        }
+    }
+    finally {
+        if ($reader) {
+            $reader.Dispose()
+        }
+        elseif ($stream) {
+            $stream.Dispose()
+        }
+    }
+
+    return [pscustomobject]@{
+        TaskName = $taskName
+        IndexFound = $indexFound
+        ParseWarnings = $parseWarnings
+    }
+}
+
 function Write-Utf8BomFileAtomic {
     param(
         [Parameter(Mandatory)]
@@ -645,6 +760,9 @@ $file = $files[0]
 $file.Refresh()
 $lengthBeforeScan = [long]$file.Length
 $textFormat = Get-JsonlTextFormat $file.FullName
+$taskNameInfo = Get-TaskNameFromLocalIndex -CurrentTaskId $taskId
+$taskName = $taskNameInfo.TaskName
+$taskNameIndexWarnings = $taskNameInfo.ParseWarnings
 
 $compactCount = 0
 $lastTokenInfo = $null
@@ -1281,6 +1399,7 @@ $reportBuilder = [Text.StringBuilder]::new()
 Add-ReportLine -Builder $reportBuilder -Value '# Codex 会话详细分析报告'
 Add-ReportLine -Builder $reportBuilder
 Add-ReportLine -Builder $reportBuilder -Value "- 任务 ID：$taskId"
+Add-ReportLine -Builder $reportBuilder -Value "- 任务名称：$taskName"
 Add-ReportLine -Builder $reportBuilder -Value "- 会话文件：$($file.FullName)"
 Add-ReportLine -Builder $reportBuilder -Value "- 生成时间：$([DateTimeOffset]::Now.ToString('yyyy-MM-dd HH:mm:ss zzz'))"
 Add-ReportLine -Builder $reportBuilder -Value '- 编码：UTF-8 BOM'
@@ -1385,6 +1504,7 @@ $resolvedReportPath = Write-Utf8BomFileAtomic `
 
 '一、基本信息'
 Format-StatusLine '任务 ID：' $taskId
+Format-StatusLine '任务名称：' $taskName
 Format-StatusLine '会话存储状态：' $storageState
 Format-StatusLine '路径：' $file.FullName
 Format-StatusLine '最后修改：' $file.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss zzz')
@@ -1440,6 +1560,8 @@ if (
     $tokenBaselineWarnings -gt 0 -or
     $offsetWarnings -gt 0 -or
     $duplicateTurnContextCount -gt 0 -or
+    $taskNameIndexWarnings -gt 0 -or
+    -not $taskNameInfo.IndexFound -or
     $fileChangedDuringScan
 ) {
     ''
@@ -1458,6 +1580,12 @@ if (
     }
     if ($duplicateTurnContextCount -gt 0) {
         "  - 同一界面回合可能包含多条内部上下文记录。本次发现并合并了 $duplicateTurnContextCount 条重复记录，最终识别为 $startedTurnCount 个回合。"
+    }
+    if ($taskNameIndexWarnings -gt 0) {
+        "  - 本地任务索引中有 $taskNameIndexWarnings 条记录无法解析；任务名称可能不是最新值。"
+    }
+    if (-not $taskNameInfo.IndexFound) {
+        '  - 未能从本地任务索引取得任务名称；任务 ID 和其余会话分析结果不受影响。'
     }
     if ($fileChangedDuringScan) {
         '  - 文件在扫描期间仍有写入；轮次、Token 和内容占比以本次已读取数据为准。'
