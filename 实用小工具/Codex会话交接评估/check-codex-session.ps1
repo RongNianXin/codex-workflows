@@ -734,6 +734,112 @@ function Get-OrCreateTurnUsage {
     return $item
 }
 
+function Get-SessionSegmentMetadata {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
+
+    $textFormat = Get-JsonlTextFormat -Path $Path
+    $stream = $null
+    $reader = $null
+    $sessionRecord = $null
+    $sessionTimestampText = ''
+
+    try {
+        $stream = [IO.File]::Open(
+            $Path,
+            [IO.FileMode]::Open,
+            [IO.FileAccess]::Read,
+            [IO.FileShare]::ReadWrite
+        )
+        $reader = [IO.StreamReader]::new(
+            $stream,
+            $textFormat.Encoding,
+            $true,
+            65536
+        )
+
+        while (($line = $reader.ReadLine()) -ne $null) {
+            if ([string]::IsNullOrWhiteSpace($line)) {
+                continue
+            }
+            $head = $line.Substring(0, [Math]::Min(4096, $line.Length))
+            if ((Get-RecordShape -Head $head).TopType -ne 'session_meta') {
+                continue
+            }
+            $sessionTimestampText = Get-HeadStringField -Head $head -Name 'timestamp'
+            $sessionRecord = $line | ConvertFrom-Json -ErrorAction Stop
+            break
+        }
+    }
+    finally {
+        if ($reader) {
+            $reader.Dispose()
+        }
+        elseif ($stream) {
+            $stream.Dispose()
+        }
+    }
+
+    if ($null -eq $sessionRecord -or $null -eq $sessionRecord.payload) {
+        throw '未找到可解析的 session_meta。'
+    }
+
+    $payload = $sessionRecord.payload
+    $idProperty = $payload.PSObject.Properties['id']
+    if ($null -eq $idProperty -or [string]::IsNullOrWhiteSpace([string]$idProperty.Value)) {
+        throw 'session_meta.payload.id 缺失。'
+    }
+
+    if ([string]::IsNullOrWhiteSpace($sessionTimestampText)) {
+        throw 'session_meta.timestamp 缺失，无法稳定排序。'
+    }
+    try {
+        $sessionStart = [DateTimeOffset]::Parse(
+            $sessionTimestampText,
+            [Globalization.CultureInfo]::InvariantCulture,
+            [Globalization.DateTimeStyles]::RoundtripKind
+        )
+    }
+    catch {
+        throw 'session_meta.timestamp 格式无效，无法稳定排序。'
+    }
+
+    $file = Get-Item -LiteralPath $Path -ErrorAction Stop
+    $metadata = @{}
+    foreach ($field in @('originator', 'cli_version', 'source', 'model_provider')) {
+        $property = $payload.PSObject.Properties[$field]
+        $metadata[$field] = if ($null -eq $property -or $null -eq $property.Value) {
+            ''
+        }
+        else {
+            [string]$property.Value
+        }
+    }
+
+    return [pscustomobject]@{
+        FullName = $file.FullName
+        LengthBeforeScan = [long]$file.Length
+        LengthAfterScan = [long]$file.Length
+        LastWriteTime = $file.LastWriteTime
+        TaskId = ([string]$idProperty.Value).Trim()
+        SessionStart = $sessionStart
+        ScanEndTime = $sessionStart
+        Originator = $metadata['originator']
+        CliVersion = $metadata['cli_version']
+        Source = $metadata['source']
+        ModelProvider = $metadata['model_provider']
+        StorageKind = if ($file.FullName -like '*\archived_sessions\*') {
+            'archived'
+        }
+        else {
+            'active'
+        }
+        TextFormat = $textFormat
+    }
+}
+
 $roots = @(
     (Join-Path $env:USERPROFILE '.codex\sessions'),
     (Join-Path $env:USERPROFILE '.codex\archived_sessions')
@@ -743,23 +849,96 @@ if (-not $roots) {
     throw '未找到 Codex 会话目录。'
 }
 
-$files = @(
+$candidateFiles = @(
     Get-ChildItem -LiteralPath $roots -Recurse -File `
         -Filter "*$taskId*.jsonl" -ErrorAction Stop
 )
 
-if ($files.Count -eq 0) {
+if ($candidateFiles.Count -eq 0) {
     throw "未找到任务 $taskId 的本地会话文件。"
 }
 
-if ($files.Count -gt 1) {
-    throw "同一任务 ID 匹配到多个文件，请人工确认：`n$($files.FullName -join "`n")"
+$segmentMetadataParseWarnings = 0
+$excludedCandidateCount = 0
+$segments = @()
+foreach ($candidate in $candidateFiles) {
+    try {
+        $segment = Get-SessionSegmentMetadata -Path $candidate.FullName
+    }
+    catch {
+        $segmentMetadataParseWarnings++
+        continue
+    }
+
+    if (-not [string]::Equals(
+        $segment.TaskId,
+        $taskId,
+        [StringComparison]::OrdinalIgnoreCase
+    )) {
+        $excludedCandidateCount++
+        continue
+    }
+    $segments += $segment
 }
 
-$file = $files[0]
-$file.Refresh()
-$lengthBeforeScan = [long]$file.Length
-$textFormat = Get-JsonlTextFormat $file.FullName
+if ($segments.Count -eq 0) {
+    throw "候选文件均未通过 session_meta.payload.id 核验，无法确认任务 $taskId 的本地会话分段。"
+}
+
+$files = @(
+    $segments | Sort-Object -Property `
+        @{ Expression = { $_.SessionStart.UtcDateTime }; Descending = $false }, `
+        @{ Expression = { $_.FullName }; Descending = $false }
+)
+$segmentCount = $files.Count
+
+foreach ($field in @('Originator', 'Source', 'ModelProvider')) {
+    $values = @(
+        $files |
+            ForEach-Object { $_.$field } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Sort-Object -Unique
+    )
+    if ($values.Count -gt 1) {
+        throw "会话分段元数据冲突：$field 存在多个不一致值，拒绝静默拼接。"
+    }
+}
+
+$segmentVersionWarnings = if (@(
+    $files |
+        ForEach-Object { $_.CliVersion } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+        Sort-Object -Unique
+).Count -gt 1) { 1 } else { 0 }
+$segmentFormatWarnings = if (@(
+    $files | ForEach-Object {
+        '{0}|{1}|{2}' -f `
+            $_.TextFormat.Encoding.WebName, `
+            $_.TextFormat.NewLineBytes, `
+            $_.TextFormat.AsciiByteWidth
+    } | Sort-Object -Unique
+).Count -gt 1) { 1 } else { 0 }
+$segmentLocationWarnings = if (@(
+    $files | ForEach-Object { $_.StorageKind } | Sort-Object -Unique
+).Count -gt 1) { 1 } else { 0 }
+$segmentTimeWarnings = if (@(
+    $files | Group-Object -Property { $_.SessionStart.UtcTicks } |
+        Where-Object { $_.Count -gt 1 }
+).Count -gt 0) { 1 } else { 0 }
+$segmentIncompleteMetadataWarnings = 0
+if ($segmentCount -gt 1) {
+    foreach ($field in @('Originator', 'CliVersion', 'Source', 'ModelProvider')) {
+        if (@(
+            $files | Where-Object {
+                [string]::IsNullOrWhiteSpace([string]$_.$field)
+            }
+        ).Count -gt 0) {
+            $segmentIncompleteMetadataWarnings++
+        }
+    }
+}
+
+$primaryFile = $files[0]
 $taskNameInfo = Get-TaskNameFromLocalIndex -CurrentTaskId $taskId
 $taskName = $taskNameInfo.TaskName
 $taskNameIndexWarnings = $taskNameInfo.ParseWarnings
@@ -784,7 +963,7 @@ $completedSizeByOrdinal = @{}
 $terminalTurnIds = @{}
 $categoryBytes = @{}
 $categoryRecords = @{}
-$cumulativeBytes = [long]$textFormat.BomBytes
+$cumulativeBytes = [long]0
 $scanEndPosition = [long]0
 $lastResidualCategory = '其他事件与结构'
 $lastCompletionOrdinal = 0
@@ -792,17 +971,45 @@ $lastLineWasCompletion = $false
 $lastLineHadNewline = $true
 $stream = $null
 $reader = $null
+$fileChangedDuringScan = $false
+$previousSegmentEndTime = $null
 
-if ($textFormat.BomBytes -gt 0) {
+for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
+    $file = $files[$segmentIndex]
+    $textFormat = $file.TextFormat
+    $segmentBaseBytes = $cumulativeBytes
+    $segmentScanEndPosition = [long]0
+    $segmentLastEventTime = $file.SessionStart
+    $lastResidualCategory = '其他事件与结构'
+    $lastCompletionOrdinal = 0
+    $lastLineWasCompletion = $false
+    $lastLineHadNewline = $true
+    $stream = $null
+    $reader = $null
+
+    if (
+        $null -ne $previousSegmentEndTime -and
+        $file.SessionStart -lt $previousSegmentEndTime
+    ) {
+        throw "会话分段时间范围发生重叠：当前分段开始 $($file.SessionStart.ToString('o'))，上一分段结束 $($previousSegmentEndTime.ToString('o'))；无法在没有可靠记录标识的情况下安全聚合。"
+    }
+
+    if ($segmentIndex -gt 0) {
+        # 后续分段的首个累计快照只作基线，避免把上一分段累计量重复计算。
+        $previousTokenSnapshot = $null
+    }
+
+    $cumulativeBytes += [long]$textFormat.BomBytes
+    if ($textFormat.BomBytes -gt 0) {
     Add-CategoryStat `
         $categoryBytes `
         $categoryRecords `
         '其他事件与结构' `
         $textFormat.BomBytes `
         $false
-}
+    }
 
-try {
+    try {
     $stream = [IO.File]::Open(
         $file.FullName,
         [IO.FileMode]::Open,
@@ -829,6 +1036,33 @@ try {
         $recordTimestamp = Get-HeadStringField $head 'timestamp'
         $category = Get-RecordCategory $shape.TopType $shape.PayloadType
         $lastResidualCategory = $category
+
+        if (-not [string]::IsNullOrWhiteSpace($recordTimestamp)) {
+            $recordTime = $null
+            try {
+                $recordTime = [DateTimeOffset]::Parse(
+                    $recordTimestamp,
+                    [Globalization.CultureInfo]::InvariantCulture,
+                    [Globalization.DateTimeStyles]::RoundtripKind
+                )
+            }
+            catch {
+                $parseWarnings++
+            }
+            if ($null -ne $recordTime) {
+                if (
+                    $segmentIndex -gt 0 -and
+                    $shape.TopType -ne 'session_meta' -and
+                    $null -ne $previousSegmentEndTime -and
+                    $recordTime -lt $previousSegmentEndTime
+                ) {
+                    throw '会话分段记录时间发生重叠，拒绝静默重复统计。'
+                }
+                if ($recordTime -gt $segmentLastEventTime) {
+                    $segmentLastEventTime = $recordTime
+                }
+            }
+        }
 
         $inlineDataBytes = Get-InlineDataByteCount `
             $line `
@@ -1043,6 +1277,7 @@ try {
 
                     if ($null -eq $previousTokenSnapshot) {
                         if (
+                            $segmentIndex -eq 0 -and
                             $currentTurnIndex -le 1 -and
                             $completedTurnCount -eq 0 -and
                             $abortedTurnCount -eq 0
@@ -1181,28 +1416,31 @@ try {
         }
     }
 
-    $scanEndPosition = [long]$stream.Position
-    if ($scanEndPosition -gt 0) {
+    $segmentScanEndPosition = [long]$stream.Position
+    if ($segmentScanEndPosition -gt 0) {
         $savedPosition = $stream.Position
         $null = $stream.Seek(-1, [IO.SeekOrigin]::End)
         $lastByte = $stream.ReadByte()
         $lastLineHadNewline = ($lastByte -eq 0x0A)
         $null = $stream.Seek($savedPosition, [IO.SeekOrigin]::Begin)
     }
-}
-catch {
-    throw "读取会话文件失败：$($_.Exception.Message)"
-}
-finally {
+    }
+    catch {
+        throw "读取会话分段失败：$($_.Exception.Message)"
+    }
+    finally {
     if ($reader) {
         $reader.Dispose()
     }
     elseif ($stream) {
         $stream.Dispose()
     }
-}
+    }
 
-if (-not $lastLineHadNewline -and $cumulativeBytes -gt 0) {
+    if (
+        -not $lastLineHadNewline -and
+        ($cumulativeBytes - $segmentBaseBytes) -gt 0
+    ) {
     $cumulativeBytes -= [long]$textFormat.NewLineBytes
     if ($categoryBytes.ContainsKey($lastResidualCategory)) {
         $categoryBytes[$lastResidualCategory] = [Math]::Max(
@@ -1220,11 +1458,12 @@ if (-not $lastLineHadNewline -and $cumulativeBytes -gt 0) {
             $turnUsages[$currentTurnIndex].EndBytes -= [long]$textFormat.NewLineBytes
         }
     }
-}
+    }
 
-if ($scanEndPosition -ne $cumulativeBytes) {
+    $segmentEstimatedBytes = $cumulativeBytes - $segmentBaseBytes
+    if ($segmentScanEndPosition -ne $segmentEstimatedBytes) {
     # 极少数混合换行文件可能让按行估算与实际字节位置不一致。
-    $offsetDifference = $scanEndPosition - $cumulativeBytes
+    $offsetDifference = $segmentScanEndPosition - $segmentEstimatedBytes
     if (-not $categoryBytes.ContainsKey($lastResidualCategory)) {
         $categoryBytes[$lastResidualCategory] = [long]0
         $categoryRecords[$lastResidualCategory] = 0
@@ -1233,8 +1472,22 @@ if ($scanEndPosition -ne $cumulativeBytes) {
         0,
         [long]$categoryBytes[$lastResidualCategory] + $offsetDifference
     )
-    $cumulativeBytes = $scanEndPosition
+    $cumulativeBytes += $offsetDifference
     $offsetWarnings++
+    }
+
+    $scanEndPosition += $segmentScanEndPosition
+    $currentFileInfo = Get-Item -LiteralPath $file.FullName -ErrorAction Stop
+    if (
+        [long]$currentFileInfo.Length -ne [long]$file.LengthBeforeScan -or
+        [long]$currentFileInfo.Length -ne $segmentScanEndPosition
+    ) {
+        $fileChangedDuringScan = $true
+    }
+    $file.LastWriteTime = $currentFileInfo.LastWriteTime
+    $file.LengthAfterScan = [long]$currentFileInfo.Length
+    $file.ScanEndTime = $segmentLastEventTime
+    $previousSegmentEndTime = $segmentLastEventTime
 }
 
 foreach ($turnUsage in $turnUsages.Values) {
@@ -1256,20 +1509,29 @@ $unfinishedTurnCount = @(
     $turnUsages.Values | Where-Object { $_.Status -eq '未结束' }
 ).Count
 
-$file.Refresh()
-$latestLength = [long]$file.Length
-$fileChangedDuringScan = (
-    $latestLength -ne $lengthBeforeScan -or
-    $latestLength -ne $scanEndPosition
-)
+$latestLength = [long](
+    $files | Measure-Object -Property LengthAfterScan -Sum
+).Sum
+$latestLastWriteTime = (
+    $files | Sort-Object -Property LastWriteTime -Descending | Select-Object -First 1
+).LastWriteTime
 $sizeMiB = $latestLength / 1MB
 $sizeText = Format-MiB $latestLength
-$storageState = if ($file.FullName -like '*\archived_sessions\*') {
+$storageState = if ($segmentLocationWarnings -gt 0) {
+    '混合（活动与归档分段并存）'
+}
+elseif ($primaryFile.StorageKind -eq 'archived') {
     '已归档'
 }
 else {
     '未归档（不代表应用正在运行）'
 }
+$segmentEndTime = (
+    $files | Sort-Object -Property ScanEndTime -Descending | Select-Object -First 1
+).ScanEndTime
+$segmentTimeRangeText = '{0} 至 {1}' -f `
+    (Format-EventTimestamp $primaryFile.SessionStart.ToString('o')), `
+    (Format-EventTimestamp $segmentEndTime.ToString('o'))
 
 $contextText = '无法取得'
 $contextPercent = $null
@@ -1349,7 +1611,7 @@ else {
 }
 
 $totalScore = $sizeScore + $compressionScore
-$sizeBasis = "文件为 $sizeText，大小评分 $sizeScore 分；分级线为 30、50、100 和 200 MiB。"
+$sizeBasis = "聚合文件为 $sizeText，大小评分 $sizeScore 分；分级线为 30、50、100 和 200 MiB。"
 $compressionBasis = "已自动压缩 $compactCount 次，压缩评分 $compressionScore 分；分级线为 4、7 和 10 次。"
 
 if ($totalScore -ge 3) {
@@ -1386,21 +1648,32 @@ $resolvedReportPath = Get-DetailedReportPath `
 if ([IO.Path]::GetExtension($resolvedReportPath) -ine '.md') {
     throw "详细报告必须使用 .md 扩展名：$resolvedReportPath"
 }
-if (
-    [string]::Equals(
-        [IO.Path]::GetFullPath($resolvedReportPath),
-        [IO.Path]::GetFullPath($file.FullName),
-        [StringComparison]::OrdinalIgnoreCase
-    )
-) {
+if (@(
+    $files | Where-Object {
+        [string]::Equals(
+            [IO.Path]::GetFullPath($resolvedReportPath),
+            [IO.Path]::GetFullPath($_.FullName),
+            [StringComparison]::OrdinalIgnoreCase
+        )
+    }
+).Count -gt 0) {
     throw '详细报告路径不能与会话 JSONL 文件相同。'
+}
+$pathSummary = if ($segmentCount -eq 1) {
+    $primaryFile.FullName
+}
+else {
+    "$($primaryFile.FullName)（另有 $($segmentCount - 1) 个分段）"
 }
 $reportBuilder = [Text.StringBuilder]::new()
 Add-ReportLine -Builder $reportBuilder -Value '# Codex 会话详细分析报告'
 Add-ReportLine -Builder $reportBuilder
 Add-ReportLine -Builder $reportBuilder -Value "- 任务 ID：$taskId"
 Add-ReportLine -Builder $reportBuilder -Value "- 任务名称：$taskName"
-Add-ReportLine -Builder $reportBuilder -Value "- 会话文件：$($file.FullName)"
+Add-ReportLine -Builder $reportBuilder -Value "- 会话分段数：$segmentCount"
+Add-ReportLine -Builder $reportBuilder -Value "- 聚合字节数：$(Format-Integer $latestLength) B（$sizeText）"
+Add-ReportLine -Builder $reportBuilder -Value "- 分段时间范围：$segmentTimeRangeText"
+Add-ReportLine -Builder $reportBuilder -Value "- 分段路径：$pathSummary"
 Add-ReportLine -Builder $reportBuilder -Value "- 生成时间：$([DateTimeOffset]::Now.ToString('yyyy-MM-dd HH:mm:ss zzz'))"
 Add-ReportLine -Builder $reportBuilder -Value '- 编码：UTF-8 BOM'
 Add-ReportLine -Builder $reportBuilder
@@ -1506,8 +1779,11 @@ $resolvedReportPath = Write-Utf8BomFileAtomic `
 Format-StatusLine '任务 ID：' $taskId
 Format-StatusLine '任务名称：' $taskName
 Format-StatusLine '会话存储状态：' $storageState
-Format-StatusLine '路径：' $file.FullName
-Format-StatusLine '最后修改：' $file.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss zzz')
+Format-StatusLine '会话分段数：' "$segmentCount 个"
+Format-StatusLine '聚合字节数：' "$(Format-Integer $latestLength) B（$sizeText）"
+Format-StatusLine '分段时间范围：' $segmentTimeRangeText
+Format-StatusLine '路径：' $pathSummary
+Format-StatusLine '最后修改：' $latestLastWriteTime.ToString('yyyy-MM-dd HH:mm:ss zzz')
 Format-StatusLine '最近输入占窗口：' $contextText
 ''
 '二、文件资源'
@@ -1560,6 +1836,13 @@ if (
     $tokenBaselineWarnings -gt 0 -or
     $offsetWarnings -gt 0 -or
     $duplicateTurnContextCount -gt 0 -or
+    $segmentMetadataParseWarnings -gt 0 -or
+    $excludedCandidateCount -gt 0 -or
+    $segmentVersionWarnings -gt 0 -or
+    $segmentFormatWarnings -gt 0 -or
+    $segmentLocationWarnings -gt 0 -or
+    $segmentTimeWarnings -gt 0 -or
+    $segmentIncompleteMetadataWarnings -gt 0 -or
     $taskNameIndexWarnings -gt 0 -or
     -not $taskNameInfo.IndexFound -or
     $fileChangedDuringScan
@@ -1573,13 +1856,34 @@ if (
         "  - 累计 Token 计数回退 $tokenResetWarnings 次；回退点已重新建立基线，排名可能少计但不会把旧累计量重复计算。"
     }
     if ($tokenBaselineWarnings -gt 0) {
-        "  - 首个累计 Token 快照出现在后续回合 $tokenBaselineWarnings 次；该快照仅作为基线，排名可能少计但不会把历史累计量误算到单一回合。"
+        "  - 后续回合或新分段的首个累计 Token 快照有 $tokenBaselineWarnings 次仅作为基线；排名可能少计，但不会把历史累计量重复算到单一回合。"
     }
     if ($offsetWarnings -gt 0) {
         "  - 检测到非统一编码或换行；最终文件占用已按实际扫描字节校正，历史里程碑大小可能有轻微偏差。"
     }
     if ($duplicateTurnContextCount -gt 0) {
         "  - 同一界面回合可能包含多条内部上下文记录。本次发现并合并了 $duplicateTurnContextCount 条重复记录，最终识别为 $startedTurnCount 个回合。"
+    }
+    if ($segmentMetadataParseWarnings -gt 0) {
+        "  - 有 $segmentMetadataParseWarnings 个文件名候选的 session_meta 无法解析，已排除且未参与聚合。"
+    }
+    if ($excludedCandidateCount -gt 0) {
+        "  - 有 $excludedCandidateCount 个文件名候选的内部任务 ID 不匹配，已排除且未参与聚合。"
+    }
+    if ($segmentVersionWarnings -gt 0) {
+        '  - 会话分段记录了不同 CLI 版本；已按各分段格式读取，版本差异需人工留意。'
+    }
+    if ($segmentFormatWarnings -gt 0) {
+        '  - 会话分段的编码或换行格式不一致；已逐段识别并聚合。'
+    }
+    if ($segmentLocationWarnings -gt 0) {
+        '  - 同一任务同时存在活动目录和归档目录分段；已明确标记为混合存储状态。'
+    }
+    if ($segmentTimeWarnings -gt 0) {
+        '  - 多个分段的 session_meta 时间相同；已使用完整路径作为稳定次序。'
+    }
+    if ($segmentIncompleteMetadataWarnings -gt 0) {
+        "  - 有 $segmentIncompleteMetadataWarnings 类 session_meta 字段在部分分段中缺失；已继续聚合，但兼容性需人工留意。"
     }
     if ($taskNameIndexWarnings -gt 0) {
         "  - 本地任务索引中有 $taskNameIndexWarnings 条记录无法解析；任务名称可能不是最新值。"
