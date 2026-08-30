@@ -454,8 +454,6 @@ try {
         if (-not $verification.ok) {
             throw "批量修复回读失败：remaining=$($verification.remainingExtended), integrity=$($verification.integrity)"
         }
-        Assert-CodexStopped
-
         $manifest.status = 'success'
         $manifest.completedAtUtc = [DateTime]::UtcNow.ToString('o')
         $manifest.changedRows = $normalized.changes
@@ -519,8 +517,6 @@ try {
     $targetNormalized = $true
     $verification = Invoke-SqliteHelper -Action verify -DatabasePath $stateDatabase -Id $resolvedTaskId -Argument1 $targetInspection.normalizedPath
     if (-not $verification.ok) { throw "目标任务修复回读失败：integrity=$($verification.integrity)" }
-    Assert-CodexStopped
-
     $manifest.status = 'success'
     $manifest.completedAtUtc = [DateTime]::UtcNow.ToString('o')
     $manifest | ConvertTo-Json | Set-Content -LiteralPath $manifestPath -Encoding utf8NoBOM
