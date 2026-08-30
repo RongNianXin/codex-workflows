@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 internal static class Program
@@ -80,6 +81,8 @@ internal static class Program
             wrapper.AppendLine("$ErrorActionPreference = 'Stop'");
             wrapper.AppendLine("[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)");
             wrapper.AppendLine("$OutputEncoding = [Console]::OutputEncoding");
+            wrapper.AppendLine("$env:NO_COLOR = '1'");
+            wrapper.AppendLine("if ($null -ne $PSStyle) { $PSStyle.OutputRendering = 'PlainText' }");
             if (!allAffected)
             {
                 string encodedQuery = Convert.ToBase64String(Encoding.UTF8.GetBytes(taskQuery ?? string.Empty));
@@ -108,7 +111,8 @@ internal static class Program
             wrapper.AppendLine("  exit 0");
             wrapper.AppendLine("}");
             wrapper.AppendLine("catch {");
-            wrapper.AppendLine("  Write-Error $_.Exception.Message");
+            wrapper.AppendLine("  Write-Output 'RESULT_CODE=SCRIPT_ERROR'");
+            wrapper.AppendLine("  Write-Output $_.Exception.Message");
             wrapper.AppendLine("  exit 1");
             wrapper.AppendLine("}");
             File.WriteAllText(wrapperPath, wrapper.ToString(), new UTF8Encoding(false));
@@ -135,7 +139,7 @@ internal static class Program
                 string stdout = process.StandardOutput.ReadToEnd();
                 string stderr = process.StandardError.ReadToEnd();
                 process.WaitForExit();
-                string output = (stdout + Environment.NewLine + stderr).Trim();
+                string output = CleanProcessOutput(stdout + Environment.NewLine + stderr);
                 return new RunResult(process.ExitCode, output);
             }
         }
@@ -154,6 +158,30 @@ internal static class Program
     {
         Guid ignored;
         return !string.IsNullOrWhiteSpace(value) && Guid.TryParseExact(value.Trim(), "D", out ignored);
+    }
+
+    internal static bool IsCodexRunning()
+    {
+        Process[] processes = new Process[0];
+        try
+        {
+            processes = Process.GetProcessesByName("Codex");
+            return processes.Length > 0;
+        }
+        finally
+        {
+            foreach (Process process in processes)
+            {
+                process.Dispose();
+            }
+        }
+    }
+
+    private static string CleanProcessOutput(string value)
+    {
+        string output = value ?? string.Empty;
+        output = Regex.Replace(output, "\\x1B\\[[0-?]*[ -/]*[@-~]", string.Empty);
+        return output.Trim();
     }
 
     private static string ExtractResource()
@@ -429,12 +457,13 @@ internal sealed class RepairForm : Form
                     "只读扫描发现了已知路径异常，当前尚未修改任何数据。\r\n\r\n是否继续修复？请先完全退出 Codex（包括系统托盘进程），再点击“是”。工具会重新扫描，不会沿用可能过期的在线扫描结果。",
                     "发现可修复异常", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                 if (choice != DialogResult.Yes) return;
+                if (!EnsureCodexStoppedBeforeRepair()) return;
 
                 RunAsync(true, null, false, "正在重新扫描并修复已知路径异常……请勿启动 Codex。",
                     delegate(RunResult repairResult)
                     {
                         ShowResult(repairResult,
-                            repairResult.ExitCode == 0 ? "重新扫描与修复流程已结束；没有归档任何任务。" : "修复失败，未完成的修改会自动回滚。请查看输出。");
+                            GetRepairResultMessage(repairResult, "重新扫描与修复流程已结束；没有归档任何任务。"));
                     });
             });
     }
@@ -472,12 +501,13 @@ internal sealed class RepairForm : Form
                     "已确认该任务命中已知路径异常。\r\n\r\n是否只修复这个任务的路径？不会归档、删除或移动任务。请先完全退出 Codex，再点击“是”。",
                     "确认只修复指定任务", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                 if (choice != DialogResult.Yes) return;
+                if (!EnsureCodexStoppedBeforeRepair()) return;
 
                 RunAsync(false, query, false, "正在修复指定任务路径……请勿启动 Codex。",
                     delegate(RunResult repairResult)
                     {
                         ShowResult(repairResult,
-                            repairResult.ExitCode == 0 ? "路径修复流程已结束；没有归档该任务。" : "修复失败，修改会自动回滚。请查看输出。");
+                            GetRepairResultMessage(repairResult, "路径修复流程已结束；没有归档该任务。"));
                     });
             });
     }
@@ -511,6 +541,25 @@ internal sealed class RepairForm : Form
         bulkRepairButton.Enabled = enabled;
         analyzeButton.Enabled = enabled;
         queryBox.Enabled = enabled;
+    }
+
+    private bool EnsureCodexStoppedBeforeRepair()
+    {
+        if (!Program.IsCodexRunning()) return true;
+        MessageBox.Show(this,
+            "检测到 Codex 仍在运行，因此尚未开始修复，也没有修改任何数据。\r\n\r\n请完全退出所有 Codex 窗口及系统托盘进程，然后重新点击扫描或分析。",
+            "Codex 尚未完全退出", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return false;
+    }
+
+    private static string GetRepairResultMessage(RunResult result, string successMessage)
+    {
+        if (result.ExitCode == 0) return successMessage;
+        if (result.Output.IndexOf("修复前必须完全退出 Codex", StringComparison.Ordinal) >= 0)
+        {
+            return "检测到 Codex 在修复开始前重新运行；本次未确认完成修复。请完全退出 Codex 后重试。";
+        }
+        return "修复未成功。请查看输出；如果已经发生路径修改，脚本只会在安全条件满足时尝试回滚。";
     }
 
     private void ShowResult(RunResult result, string message)
