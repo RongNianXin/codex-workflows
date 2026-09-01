@@ -6,6 +6,8 @@
 
 个人维护的工作流、故障排查记录与 Windows 本地工具箱。
 
+[English overview](README.en.md)
+
 [![Repository quality](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml)
 ![License: MIT](https://img.shields.io/badge/license-MIT-2F855A.svg)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4.svg?logo=windows11&logoColor=white)
