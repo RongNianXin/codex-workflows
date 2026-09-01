@@ -95,6 +95,50 @@ function Test-CommanderRuleVersion {
     Write-Host "Commander rule version $($versions[0]): PASS"
 }
 
+function Test-CommanderDurableWorkflowContract {
+    $contracts = @(
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
+            Required = @('请帮我部署，我要人工核验', '下次仍可直接说')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
+            Required = @('低信息部署请求与运行身份交付门禁', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/04-状态、目标变更与交接规范.md'
+            Required = @('耐久 Commit 台账与关键节点', 'COMMIT-LEDGER', '保留级别：ROUTINE / KEY_NODE')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/10-自动状态索引规范.md'
+            Required = @('COMMIT-LEDGER', '人工核验运行身份清单', '并存实现决议矩阵')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/07-总指挥交接记录模板.md'
+            Required = @('KEY_NODE', '运行身份', '并存实现决议')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/总指挥轻量交接启动配置.md'
+            Required = @('KEY_NODE', 'expected_candidate', 'commit_ledger')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/docs/PR_SUBMISSION_AND_REVIEW_STANDARD.md'
+            Required = @('并存实现决议与实际运行身份', '代码已包含', '干净环境可复现')
+        }
+    )
+
+    foreach ($contract in $contracts) {
+        $fullPath = Join-Path $repoRoot $contract.Path
+        $content = Get-Content -LiteralPath $fullPath -Raw
+        foreach ($requiredText in $contract.Required) {
+            if (-not $content.Contains($requiredText)) {
+                throw "第二代总指挥耐久契约缺失：$($contract.Path) -> $requiredText"
+            }
+        }
+    }
+    Write-Host 'Commander durable workflow contract: PASS'
+}
+
 function Get-CSharpCompiler {
     $command = Get-Command csc.exe -ErrorAction SilentlyContinue
     if ($null -ne $command) { return $command.Source }
@@ -177,5 +221,6 @@ function Test-ArchiveRepairLauncher {
 Test-MarkdownFiles
 Test-PowerShellFiles
 Test-CommanderRuleVersion
+Test-CommanderDurableWorkflowContract
 Test-ArchiveRepairLauncher
 Write-Host 'Repository quality checks: PASS'
