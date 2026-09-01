@@ -6,16 +6,24 @@
 
 Personal workflow rules, Windows troubleshooting notes, and small local utilities.
 
-[中文说明](README.md)
+[简体中文](README.md) | **English**
 
 [![Repository quality](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml)
+[![Last commit](https://img.shields.io/github/last-commit/RongNianXin/codex-workflows?label=last%20commit)](https://github.com/RongNianXin/codex-workflows/commits/main)
 ![License: MIT](https://img.shields.io/badge/license-MIT-2F855A.svg)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4.svg?logo=windows11&logoColor=white)
+
+<br />
+
+<img src="assets/repository-cover.png" alt="Codex Workflows repository cover" width="100%" />
 
 </div>
 
 > [!NOTE]
 > This is an independent community experiment. It is not affiliated with or endorsed by OpenAI.
+
+> [!TIP]
+> **Maintenance status: active.** New workflows, troubleshooting notes, and local tools are added after verification. See the [changelog](CHANGELOG.md) and commit history for the actual record.
 
 ## Why this repository exists
 

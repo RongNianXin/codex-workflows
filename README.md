@@ -6,9 +6,10 @@
 
 个人维护的工作流、故障排查记录与 Windows 本地工具箱。
 
-[English overview](README.en.md)
+**简体中文** | [English](README.en.md)
 
 [![Repository quality](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml)
+[![Last commit](https://img.shields.io/github/last-commit/RongNianXin/codex-workflows?label=last%20commit)](https://github.com/RongNianXin/codex-workflows/commits/main)
 ![License: MIT](https://img.shields.io/badge/license-MIT-2F855A.svg)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4.svg?logo=windows11&logoColor=white)
 
@@ -28,6 +29,9 @@
 
 > [!NOTE]
 > 这是社区实验项目，与 OpenAI 不存在官方隶属或背书关系。
+
+> [!TIP]
+> **维护状态：持续维护。** 新的工作流、故障记录和本地工具会在完成验证后纳入仓库；实际变化以 [CHANGELOG](CHANGELOG.md) 和提交历史为准。
 
 ## 先选入口
 
