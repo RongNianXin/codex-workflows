@@ -959,15 +959,15 @@ $tokenAdvanceCount = 0
 $previousTokenSnapshot = $null
 $turnUsages = @{}
 $turnIdToIndex = @{}
-$completedSizeByOrdinal = @{}
+$turnEndSizeByIndex = @{}
 $terminalTurnIds = @{}
 $categoryBytes = @{}
 $categoryRecords = @{}
 $cumulativeBytes = [long]0
 $scanEndPosition = [long]0
 $lastResidualCategory = '其他事件与结构'
-$lastCompletionOrdinal = 0
-$lastLineWasCompletion = $false
+$lastTerminalTurnIndex = 0
+$lastLineWasTerminal = $false
 $lastLineHadNewline = $true
 $stream = $null
 $reader = $null
@@ -981,8 +981,8 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
     $segmentScanEndPosition = [long]0
     $segmentLastEventTime = $file.SessionStart
     $lastResidualCategory = '其他事件与结构'
-    $lastCompletionOrdinal = 0
-    $lastLineWasCompletion = $false
+    $lastTerminalTurnIndex = 0
+    $lastLineWasTerminal = $false
     $lastLineHadNewline = $true
     $stream = $null
     $reader = $null
@@ -1028,7 +1028,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
         $lineByteCount = [long]$textFormat.Encoding.GetByteCount($line)
         $recordBytes = $lineByteCount + [long]$textFormat.NewLineBytes
         $cumulativeBytes += $recordBytes
-        $lastLineWasCompletion = $false
+        $lastLineWasTerminal = $false
 
         $head = $line.Substring(0, [Math]::Min(4096, $line.Length))
         $shape = Get-RecordShape $head
@@ -1399,13 +1399,13 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
                     $recordTimestamp
                 $turnUsage.EndBytes = $cumulativeBytes
                 $turnUsage.EndTimestamp = $recordTimestamp
+                $turnEndSizeByIndex[$turnUsage.TurnIndex] = $cumulativeBytes
+                $lastTerminalTurnIndex = $turnUsage.TurnIndex
+                $lastLineWasTerminal = $true
 
                 if ($isCompleteEvent) {
                     $turnUsage.Status = '已完成'
                     $completedTurnCount++
-                    $completedSizeByOrdinal[$completedTurnCount] = $cumulativeBytes
-                    $lastCompletionOrdinal = $completedTurnCount
-                    $lastLineWasCompletion = $true
                 }
                 else {
                     $turnUsage.Status = '已中止'
@@ -1448,8 +1448,8 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
             [long]$categoryBytes[$lastResidualCategory] - [long]$textFormat.NewLineBytes
         )
     }
-    if ($lastLineWasCompletion -and $lastCompletionOrdinal -gt 0) {
-        $completedSizeByOrdinal[$lastCompletionOrdinal] -= [long]$textFormat.NewLineBytes
+    if ($lastLineWasTerminal -and $lastTerminalTurnIndex -gt 0) {
+        $turnEndSizeByIndex[$lastTerminalTurnIndex] -= [long]$textFormat.NewLineBytes
         if (
             $currentTurnIndex -gt 0 -and
             $turnUsages.ContainsKey($currentTurnIndex) -and
@@ -1791,13 +1791,13 @@ Format-StatusLine '上下文压缩：' "$compactCount 次"
 Format-StatusLine '回合统计：' "已完成 $completedTurnCount 轮；已中止 $abortedTurnCount 轮；未结束 $unfinishedTurnCount 轮"
 Format-StatusLine '回合识别：' "原始 turn_context $turnContextRecordCount 条；按 turn_id/终止边界合并重复 $duplicateTurnContextCount 条；识别 $startedTurnCount 轮"
 
-for ($milestone = 5; $milestone -le $completedTurnCount; $milestone += 5) {
-    $milestoneLabel = '{0:D2} 轮完成后文件大小：' -f $milestone
-    if ($completedSizeByOrdinal.ContainsKey($milestone)) {
-        $milestoneText = Format-MiB $completedSizeByOrdinal[$milestone]
+for ($milestone = 5; $milestone -lt $startedTurnCount; $milestone += 5) {
+    $milestoneLabel = '{0:D2} 轮结束后文件大小：' -f $milestone
+    if ($turnEndSizeByIndex.ContainsKey($milestone)) {
+        $milestoneText = Format-MiB $turnEndSizeByIndex[$milestone]
     }
     else {
-        $milestoneText = "尚未达到（当前已完成 $completedTurnCount 轮）"
+        $milestoneText = '无法取得（未发现明确终止边界）'
     }
     Format-StatusLine $milestoneLabel $milestoneText
 }
