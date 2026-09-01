@@ -7,53 +7,11 @@
 ## 文件
 
 1. `check-codex-session.ps1`：在终端输出任务 ID、任务名称、会话分段数、聚合字节数、分段时间范围、存储状态、回合与文件增长、自动压缩次数、最近输入占窗口比例和交接建议，并生成详细分析报告。
-2. `查看当前任务本地对话文件大小-公开版.docx`：适合下载后离线查看的脱敏使用说明。
+2. [快速使用说明](查看当前任务本地对话文件大小.md)：适合第一次使用时直接照着操作的精简 Markdown 指南，可在 GitHub 中直接阅读。
 
-## 使用步骤
+## 快速开始
 
-1. 在目标 Codex 对话中取得任务 ID。可以发送：
-
-   ```text
-   请只回复当前任务的任务名称、本地会话文件绝对路径、任务 ID、文件大小和最后修改时间。
-   ```
-
-2. 打开 Windows PowerShell 或 Windows Terminal，进入本目录：
-
-   ```powershell
-   Set-Location "<TOOL_DIRECTORY>"
-   ```
-
-3. 另起一条命令，传入实际任务 ID：
-
-   ```powershell
-   .\check-codex-session.ps1 "00000000-0000-0000-0000-000000000000"
-   ```
-
-   也可以不传参数，由脚本提示输入：
-
-   ```powershell
-   .\check-codex-session.ps1
-   ```
-
-4. 如果执行策略阻止脚本，可使用一次性调用：
-
-   ```powershell
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\check-codex-session.ps1" -TaskId "00000000-0000-0000-0000-000000000000"
-   ```
-
-5. 默认报告位于当前 Windows 用户的本地应用数据目录：
-
-   ```text
-   Codex会话交接评估\报告\<任务ID>-详细分析报告.md
-   ```
-
-   同一任务再次运行时自动覆盖旧报告，不累积带时间戳的副本。也可以用 `-ReportPath` 指定其他 Markdown 路径：
-
-   ```powershell
-   .\check-codex-session.ps1 -TaskId "00000000-0000-0000-0000-000000000000" -ReportPath "<REPORT_PATH>.md"
-   ```
-
-   报告包含完整用户输入，可能带有本地路径、内部信息或凭据，不要上传、提交或在公开场合直接粘贴。旧参数 `-ShowTurnPreview` 继续被接受以兼容已有命令，但详细内容不再显示在终端。
+第一次使用时，请直接打开 [快速使用说明](查看当前任务本地对话文件大小.md)。本文后续内容只解释指标、准确性边界和可选显示设置，不再重复操作步骤。
 
 ## 如何理解结果
 
