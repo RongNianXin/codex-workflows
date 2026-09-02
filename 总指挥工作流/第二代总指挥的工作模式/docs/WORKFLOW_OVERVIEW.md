@@ -18,5 +18,7 @@
 
 - [自动化测试经验与可信结果门禁](AUTOMATED_TESTING_LESSONS.md)：浏览器、真实媒体、模型、跨版本对照或人工结果冲突时按需完整读取；它不产生测试、产品修改或远端写入授权。
 - [Pull Request 提交、更新与审查协作标准](PR_SUBMISSION_AND_REVIEW_STANDARD.md)：创建或更新 PR、请求审查、回复阻断意见和判断可合并状态时完整读取；它不产生远端写入、Approve 或 Merge 授权。
+- [输入到输出链路排查与算法调优标准](PIPELINE_DIAGNOSIS_AND_ALGORITHM_TUNING_STANDARD.md)：输出异常、跨环境不一致或根因不明时完整读取；默认使用紧凑文本执行图，必要时再生成矢量图或分步 HTML。
+- [链路分步演示 HTML 模板](../templates/PIPELINE_STEP_DECK_TEMPLATE.html)：用于把同一组稳定节点编号和实际证据做成可翻页说明；模板本身不生成中间证据，也不改变权限或验收状态。
 - [Codex 会话交接评估](../../../实用小工具/Codex会话交接评估/README.md)：只读检查本地会话文件容量、自动压缩次数和最近输入占窗口比例，辅助判断是否准备交接。
 - 工具阈值属于本地经验规则，不替代任务阶段、交接断点和实际理解质量判断。

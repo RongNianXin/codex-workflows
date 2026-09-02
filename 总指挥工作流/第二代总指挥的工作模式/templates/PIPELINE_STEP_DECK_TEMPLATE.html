@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data: blob:; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
+  <link rel="icon" href="data:,">
+  <title>输入到输出链路｜分步演示模板</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --canvas: #edf2f3;
+      --paper: #ffffff;
+      --ink: #18272d;
+      --muted: #617178;
+      --line: #cdd9dc;
+      --accent: #08766b;
+      --accent-soft: #dff2ee;
+      --signal: #d96b2b;
+      --warning: #9b6615;
+      --shadow: 0 18px 48px rgba(25, 49, 57, 0.12);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.52) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.52) 1px, transparent 1px),
+        var(--canvas);
+      background-size: 28px 28px;
+      color: var(--ink);
+      font-family: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", sans-serif;
+    }
+
+    button { font: inherit; }
+
+    button:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid rgba(8, 118, 107, 0.35);
+      outline-offset: 3px;
+    }
+
+    .shell {
+      width: min(1440px, calc(100% - 32px));
+      margin: 24px auto;
+      background: var(--paper);
+      border: 1px solid rgba(24, 39, 45, 0.08);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: auto minmax(180px, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      padding: 16px 20px 12px;
+      background: rgba(255, 255, 255, 0.96);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .button {
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .button:disabled {
+      cursor: not-allowed;
+      opacity: 0.42;
+    }
+
+    .button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .progress-wrap { min-width: 0; }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .progress-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--ink);
+    }
+
+    .progress-track {
+      height: 5px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #dfe7e9;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), #16a394);
+      transition: width 220ms ease;
+    }
+
+    .context-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      padding: 14px 22px;
+      background: #f7fafb;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 12px;
+    }
+
+    .context-strip strong { color: var(--ink); }
+
+    .content { padding: 24px; }
+
+    .step-card {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.82fr) minmax(420px, 1.18fr);
+      min-height: 640px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .step-copy {
+      position: relative;
+      padding: 30px 32px 32px;
+      background: linear-gradient(160deg, #f7fbfa 0%, #ffffff 62%);
+      border-right: 1px solid var(--line);
+    }
+
+    .step-copy::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 7px;
+      background: var(--accent);
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 760;
+      letter-spacing: 0.04em;
+    }
+
+    .step-number {
+      display: grid;
+      place-items: center;
+      min-width: 48px;
+      height: 48px;
+      padding: 0 8px;
+      border-radius: 13px;
+      background: var(--accent);
+      color: #fff;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 18px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      max-width: 18ch;
+      font-size: clamp(30px, 4vw, 54px);
+      line-height: 1.06;
+      letter-spacing: -0.035em;
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 26px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #075a53;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .badge[data-state="待插桩"] {
+      background: #fff0dc;
+      color: var(--warning);
+    }
+
+    .badge[data-state="仅代码确认"] {
+      background: #e8edf7;
+      color: #455a85;
+    }
+
+    .fact-list {
+      display: grid;
+      gap: 0;
+      margin: 0;
+    }
+
+    .fact {
+      padding: 15px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .fact dt {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 760;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .fact dd {
+      margin: 0;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.68;
+      white-space: pre-wrap;
+    }
+
+    .evidence-panel {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 16px;
+      padding: 24px;
+      background: #f3f6f7;
+    }
+
+    .evidence-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .evidence-head h2 {
+      margin: 2px 0 0;
+      font-size: 18px;
+    }
+
+    .evidence-kind {
+      padding: 5px 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      background: #fff;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 11px;
+    }
+
+    .evidence-stage {
+      display: grid;
+      place-items: center;
+      min-height: 430px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: #fff;
+    }
+
+    .evidence-stage img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      max-height: 620px;
+      object-fit: contain;
+      background: #eef2f3;
+    }
+
+    .placeholder {
+      max-width: 520px;
+      padding: 32px;
+      text-align: center;
+    }
+
+    .placeholder-mark {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 18px;
+      border: 2px dashed var(--warning);
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      color: var(--warning);
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .placeholder h3 { margin: 0 0 10px; }
+    .placeholder p { margin: 0; color: var(--muted); line-height: 1.65; }
+
+    .evidence-code {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 24px;
+      overflow: auto;
+      background: #152127;
+      color: #dce9e8;
+      font: 13px/1.65 Consolas, "Cascadia Mono", monospace;
+      white-space: pre-wrap;
+    }
+
+    .evidence-table {
+      width: calc(100% - 32px);
+      margin: 16px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .evidence-table th,
+    .evidence-table td {
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .evidence-table th { background: #edf5f3; }
+
+    .evidence-caption {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .stage-nav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 16px 24px 22px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .stage-chip {
+      flex: 0 0 auto;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .stage-chip[aria-current="step"] {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .overview {
+      display: none;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .overview.active { display: grid; }
+    .single-view.hidden { display: none; }
+
+    .overview-card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--accent);
+      border-radius: 14px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .overview-card:hover { border-color: var(--accent); }
+    .overview-card h3 { margin: 8px 0 10px; }
+    .overview-card p { margin: 0; color: var(--muted); line-height: 1.55; }
+
+    .notice {
+      margin: 18px 24px 24px;
+      padding: 12px 15px;
+      border-left: 4px solid var(--signal);
+      background: #fff4ec;
+      color: #704022;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 900px) {
+      .shell { width: min(100% - 16px, 760px); margin: 8px auto; border-radius: 18px; }
+      .topbar { grid-template-columns: 1fr; }
+      .nav-group { justify-content: space-between; }
+      .context-strip { grid-template-columns: 1fr; }
+      .content { padding: 12px; }
+      .step-card { grid-template-columns: 1fr; }
+      .step-copy { border-right: 0; border-bottom: 1px solid var(--line); }
+      .evidence-stage { min-height: 360px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .shell { width: 100%; margin: 0; border: 0; box-shadow: none; }
+      .topbar, .stage-nav { display: none; }
+      .overview { display: grid !important; }
+      .single-view { display: none !important; }
+      .overview-card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="nav-group" aria-label="步骤导航">
+        <button class="button" id="previousStep" type="button">← 上一步</button>
+        <button class="button" id="nextStep" type="button">下一步 →</button>
+      </div>
+      <div class="progress-wrap" aria-live="polite">
+        <div class="progress-meta">
+          <span id="stepCounter">1 / 1</span>
+          <span class="progress-title" id="deckTitle">输入到输出链路</span>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+      </div>
+      <button class="button primary" id="toggleOverview" type="button">查看全部</button>
+    </header>
+
+    <section class="context-strip" aria-label="演示基线">
+      <span><strong>基线：</strong><span id="baselineLabel"></span></span>
+      <span><strong>事实截点：</strong><span id="cutoffLabel"></span></span>
+    </section>
+
+    <section class="content">
+      <div class="single-view" id="singleView">
+        <article class="step-card" aria-labelledby="stepName">
+          <section class="step-copy">
+            <div class="eyebrow">
+              <span class="step-number" id="stepNumber"></span>
+              <span id="stepSection"></span>
+            </div>
+            <h1 id="stepName"></h1>
+            <div class="status-row">
+              <span class="badge" id="evidenceStatus"></span>
+            </div>
+            <dl class="fact-list" id="factList"></dl>
+          </section>
+          <section class="evidence-panel" aria-labelledby="evidenceTitle">
+            <div class="evidence-head">
+              <h2 id="evidenceTitle">本节点证据</h2>
+              <span class="evidence-kind" id="evidenceKind"></span>
+            </div>
+            <div class="evidence-stage" id="evidenceStage"></div>
+            <p class="evidence-caption" id="evidenceCaption"></p>
+          </section>
+        </article>
+      </div>
+      <div class="overview" id="overview" aria-label="全部步骤"></div>
+    </section>
+
+    <nav class="stage-nav" id="stageNav" aria-label="阶段索引"></nav>
+    <p class="notice">展示不改变证据等级。示意图和占位内容不能作为运行通过、根因确认或专业验收的依据。</p>
+  </main>
+
+  <noscript>
+    <p>此模板需要浏览器启用 JavaScript 才能翻页。请保留同目录的文本执行图作为无脚本回退。</p>
+  </noscript>
+
+  <script>
+    "use strict";
+
+    // AI 复用时只替换本对象。证据图片使用相对路径；不要写入凭据、真实账号或不应公开的绝对路径。
+    const PRESENTATION = {
+      title: "图像对象分割｜输入到输出链路",
+      baseline: "BASELINE-EXAMPLE / 请替换为实际代码与配置指纹",
+      factCutoff: "待填写",
+      steps: [
+        {
+          id: "1",
+          section: "输入",
+          name: "读取并校验输入",
+          evidenceStatus: "已观察",
+          input: "使用者选择的输入文件。",
+          process: "校验类型、完成解码，并记录原始尺寸和来源指纹。",
+          output: "可供下一节点处理的像素或结构化数据。",
+          invariant: "输入来源、尺寸和版本能够被追溯。",
+          failureSignal: "解码失败、尺寸异常，或来源与目标样本不一致。",
+          relation: "输入不一致会使后续所有对照失效。",
+          evidence: {
+            kind: "table",
+            title: "输入摘要",
+            rows: [
+              ["字段", "示例值"],
+              ["来源指纹", "SHA-256 / 待替换"],
+              ["尺寸", "宽 × 高 / 待替换"],
+              ["证据说明", "示例表格，不是实际运行证据"]
+            ],
+            caption: "替换为本轮实际输入摘要；不要粘贴不必要的敏感原始数据。"
+          }
+        },
+        {
+          id: "2",
+          section: "处理",
+          name: "生成中间证据",
+          evidenceStatus: "待插桩",
+          input: "节点 1 的输出和当前参数。",
+          process: "运行该节点的实际转换，并保存最小必要中间产物。",
+          output: "中间图、日志、指标、表格或结构化结果。",
+          invariant: "失败样本与正常对照使用同一版本、尺寸、参数和显示口径。",
+          failureSignal: "中间产物缺失，或不同样本使用了不可比较的处理条件。",
+          relation: "尚无产物时只能说明代码预期，不能声称已观察到该步骤效果。",
+          evidence: {
+            kind: "placeholder",
+            title: "待插桩 / 未生成",
+            body: "这里应放本节点真实中间产物。取得它可能需要代码插桩、运行授权或额外资源；没有证据时保留缺口。",
+            caption: "占位内容只说明证据缺失，不是处理效果图。"
+          }
+        },
+        {
+          id: "3",
+          section: "输出",
+          name: "校验输出与失败信号",
+          evidenceStatus: "仅代码确认",
+          input: "节点 2 的候选结果。",
+          process: "执行质量门禁，记录通过、拒绝原因和下游去向。",
+          output: "正式输出或带原因的失败结果。",
+          invariant: "拒绝原因必须可定位到稳定节点，不能只保留统一失败码。",
+          failureSignal: "只看到最终失败，无法知道哪个候选在哪个门禁被拒绝。",
+          relation: "这是末端状态；它能证明分支结果，不能单独证明根因。",
+          evidence: {
+            kind: "code",
+            title: "结构化结果示例",
+            text: "status: rejected\nnode: 3\nreason: <待替换为实际失败信号>\nevidence_state: code-confirmed",
+            caption: "示例文本不是运行日志。实际交付时替换为脱敏后的真实结果摘要。"
+          }
+        }
+      ]
+    };
+
+    const ui = {
+      previous: document.getElementById("previousStep"),
+      next: document.getElementById("nextStep"),
+      toggle: document.getElementById("toggleOverview"),
+      counter: document.getElementById("stepCounter"),
+      deckTitle: document.getElementById("deckTitle"),
+      progress: document.getElementById("progressBar"),
+      baseline: document.getElementById("baselineLabel"),
+      cutoff: document.getElementById("cutoffLabel"),
+      singleView: document.getElementById("singleView"),
+      overview: document.getElementById("overview"),
+      stepNumber: document.getElementById("stepNumber"),
+      stepSection: document.getElementById("stepSection"),
+      stepName: document.getElementById("stepName"),
+      evidenceStatus: document.getElementById("evidenceStatus"),
+      factList: document.getElementById("factList"),
+      evidenceKind: document.getElementById("evidenceKind"),
+      evidenceStage: document.getElementById("evidenceStage"),
+      evidenceCaption: document.getElementById("evidenceCaption"),
+      stageNav: document.getElementById("stageNav")
+    };
+
+    let currentIndex = readInitialIndex();
+    let overviewVisible = false;
+
+    function valueOrPending(value) {
+      return typeof value === "string" && value.trim() ? value.trim() : "待填写";
+    }
+
+    function readInitialIndex() {
+      const count = Array.isArray(PRESENTATION.steps) ? PRESENTATION.steps.length : 0;
+      const match = window.location.hash.match(/step=(\d+)/);
+      const requested = match ? Number(match[1]) - 1 : 0;
+      return Number.isInteger(requested) && requested >= 0 && requested < count ? requested : 0;
+    }
+
+    function replaceChildren(target, children) {
+      target.replaceChildren(...children);
+    }
+
+    function makeFact(label, value) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "fact";
+      const term = document.createElement("dt");
+      term.textContent = label;
+      const description = document.createElement("dd");
+      description.textContent = valueOrPending(value);
+      wrapper.append(term, description);
+      return wrapper;
+    }
+
+    function makePlaceholder(title, body) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "placeholder";
+      const mark = document.createElement("div");
+      mark.className = "placeholder-mark";
+      mark.setAttribute("aria-hidden", "true");
+      mark.textContent = "?";
+      const heading = document.createElement("h3");
+      heading.textContent = valueOrPending(title);
+      const copy = document.createElement("p");
+      copy.textContent = valueOrPending(body);
+      wrapper.append(mark, heading, copy);
+      return wrapper;
+    }
+
+    function makeEvidence(evidence) {
+      const item = evidence || { kind: "placeholder", title: "证据缺失", body: "当前节点没有登记证据。" };
+      const kind = valueOrPending(item.kind).toLowerCase();
+
+      if (kind === "image") {
+        const source = valueOrPending(item.src);
+        const unsafeSource = /^(?:https?:|file:|javascript:|[\\/]|[a-z]:)/i.test(source)
+          || /(?:^|[\\/])\.\.(?:[\\/]|$)/.test(source);
+        if (unsafeSource || source === "待填写") {
+          return makePlaceholder("图片路径无效", "只允许当前演示目录内的相对路径或明确的 data:image 资源。");
+        }
+        const image = document.createElement("img");
+        image.src = source;
+        image.alt = valueOrPending(item.alt);
+        image.loading = "lazy";
+        image.addEventListener("error", () => {
+          replaceChildren(ui.evidenceStage, [makePlaceholder("图片无法读取", "检查相对路径、文件名和资产是否与 HTML 一同交付。")]);
+        }, { once: true });
+        return image;
+      }
+
+      if (kind === "table" && Array.isArray(item.rows)) {
+        const table = document.createElement("table");
+        table.className = "evidence-table";
+        item.rows.forEach((row, rowIndex) => {
+          const tr = document.createElement("tr");
+          (Array.isArray(row) ? row : [row]).forEach((cell) => {
+            const element = document.createElement(rowIndex === 0 ? "th" : "td");
+            element.textContent = String(cell ?? "");
+            tr.appendChild(element);
+          });
+          table.appendChild(tr);
+        });
+        return table;
+      }
+
+      if (["code", "log", "json", "metric"].includes(kind)) {
+        const pre = document.createElement("pre");
+        pre.className = "evidence-code";
+        pre.textContent = valueOrPending(item.text);
+        return pre;
+      }
+
+      return makePlaceholder(item.title || "证据占位", item.body || "当前没有可展示的实际产物。");
+    }
+
+    function renderStep() {
+      const step = PRESENTATION.steps[currentIndex];
+      const count = PRESENTATION.steps.length;
+      ui.counter.textContent = `${currentIndex + 1} / ${count}`;
+      ui.deckTitle.textContent = valueOrPending(PRESENTATION.title);
+      ui.progress.style.width = `${((currentIndex + 1) / count) * 100}%`;
+      ui.baseline.textContent = valueOrPending(PRESENTATION.baseline);
+      ui.cutoff.textContent = valueOrPending(PRESENTATION.factCutoff);
+      ui.stepNumber.textContent = valueOrPending(step.id);
+      ui.stepSection.textContent = valueOrPending(step.section);
+      ui.stepName.textContent = valueOrPending(step.name);
+      ui.evidenceStatus.textContent = valueOrPending(step.evidenceStatus);
+      ui.evidenceStatus.dataset.state = valueOrPending(step.evidenceStatus);
+      ui.evidenceKind.textContent = valueOrPending(step.evidence && step.evidence.kind);
+      ui.evidenceCaption.textContent = valueOrPending(step.evidence && step.evidence.caption);
+      replaceChildren(ui.factList, [
+        makeFact("输入", step.input),
+        makeFact("实际处理", step.process),
+        makeFact("输出", step.output),
+        makeFact("不变量", step.invariant),
+        makeFact("失败信号", step.failureSignal),
+        makeFact("与当前异常的关系", step.relation)
+      ]);
+      replaceChildren(ui.evidenceStage, [makeEvidence(step.evidence)]);
+      ui.previous.disabled = currentIndex === 0;
+      ui.next.disabled = currentIndex === count - 1;
+      window.history.replaceState(null, "", `#step=${currentIndex + 1}`);
+      renderStageNav();
+    }
+
+    function renderStageNav() {
+      const chips = PRESENTATION.steps.map((step, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "stage-chip";
+        button.textContent = `${valueOrPending(step.id)} ${valueOrPending(step.name)}`;
+        if (index === currentIndex) button.setAttribute("aria-current", "step");
+        button.addEventListener("click", () => showStep(index));
+        return button;
+      });
+      replaceChildren(ui.stageNav, chips);
+    }
+
+    function renderOverview() {
+      const cards = PRESENTATION.steps.map((step, index) => {
+        const card = document.createElement("article");
+        card.className = "overview-card";
+        card.tabIndex = 0;
+        const meta = document.createElement("span");
+        meta.className = "badge";
+        meta.dataset.state = valueOrPending(step.evidenceStatus);
+        meta.textContent = `${valueOrPending(step.id)} · ${valueOrPending(step.evidenceStatus)}`;
+        const title = document.createElement("h3");
+        title.textContent = valueOrPending(step.name);
+        const copy = document.createElement("p");
+        copy.textContent = valueOrPending(step.output);
+        const activate = () => showStep(index);
+        card.addEventListener("click", activate);
+        card.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            activate();
+          }
+        });
+        card.append(meta, title, copy);
+        return card;
+      });
+      replaceChildren(ui.overview, cards);
+    }
+
+    function showStep(index) {
+      currentIndex = Math.max(0, Math.min(PRESENTATION.steps.length - 1, index));
+      overviewVisible = false;
+      ui.overview.classList.remove("active");
+      ui.singleView.classList.remove("hidden");
+      ui.toggle.textContent = "查看全部";
+      renderStep();
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+    }
+
+    function toggleOverview() {
+      overviewVisible = !overviewVisible;
+      ui.overview.classList.toggle("active", overviewVisible);
+      ui.singleView.classList.toggle("hidden", overviewVisible);
+      ui.toggle.textContent = overviewVisible ? "逐步查看" : "查看全部";
+      if (overviewVisible) renderOverview();
+    }
+
+    ui.previous.addEventListener("click", () => showStep(currentIndex - 1));
+    ui.next.addEventListener("click", () => showStep(currentIndex + 1));
+    ui.toggle.addEventListener("click", toggleOverview);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && overviewVisible) {
+        toggleOverview();
+        return;
+      }
+      if (overviewVisible) return;
+      if (event.key === "ArrowLeft") showStep(currentIndex - 1);
+      if (event.key === "ArrowRight") showStep(currentIndex + 1);
+      if (event.key === "Home") showStep(0);
+      if (event.key === "End") showStep(PRESENTATION.steps.length - 1);
+    });
+
+    if (!Array.isArray(PRESENTATION.steps) || PRESENTATION.steps.length === 0) {
+      PRESENTATION.steps = [{
+        id: "0",
+        section: "配置错误",
+        name: "没有步骤数据",
+        evidenceStatus: "待确认",
+        input: "PRESENTATION.steps",
+        process: "检查模板数据对象。",
+        output: "至少一个步骤。",
+        invariant: "步骤列表不能为空。",
+        failureSignal: "页面没有可导航步骤。",
+        relation: "需要补充实际执行图。",
+        evidence: { kind: "placeholder", title: "步骤数据缺失", body: "请先建立实际执行图，再填充模板。" }
+      }];
+      currentIndex = 0;
+    }
+
+    renderStep();
+  </script>
+</body>
+</html>

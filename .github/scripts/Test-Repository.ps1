@@ -99,11 +99,11 @@ function Test-CommanderDurableWorkflowContract {
     $contracts = @(
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
-            Required = @('场景 2E：部署当前可靠候选供人工核验', '目标：部署当前最新可靠成果，供人工核验。', '运行身份：')
+            Required = @('场景 2E：部署当前可靠候选供人工核验', '目标：部署当前最新可靠成果，供人工核验。', '运行身份：', '紧凑文本执行图', '静态 HTML 模板')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
-            Required = @('低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵')
+            Required = @('低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/04-状态、目标变更与交接规范.md'
@@ -111,15 +111,15 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/10-自动状态索引规范.md'
-            Required = @('COMMIT-LEDGER', '人工核验运行身份清单', '规范启动命令及自检输出', '并存实现决议矩阵')
+            Required = @('COMMIT-LEDGER', '人工核验运行身份清单', '规范启动命令及自检输出', '并存实现决议矩阵', '节点覆盖状态')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/07-总指挥交接记录模板.md'
-            Required = @('KEY_NODE', '运行身份', '规范启动命令及自检输出', '并存实现决议')
+            Required = @('KEY_NODE', '运行身份', '规范启动命令及自检输出', '并存实现决议', '当前分步展示产物')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/总指挥轻量交接启动配置.md'
-            Required = @('KEY_NODE', 'canonical_start_command', 'startup_check', 'commit_ledger')
+            Required = @('KEY_NODE', 'canonical_start_command', 'startup_check', 'commit_ledger', 'step_deck_pointer_and_hash')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/docs/PR_SUBMISSION_AND_REVIEW_STANDARD.md'
@@ -132,6 +132,10 @@ function Test-CommanderDurableWorkflowContract {
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/11-操作者协作画像规范.md'
             Required = @('两次操作者授权', '下一条独立消息', 'active_entry_limit', '独立应用能力未验证')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/docs/PIPELINE_DIAGNOSIS_AND_ALGORITHM_TUNING_STANDARD.md'
+            Required = @('分层展示与 HTML 步骤演示', 'PIPELINE_STEP_DECK_TEMPLATE.html', '示意，不是运行证据')
         }
     )
 
@@ -145,6 +149,41 @@ function Test-CommanderDurableWorkflowContract {
         }
     }
     Write-Host 'Commander durable workflow contract: PASS'
+}
+
+function Test-PipelineStepDeckTemplate {
+    $relativePath = '总指挥工作流/第二代总指挥的工作模式/templates/PIPELINE_STEP_DECK_TEMPLATE.html'
+    $tracked = @(Get-TrackedFiles -Pattern $relativePath)
+    if ($tracked.Count -ne 1) {
+        throw "链路分步演示模板尚未被 Git 精确跟踪：$relativePath"
+    }
+
+    $content = Get-Content -LiteralPath (Join-Path $repoRoot $relativePath) -Raw
+    foreach ($requiredText in @(
+        'Content-Security-Policy',
+        'id="previousStep"',
+        'id="nextStep"',
+        'id="toggleOverview"',
+        'ArrowLeft',
+        'ArrowRight',
+        'textContent',
+        '待插桩 / 未生成'
+    )) {
+        if (-not $content.Contains($requiredText)) {
+            throw "链路分步演示模板缺少耐久契约：$requiredText"
+        }
+    }
+
+    if ($content.Contains('.innerHTML')) {
+        throw '链路分步演示模板不得用 innerHTML 注入任务数据。'
+    }
+    if ($content -match '(?i)https?://') {
+        throw '链路分步演示模板不得依赖远端资源。'
+    }
+    if ($content -match '(?i)[a-z]:\\') {
+        throw '链路分步演示模板不得固化 Windows 绝对路径。'
+    }
+    Write-Host 'Pipeline step deck template: PASS'
 }
 
 function Test-LocalProfilePrivacyBoundary {
@@ -272,6 +311,7 @@ Test-MarkdownFiles
 Test-PowerShellFiles
 Test-CommanderRuleVersion
 Test-CommanderDurableWorkflowContract
+Test-PipelineStepDeckTemplate
 Test-LocalProfilePrivacyBoundary
 Test-ExplicitAttachmentBoundary
 Test-ArchiveRepairLauncher
