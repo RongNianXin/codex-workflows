@@ -630,7 +630,6 @@
 
     let currentIndex = readInitialIndex();
     let overviewVisible = false;
-    let stableSingleViewHeight = 0;
 
     function valueOrPending(value) {
       return typeof value === "string" && value.trim() ? value.trim() : "待填写";
@@ -785,8 +784,6 @@
         makeFact("与当前异常的关系", step.relation)
       ]);
       replaceChildren(ui.evidenceStage, [makeStageOutput(stageOutput)]);
-      stableSingleViewHeight = Math.max(stableSingleViewHeight, ui.singleView.scrollHeight);
-      ui.singleView.style.minHeight = `${stableSingleViewHeight}px`;
       ui.previous.disabled = currentIndex === 0;
       ui.next.disabled = currentIndex === count - 1;
       window.history.replaceState(null, "", `#step=${currentIndex + 1}`);
@@ -833,22 +830,37 @@
       replaceChildren(ui.overview, cards);
     }
 
-    function showStep(index) {
-      const navigationPosition = {
+    function captureNavigationPosition() {
+      const stageNavRect = ui.stageNav.getBoundingClientRect();
+      return {
         x: window.scrollX,
         y: window.scrollY,
-        stageNavX: ui.stageNav.scrollLeft
+        stageNavX: ui.stageNav.scrollLeft,
+        stageNavVisible: stageNavRect.bottom > 0 && stageNavRect.top < window.innerHeight,
+        stageNavTop: stageNavRect.top
       };
+    }
+
+    function restoreNavigationPosition(position) {
+      ui.stageNav.scrollLeft = position.stageNavX;
+      if (position.stageNavVisible) {
+        const currentTop = ui.stageNav.getBoundingClientRect().top;
+        window.scrollBy({ left: 0, top: currentTop - position.stageNavTop, behavior: "auto" });
+      } else {
+        window.scrollTo({ left: position.x, top: position.y, behavior: "auto" });
+      }
+      ui.stageNav.scrollLeft = position.stageNavX;
+    }
+
+    function showStep(index) {
+      const navigationPosition = captureNavigationPosition();
       currentIndex = Math.max(0, Math.min(PRESENTATION.steps.length - 1, index));
       overviewVisible = false;
       ui.overview.classList.remove("active");
       ui.singleView.classList.remove("hidden");
       ui.toggle.textContent = "查看全部";
       renderStep();
-      const restorePosition = () => {
-        window.scrollTo({ left: navigationPosition.x, top: navigationPosition.y, behavior: "auto" });
-        ui.stageNav.scrollLeft = navigationPosition.stageNavX;
-      };
+      const restorePosition = () => restoreNavigationPosition(navigationPosition);
       restorePosition();
       window.requestAnimationFrame(restorePosition);
     }
