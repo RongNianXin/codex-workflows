@@ -47,6 +47,7 @@ The material is deliberately inspectable. Most of it is Markdown and PowerShell 
 | Troubleshoot Codex Desktop or CC Switch | [Troubleshooting notes](故障排查与解决经验/) |
 | Reuse a focused prompt | [Prompt collection](其他%20Codex%20技巧性提示词/) |
 | Try a local helper | [Local utilities](实用小工具/) |
+| Decide whether a Codex task is ready for handoff | [Session handoff assessment](实用小工具/Codex会话交接评估/README.en.md) |
 
 The detailed manuals are currently written in Chinese. This page is an evaluation and navigation guide for English-speaking visitors.
 
