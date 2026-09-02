@@ -99,7 +99,7 @@ function Test-CommanderDurableWorkflowContract {
     $contracts = @(
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
-            Required = @('场景 2E：部署当前可靠候选供人工核验', '目标：部署当前最新可靠成果，供人工核验。', '运行身份：', '紧凑文本执行图', '静态 HTML 模板', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账')
+            Required = @('场景 2E：部署当前可靠候选供人工核验', '目标：部署当前最新可靠成果，供人工核验。', '运行身份：', '紧凑文本执行图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
@@ -151,7 +151,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/docs/PIPELINE_DIAGNOSIS_AND_ALGORITHM_TUNING_STANDARD.md'
-            Required = @('分层展示与 HTML 步骤演示', 'PIPELINE_STEP_DECK_TEMPLATE.html', '示意，不是运行证据')
+            Required = @('分层展示与 HTML 步骤演示', 'PIPELINE_STEP_DECK_TEMPLATE.html', '唯一拓扑表', '本步骤输出效果', '本步骤没有可展示的直观视觉样例', '真实阶段结果尚未采集', '示意，不是运行证据')
         }
     )
 
@@ -183,7 +183,12 @@ function Test-PipelineStepDeckTemplate {
         'ArrowLeft',
         'ArrowRight',
         'textContent',
-        '待插桩 / 未生成'
+        '本步骤输出效果',
+        '本步骤没有可展示的直观视觉样例',
+        '真实阶段结果尚未采集',
+        'stageNavX',
+        'stableSingleViewHeight',
+        'window.requestAnimationFrame(restorePosition)'
     )) {
         if (-not $content.Contains($requiredText)) {
             throw "链路分步演示模板缺少耐久契约：$requiredText"

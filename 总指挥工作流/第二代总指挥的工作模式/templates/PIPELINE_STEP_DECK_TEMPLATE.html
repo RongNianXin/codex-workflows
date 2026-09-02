@@ -343,6 +343,17 @@
       font-weight: 800;
     }
 
+    .placeholder[data-state="no-visual"] .placeholder-mark {
+      border-style: solid;
+      border-color: var(--line);
+      color: var(--muted);
+    }
+
+    .placeholder[data-state="not-captured"] .placeholder-mark {
+      border-color: var(--warning);
+      color: var(--warning);
+    }
+
     .placeholder h3 { margin: 0 0 10px; }
     .placeholder p { margin: 0; color: var(--muted); line-height: 1.65; }
 
@@ -505,7 +516,7 @@
           </section>
           <section class="evidence-panel" aria-labelledby="evidenceTitle">
             <div class="evidence-head">
-              <h2 id="evidenceTitle">本节点证据</h2>
+              <h2 id="evidenceTitle">本步骤输出效果</h2>
               <span class="evidence-kind" id="evidenceKind"></span>
             </div>
             <div class="evidence-stage" id="evidenceStage"></div>
@@ -517,7 +528,7 @@
     </section>
 
     <nav class="stage-nav" id="stageNav" aria-label="阶段索引"></nav>
-    <p class="notice">展示不改变证据等级。示意图和占位内容不能作为运行通过、根因确认或专业验收的依据。</p>
+    <p class="notice">右侧只展示同一输入和基线的实际阶段输出；人工核验附件只用于诊断，不作为阶段输出。没有真实产物时如实标注，不用示意图冒充。</p>
   </main>
 
   <noscript>
@@ -544,7 +555,7 @@
           invariant: "输入来源、尺寸和版本能够被追溯。",
           failureSignal: "解码失败、尺寸异常，或来源与目标样本不一致。",
           relation: "输入不一致会使后续所有对照失效。",
-          evidence: {
+          stageOutput: {
             kind: "table",
             title: "输入摘要",
             rows: [
@@ -567,11 +578,11 @@
           invariant: "失败样本与正常对照使用同一版本、尺寸、参数和显示口径。",
           failureSignal: "中间产物缺失，或不同样本使用了不可比较的处理条件。",
           relation: "尚无产物时只能说明代码预期，不能声称已观察到该步骤效果。",
-          evidence: {
-            kind: "placeholder",
-            title: "待插桩 / 未生成",
-            body: "这里应放本节点真实中间产物。取得它可能需要代码插桩、运行授权或额外资源；没有证据时保留缺口。",
-            caption: "占位内容只说明证据缺失，不是处理效果图。"
+          stageOutput: {
+            kind: "not-captured",
+            title: "真实阶段结果尚未采集",
+            body: "本节点应产生可展示的中间结果，但当前还没有绑定同一输入和基线的真实产物。取得它可能需要代码插桩、运行授权或额外资源。",
+            caption: "这里只说明阶段输出缺口，不用示意结果冒充真实中间产物。"
           }
         },
         {
@@ -585,11 +596,11 @@
           invariant: "拒绝原因必须可定位到稳定节点，不能只保留统一失败码。",
           failureSignal: "只看到最终失败，无法知道哪个候选在哪个门禁被拒绝。",
           relation: "这是末端状态；它能证明分支结果，不能单独证明根因。",
-          evidence: {
-            kind: "code",
-            title: "结构化结果示例",
-            text: "status: rejected\nnode: 3\nreason: <待替换为实际失败信号>\nevidence_state: code-confirmed",
-            caption: "示例文本不是运行日志。实际交付时替换为脱敏后的真实结果摘要。"
+          stageOutput: {
+            kind: "no-visual",
+            title: "本步骤没有可展示的直观视觉样例",
+            body: "该节点输出的是通过/拒绝状态和原因，不会自然产生一张处理后的图片。实际交付时可在这里展示脱敏后的真实结构化结果。",
+            caption: "无直观图像不等于没有输出；结构化结果仍需绑定当前基线。"
           }
         }
       ]
@@ -619,6 +630,7 @@
 
     let currentIndex = readInitialIndex();
     let overviewVisible = false;
+    let stableSingleViewHeight = 0;
 
     function valueOrPending(value) {
       return typeof value === "string" && value.trim() ? value.trim() : "待填写";
@@ -646,13 +658,14 @@
       return wrapper;
     }
 
-    function makePlaceholder(title, body) {
+    function makePlaceholder(title, body, state = "not-captured") {
       const wrapper = document.createElement("div");
       wrapper.className = "placeholder";
+      wrapper.dataset.state = state;
       const mark = document.createElement("div");
       mark.className = "placeholder-mark";
       mark.setAttribute("aria-hidden", "true");
-      mark.textContent = "?";
+      mark.textContent = state === "no-visual" ? "—" : "○";
       const heading = document.createElement("h3");
       heading.textContent = valueOrPending(title);
       const copy = document.createElement("p");
@@ -661,23 +674,43 @@
       return wrapper;
     }
 
-    function makeEvidence(evidence) {
-      const item = evidence || { kind: "placeholder", title: "证据缺失", body: "当前节点没有登记证据。" };
+    function makeStageOutput(stageOutput) {
+      const item = stageOutput || {
+        kind: "not-captured",
+        title: "真实阶段结果尚未采集",
+        body: "当前节点没有登记绑定同一输入和基线的真实阶段输出。"
+      };
       const kind = valueOrPending(item.kind).toLowerCase();
+
+      if (kind === "no-visual") {
+        return makePlaceholder(
+          item.title || "本步骤没有可展示的直观视觉样例",
+          item.body || "该节点输出结构化状态、参数或控制信号，不自然产生图片。",
+          "no-visual"
+        );
+      }
+
+      if (kind === "not-captured") {
+        return makePlaceholder(
+          item.title || "真实阶段结果尚未采集",
+          item.body || "本节点应产生可展示结果，但当前尚无绑定同一输入和基线的真实产物。",
+          "not-captured"
+        );
+      }
 
       if (kind === "image") {
         const source = valueOrPending(item.src);
         const unsafeSource = /^(?:https?:|file:|javascript:|[\\/]|[a-z]:)/i.test(source)
           || /(?:^|[\\/])\.\.(?:[\\/]|$)/.test(source);
         if (unsafeSource || source === "待填写") {
-          return makePlaceholder("图片路径无效", "只允许当前演示目录内的相对路径或明确的 data:image 资源。");
+          return makePlaceholder("图片路径无效", "只允许当前演示目录内的相对路径或明确的 data:image 资源。", "not-captured");
         }
         const image = document.createElement("img");
         image.src = source;
         image.alt = valueOrPending(item.alt);
         image.loading = "lazy";
         image.addEventListener("error", () => {
-          replaceChildren(ui.evidenceStage, [makePlaceholder("图片无法读取", "检查相对路径、文件名和资产是否与 HTML 一同交付。")]);
+          replaceChildren(ui.evidenceStage, [makePlaceholder("图片无法读取", "检查相对路径、文件名和资产是否与 HTML 一同交付。", "not-captured")]);
         }, { once: true });
         return image;
       }
@@ -704,7 +737,26 @@
         return pre;
       }
 
-      return makePlaceholder(item.title || "证据占位", item.body || "当前没有可展示的实际产物。");
+      return makePlaceholder(
+        item.title || "真实阶段结果尚未采集",
+        item.body || "当前没有绑定同一输入和基线的真实阶段产物。",
+        "not-captured"
+      );
+    }
+
+    function stageOutputKindLabel(stageOutput) {
+      const kind = valueOrPending(stageOutput && stageOutput.kind).toLowerCase();
+      const labels = {
+        image: "真实阶段图像",
+        table: "结构化阶段输出",
+        code: "结构化阶段输出",
+        log: "运行日志",
+        json: "结构化阶段输出",
+        metric: "阶段指标",
+        "no-visual": "无直观图像",
+        "not-captured": "尚未采集"
+      };
+      return labels[kind] || "尚未采集";
     }
 
     function renderStep() {
@@ -718,10 +770,12 @@
       ui.stepNumber.textContent = valueOrPending(step.id);
       ui.stepSection.textContent = valueOrPending(step.section);
       ui.stepName.textContent = valueOrPending(step.name);
-      ui.evidenceStatus.textContent = valueOrPending(step.evidenceStatus);
+      ui.evidenceStatus.textContent = `诊断覆盖：${valueOrPending(step.evidenceStatus)}`;
       ui.evidenceStatus.dataset.state = valueOrPending(step.evidenceStatus);
-      ui.evidenceKind.textContent = valueOrPending(step.evidence && step.evidence.kind);
-      ui.evidenceCaption.textContent = valueOrPending(step.evidence && step.evidence.caption);
+      const stageOutput = step.stageOutput || step.evidence;
+      ui.evidenceKind.textContent = stageOutputKindLabel(stageOutput);
+      ui.evidenceKind.dataset.state = valueOrPending(stageOutput && stageOutput.kind);
+      ui.evidenceCaption.textContent = valueOrPending(stageOutput && stageOutput.caption);
       replaceChildren(ui.factList, [
         makeFact("输入", step.input),
         makeFact("实际处理", step.process),
@@ -730,7 +784,9 @@
         makeFact("失败信号", step.failureSignal),
         makeFact("与当前异常的关系", step.relation)
       ]);
-      replaceChildren(ui.evidenceStage, [makeEvidence(step.evidence)]);
+      replaceChildren(ui.evidenceStage, [makeStageOutput(stageOutput)]);
+      stableSingleViewHeight = Math.max(stableSingleViewHeight, ui.singleView.scrollHeight);
+      ui.singleView.style.minHeight = `${stableSingleViewHeight}px`;
       ui.previous.disabled = currentIndex === 0;
       ui.next.disabled = currentIndex === count - 1;
       window.history.replaceState(null, "", `#step=${currentIndex + 1}`);
@@ -778,14 +834,23 @@
     }
 
     function showStep(index) {
+      const navigationPosition = {
+        x: window.scrollX,
+        y: window.scrollY,
+        stageNavX: ui.stageNav.scrollLeft
+      };
       currentIndex = Math.max(0, Math.min(PRESENTATION.steps.length - 1, index));
       overviewVisible = false;
       ui.overview.classList.remove("active");
       ui.singleView.classList.remove("hidden");
       ui.toggle.textContent = "查看全部";
       renderStep();
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+      const restorePosition = () => {
+        window.scrollTo({ left: navigationPosition.x, top: navigationPosition.y, behavior: "auto" });
+        ui.stageNav.scrollLeft = navigationPosition.stageNavX;
+      };
+      restorePosition();
+      window.requestAnimationFrame(restorePosition);
     }
 
     function toggleOverview() {
@@ -806,6 +871,7 @@
         return;
       }
       if (overviewVisible) return;
+      if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) event.preventDefault();
       if (event.key === "ArrowLeft") showStep(currentIndex - 1);
       if (event.key === "ArrowRight") showStep(currentIndex + 1);
       if (event.key === "Home") showStep(0);
@@ -824,7 +890,7 @@
         invariant: "步骤列表不能为空。",
         failureSignal: "页面没有可导航步骤。",
         relation: "需要补充实际执行图。",
-        evidence: { kind: "placeholder", title: "步骤数据缺失", body: "请先建立实际执行图，再填充模板。" }
+        stageOutput: { kind: "not-captured", title: "步骤数据缺失", body: "请先建立实际执行图，再填充模板。" }
       }];
       currentIndex = 0;
     }
