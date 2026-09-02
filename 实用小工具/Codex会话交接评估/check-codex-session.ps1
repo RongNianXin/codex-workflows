@@ -20,7 +20,11 @@ param(
 # -ShowTurnPreview 作为旧命令兼容参数保留；详细报告固定包含前三高消耗回合的完整用户输入。
 
 if (@('zh-CN', 'en-US') -notcontains $Language) {
-    throw "不支持的语言 '$Language'；仅支持 zh-CN 或 en-US。`nUnsupported language '$Language'. Use zh-CN or en-US."
+    if ($Language -imatch '^en(?:-|$)') {
+        throw "Unsupported language '$Language'. Use zh-CN or en-US."
+    }
+
+    throw "不支持的语言 '$Language'；仅支持 zh-CN 或 en-US。"
 }
 $Language = if ($Language -ieq 'en-US') { 'en-US' } else { 'zh-CN' }
 
