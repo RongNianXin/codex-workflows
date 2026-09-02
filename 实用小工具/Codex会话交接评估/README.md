@@ -1,5 +1,7 @@
 # Codex 会话交接评估
 
+[English](README.en.md)
+
 本目录提供一个只读 PowerShell 脚本，用于查看指定 Codex 任务的名称、一个或多个本地会话分段、回合增长、Token 记录和主要文件占用。传统 Windows PowerShell 可以直接执行；Windows Terminal 只是可选的显示界面。
 
 脚本不会修改会话。终端只显示基本信息、文件资源、详细报告路径和交接建议；Token 排名、文件占用构成及前三个高消耗回合的完整用户输入写入本地 Markdown 详细报告。文件较大或压缩次数较多只是一项诊断信号；网络代理、具体版本回归、图片/工具输出、后台进程和存储性能仍需分别排查。
@@ -18,6 +20,22 @@
 ![Codex 会话交接评估的脱敏终端输出示意](运行效果示意.svg)
 
 > 这是按真实输出结构重绘的示意图，数值和路径均为虚构示例，不代表 OpenAI 官方阈值。
+
+## 选择输出语言
+
+脚本默认使用简体中文，原有命令不需要修改。需要英文终端和英文详细报告时，显式传入 `-Language en-US`：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\check-codex-session.ps1" -TaskId "<TASK_ID>" -Language en-US
+```
+
+也可以显式指定中文：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\check-codex-session.ps1" -TaskId "<TASK_ID>" -Language zh-CN
+```
+
+每次运行只显示一种语言。任务名称、用户输入、会话路径和其他原始数据保持原样，不会被翻译。
 
 ## 如何理解结果
 

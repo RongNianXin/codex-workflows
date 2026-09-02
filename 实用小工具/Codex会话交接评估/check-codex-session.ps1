@@ -6,24 +6,311 @@ param(
 
     [switch]$ShowTurnPreview,
 
-    [string]$ReportPath
+    [string]$ReportPath,
+
+    [string]$Language = 'zh-CN'
 )
 
-# 支持三种用法：
+# 支持以下用法：
 #   .\check-codex-session.ps1 -TaskId '任务 ID'
+#   .\check-codex-session.ps1 -TaskId '任务 ID' -Language en-US
 #   .\check-codex-session.ps1 '任务 ID'
 #   .\check-codex-session.ps1 -TaskId '任务 ID' -ReportPath '报告路径.md'
 #   .\check-codex-session.ps1                 # 根据提示输入任务 ID
 # -ShowTurnPreview 作为旧命令兼容参数保留；详细报告固定包含前三高消耗回合的完整用户输入。
+
+if (@('zh-CN', 'en-US') -notcontains $Language) {
+    throw "不支持的语言 '$Language'；仅支持 zh-CN 或 en-US。`nUnsupported language '$Language'. Use zh-CN or en-US."
+}
+$Language = if ($Language -ieq 'en-US') { 'en-US' } else { 'zh-CN' }
+
+# 所有用户可见文案集中在这里；统计与扫描逻辑只保留一套。
+$uiCatalog = @{
+    'zh-CN' = @{
+        PromptTaskId = '请输入 Codex 任务 ID'
+        InvalidTaskId = "任务 ID 格式无效：{0}`n正确示例：00000000-0000-0000-0000-000000000000"
+        TaskNameNotIndexed = '未取得（本地任务索引未记录）'
+        TaskNameReadFailed = '未取得（读取本地任务索引失败）'
+        ReportDirectory = 'Codex会话交接评估\报告'
+        ReportFileName = '{0}-详细分析报告.md'
+        ReportPathMissingDirectory = '详细报告路径缺少目录：{0}'
+        ReportNoBom = '详细报告没有写入 UTF-8 BOM。'
+        ReportRoundTripMismatch = '详细报告写后回读内容不一致。'
+        ReportWriteFailed = '写入详细分析报告失败，旧报告未被破坏：{0}'
+        SessionMetaMissing = '未找到可解析的 session_meta。'
+        SessionIdMissing = 'session_meta.payload.id 缺失。'
+        SessionTimestampMissing = 'session_meta.timestamp 缺失，无法稳定排序。'
+        SessionTimestampInvalid = 'session_meta.timestamp 格式无效，无法稳定排序。'
+        SessionDirectoryMissing = '未找到 Codex 会话目录。'
+        SessionFileMissing = '未找到任务 {0} 的本地会话文件。'
+        SessionCandidatesRejected = '候选文件均未通过 session_meta.payload.id 核验，无法确认任务 {0} 的本地会话分段。'
+        SegmentMetadataConflict = '会话分段元数据冲突：{0} 存在多个不一致值，拒绝静默拼接。'
+        SegmentRangeOverlap = '会话分段时间范围发生重叠：当前分段开始 {0}，上一分段结束 {1}；无法在没有可靠记录标识的情况下安全聚合。'
+        SegmentRecordOverlap = '会话分段记录时间发生重叠，拒绝静默重复统计。'
+        SegmentReadFailed = '读取会话分段失败：{0}'
+        ReportExtensionInvalid = '详细报告必须使用 .md 扩展名：{0}'
+        ReportMatchesSession = '详细报告路径不能与会话 JSONL 文件相同。'
+        CategoryCompacted = '压缩历史快照（不含内联附件）'
+        CategoryTurnContext = '回合上下文与指令'
+        CategorySessionMeta = '会话元数据'
+        CategoryTools = '工具调用与输出'
+        CategoryConversation = '用户、助手与推理文本'
+        CategoryOtherResponse = '其他响应记录'
+        CategoryTokenMetadata = 'Token 与速率元数据'
+        CategoryOtherEvent = '其他事件记录'
+        CategoryOther = '其他事件与结构'
+        CategoryInlineData = '内联图片与附件数据'
+        StatusCompleted = '已完成'
+        StatusAborted = '已中止'
+        StatusUnfinished = '未结束'
+        StatusUnknown = '状态待确认'
+        StorageMixed = '混合（活动与归档分段并存）'
+        StorageArchived = '已归档'
+        StorageActive = '未归档（不代表应用正在运行）'
+        RangeSeparator = ' 至 '
+        AdditionalSegments = '（另有 {0} 个分段）'
+        Unavailable = '无法取得'
+        ContextUnavailableBasis = '未取得最近上下文占比；该指标不参与综合评分。'
+        ContextHighBasis = '最近输入占窗口 {0}，达到 85% 观察线；建议自动压缩后复查。'
+        ContextNormalBasis = '最近输入占窗口 {0}，尚未达到 85% 观察线。'
+        SizeBasis = '聚合文件为 {0}，大小评分 {1} 分；分级线为 30、50、100 和 200 MiB。'
+        CompressionBasis = '已自动压缩 {0} 次，压缩评分 {1} 分；分级线为 4、7 和 10 次。'
+        AdviceHandoff = '建议交接：当前技术指标已达到交接线。请确定当前阶段的任务已完成，或至少处在一个可交接的断点处。'
+        AdvicePrepare = '建议准备交接：当前技术指标已进入观察区，但不必打断正在执行的复杂步骤。'
+        AdviceContinue = '暂不建议交接：可以继续当前任务。'
+        ReportTitle = '# Codex 会话详细分析报告'
+        ReportTaskId = '- 任务 ID：{0}'
+        ReportTaskName = '- 任务名称：{0}'
+        ReportSegmentCount = '- 会话分段数：{0}'
+        ReportAggregateBytes = '- 聚合字节数：{0} B（{1}）'
+        ReportTimeRange = '- 分段时间范围：{0}'
+        ReportPaths = '- 分段路径：{0}'
+        ReportGeneratedAt = '- 生成时间：{0}'
+        ReportEncoding = '- 编码：UTF-8 BOM'
+        ReportPrivacy = '> 本报告包含完整用户输入，可能带有本地路径、内部信息或其他敏感内容；请只在本地受控范围内使用。'
+        ReportTokenHeading = '## Token 消耗最高回合'
+        ReportTokenExplanation = '按本地累计 Token 快照增量排序。M tokens 表示百万 Token；MiB 表示本地文件字节，二者不能固定换算。'
+        RankNames = @('第一', '第二', '第三')
+        ReportTurnHeading = '### {0}：第 {1} 轮（{2}）'
+        ReportTokenUsage = '{0} tokens；输入 {1}（其中缓存 {2}），输出 {3}（其中推理 {4}）。'
+        LocatorEventTime = '事件时间 {0}'
+        LocatorTurnSuffix = '回合 ID 尾号 {0}'
+        LocatorGrowth = '本轮 JSONL 增长 {0}'
+        ReportLocator = '定位：{0}。'
+        ReportUserInput = '用户输入（完整）：'
+        ReportUserInputMissing = '未从本地记录取得该回合的用户输入。'
+        ReportTokenUnavailable = '无法可靠取得：当前文件没有可用的累计 Token 增量。'
+        ReportFileHeading = '## 本地会话文件占用前三'
+        ReportFileExplanation = '本节反映 JSONL 文件构成，不等同于 Token 消耗。'
+        ReportFileRank = '{0}：{1}，{2}，占 {3}%，涉及 {4} 条记录。'
+        ReportFileUnavailable = '无法取得：未扫描到完整的本地会话记录。'
+        SectionBasic = '一、基本信息'
+        LabelTaskId = '任务 ID：'
+        LabelTaskName = '任务名称：'
+        LabelStorage = '会话存储状态：'
+        LabelSegmentCount = '会话分段数：'
+        ValueSegmentCount = '{0} 个'
+        LabelAggregateBytes = '聚合字节数：'
+        ValueAggregateBytes = '{0} B（{1}）'
+        LabelTimeRange = '分段时间范围：'
+        LabelPath = '路径：'
+        LabelLastModified = '最后修改：'
+        LabelContext = '最近输入占窗口：'
+        SectionResources = '二、文件资源'
+        LabelCompactions = '上下文压缩：'
+        ValueCompactions = '{0} 次'
+        LabelTurnStats = '回合统计：'
+        ValueTurnStats = '已完成 {0} 轮；已中止 {1} 轮；未结束 {2} 轮'
+        LabelTurnDetection = '回合识别：'
+        ValueTurnDetection = '原始 turn_context {0} 条；按 turn_id/终止边界合并重复 {1} 条；识别 {2} 轮'
+        LabelMilestone = '{0:D2} 轮结束后文件大小：'
+        MilestoneUnavailable = '无法取得（未发现明确终止边界）'
+        LabelLatestTurn = '最新回合与文件：'
+        ValueLatestTurn = '第 {0} 轮（{1}）；{2}'
+        ValueNoTurns = '未识别到回合；{0}'
+        LabelReport = '详细分析报告：'
+        SectionAdvice = '三、交接建议'
+        ScoreSummary = '交接参考综合评分：{0} 分（0～1 分继续，2 分准备交接，3 分及以上建议交接。）'
+        AdviceSummary = '交接建议：{0}'
+        BasisHeading = '参考依据：'
+        ExperienceRule = '  4. 上述分级和 85% 观察线都是本地经验规则，并非 OpenAI 官方限制。'
+        HumanReminderHeading = '人工判断提醒：'
+        HumanReminder = '请主动判断 AI 是否已出现明显理解不足，例如忘记约束、重复执行或前后矛盾；如已出现，应提高交接优先级。'
+        ScanWarningsHeading = '扫描提醒：'
+        WarningParse = '  - {0} 条关键记录未能解析；活动任务写入结束后可重试。'
+        WarningTokenReset = '  - 累计 Token 计数回退 {0} 次；回退点已重新建立基线，排名可能少计但不会把旧累计量重复计算。'
+        WarningTokenBaseline = '  - 后续回合或新分段的首个累计 Token 快照有 {0} 次仅作为基线；排名可能少计，但不会把历史累计量重复算到单一回合。'
+        WarningOffset = '  - 检测到非统一编码或换行；最终文件占用已按实际扫描字节校正，历史里程碑大小可能有轻微偏差。'
+        WarningDuplicateContext = '  - 同一界面回合可能包含多条内部上下文记录。本次发现并合并了 {0} 条重复记录，最终识别为 {1} 个回合。'
+        WarningMetadataParse = '  - 有 {0} 个文件名候选的 session_meta 无法解析，已排除且未参与聚合。'
+        WarningCandidateExcluded = '  - 有 {0} 个文件名候选的内部任务 ID 不匹配，已排除且未参与聚合。'
+        WarningVersion = '  - 会话分段记录了不同 CLI 版本；已按各分段格式读取，版本差异需人工留意。'
+        WarningFormat = '  - 会话分段的编码或换行格式不一致；已逐段识别并聚合。'
+        WarningLocation = '  - 同一任务同时存在活动目录和归档目录分段；已明确标记为混合存储状态。'
+        WarningTime = '  - 多个分段的 session_meta 时间相同；已使用完整路径作为稳定次序。'
+        WarningIncompleteMetadata = '  - 有 {0} 类 session_meta 字段在部分分段中缺失；已继续聚合，但兼容性需人工留意。'
+        WarningTaskNameParse = '  - 本地任务索引中有 {0} 条记录无法解析；任务名称可能不是最新值。'
+        WarningTaskNameMissing = '  - 未能从本地任务索引取得任务名称；任务 ID 和其余会话分析结果不受影响。'
+        WarningFileChanged = '  - 文件在扫描期间仍有写入；轮次、Token 和内容占比以本次已读取数据为准。'
+    }
+    'en-US' = @{
+        PromptTaskId = 'Enter the Codex task ID'
+        InvalidTaskId = "Invalid task ID: {0}`nExample: 00000000-0000-0000-0000-000000000000"
+        TaskNameNotIndexed = 'Unavailable (not recorded in the local task index)'
+        TaskNameReadFailed = 'Unavailable (failed to read the local task index)'
+        ReportDirectory = 'CodexSessionHandoffAssessment\Reports'
+        ReportFileName = '{0}-detailed-analysis-report.md'
+        ReportPathMissingDirectory = 'The detailed report path has no directory: {0}'
+        ReportNoBom = 'The detailed report was not written with a UTF-8 BOM.'
+        ReportRoundTripMismatch = 'The detailed report did not match after write-back verification.'
+        ReportWriteFailed = 'Failed to write the detailed report. The previous report was not changed: {0}'
+        SessionMetaMissing = 'No parseable session_meta record was found.'
+        SessionIdMissing = 'session_meta.payload.id is missing.'
+        SessionTimestampMissing = 'session_meta.timestamp is missing, so the segments cannot be sorted reliably.'
+        SessionTimestampInvalid = 'session_meta.timestamp is invalid, so the segments cannot be sorted reliably.'
+        SessionDirectoryMissing = 'No Codex session directory was found.'
+        SessionFileMissing = 'No local session file was found for task {0}.'
+        SessionCandidatesRejected = 'None of the candidate files passed session_meta.payload.id verification for task {0}.'
+        SegmentMetadataConflict = 'Session segment metadata conflict: {0} has inconsistent values. The segments will not be joined silently.'
+        SegmentRangeOverlap = 'Session segment time ranges overlap: the current segment starts at {0}, while the previous segment ends at {1}. The segments cannot be joined safely without reliable record identifiers.'
+        SegmentRecordOverlap = 'Session segment records overlap in time. Duplicate counting was not performed.'
+        SegmentReadFailed = 'Failed to read a session segment: {0}'
+        ReportExtensionInvalid = 'The detailed report must use the .md extension: {0}'
+        ReportMatchesSession = 'The detailed report path cannot be the same as a session JSONL file.'
+        CategoryCompacted = 'Compacted history snapshots (excluding inline attachments)'
+        CategoryTurnContext = 'Turn context and instructions'
+        CategorySessionMeta = 'Session metadata'
+        CategoryTools = 'Tool calls and outputs'
+        CategoryConversation = 'User, assistant, and reasoning text'
+        CategoryOtherResponse = 'Other response records'
+        CategoryTokenMetadata = 'Token and rate metadata'
+        CategoryOtherEvent = 'Other event records'
+        CategoryOther = 'Other events and structure'
+        CategoryInlineData = 'Inline image and attachment data'
+        StatusCompleted = 'completed'
+        StatusAborted = 'aborted'
+        StatusUnfinished = 'unfinished'
+        StatusUnknown = 'status unavailable'
+        StorageMixed = 'mixed (active and archived segments)'
+        StorageArchived = 'archived'
+        StorageActive = 'not archived (this does not mean the app is running)'
+        RangeSeparator = ' to '
+        AdditionalSegments = ' ({0} more segment(s))'
+        Unavailable = 'Unavailable'
+        ContextUnavailableBasis = 'Recent context usage is unavailable, so it is not included in the score.'
+        ContextHighBasis = 'Recent input uses {0} of the context window, reaching the 85% observation threshold. Recheck after automatic compaction.'
+        ContextNormalBasis = 'Recent input uses {0} of the context window, below the 85% observation threshold.'
+        SizeBasis = 'Aggregate session size is {0}, for a size score of {1}. Thresholds: 30, 50, 100, and 200 MiB.'
+        CompressionBasis = 'Automatic compaction occurred {0} time(s), for a compaction score of {1}. Thresholds: 4, 7, and 10.'
+        AdviceHandoff = 'Handoff recommended: the technical indicators have reached the handoff threshold. Finish the current stage or stop at a clear handoff point first.'
+        AdvicePrepare = 'Prepare for handoff: the technical indicators are in the observation range, but there is no need to interrupt a complex step.'
+        AdviceContinue = 'No handoff recommended yet. Continue in the current task.'
+        ReportTitle = '# Codex session detailed analysis report'
+        ReportTaskId = '- Task ID: {0}'
+        ReportTaskName = '- Task name: {0}'
+        ReportSegmentCount = '- Session segments: {0}'
+        ReportAggregateBytes = '- Aggregate bytes: {0} B ({1})'
+        ReportTimeRange = '- Segment time range: {0}'
+        ReportPaths = '- Segment path(s): {0}'
+        ReportGeneratedAt = '- Generated at: {0}'
+        ReportEncoding = '- Encoding: UTF-8 BOM'
+        ReportPrivacy = '> This report may contain complete user input, local paths, internal information, or other sensitive content. Keep it in a controlled local environment.'
+        ReportTokenHeading = '## Turns with the highest token usage'
+        ReportTokenExplanation = 'Ranked by increases in local cumulative token snapshots. M tokens means one million tokens; MiB measures local file bytes and cannot be converted to tokens at a fixed ratio.'
+        RankNames = @('First', 'Second', 'Third')
+        ReportTurnHeading = '### {0}: turn {1} ({2})'
+        ReportTokenUsage = '{0} tokens; input {1} ({2} cached), output {3} ({4} reasoning).'
+        LocatorEventTime = 'event time {0}'
+        LocatorTurnSuffix = 'turn ID suffix {0}'
+        LocatorGrowth = 'JSONL growth in this turn {0}'
+        ReportLocator = 'Location: {0}.'
+        ReportUserInput = 'Complete user input:'
+        ReportUserInputMissing = 'The user input for this turn was not found in the local records.'
+        ReportTokenUnavailable = 'Unavailable: this session has no reliable cumulative token increase.'
+        ReportFileHeading = '## Largest local session file categories'
+        ReportFileExplanation = 'This section describes the JSONL file composition. It is not token usage.'
+        ReportFileRank = '{0}: {1}, {2}, {3}% of scanned bytes across {4} record(s).'
+        ReportFileUnavailable = 'Unavailable: no complete local session records were scanned.'
+        SectionBasic = '1. Basic information'
+        LabelTaskId = 'Task ID:'
+        LabelTaskName = 'Task name:'
+        LabelStorage = 'Session storage:'
+        LabelSegmentCount = 'Session segments:'
+        ValueSegmentCount = '{0}'
+        LabelAggregateBytes = 'Aggregate bytes:'
+        ValueAggregateBytes = '{0} B ({1})'
+        LabelTimeRange = 'Segment time range:'
+        LabelPath = 'Path:'
+        LabelLastModified = 'Last modified:'
+        LabelContext = 'Recent context usage:'
+        SectionResources = '2. File resources'
+        LabelCompactions = 'Compactions:'
+        ValueCompactions = '{0}'
+        LabelTurnStats = 'Turn status:'
+        ValueTurnStats = '{0} completed; {1} aborted; {2} unfinished'
+        LabelTurnDetection = 'Turn detection:'
+        ValueTurnDetection = '{0} turn_context record(s); {1} duplicate record(s) merged by turn_id or terminal boundary; {2} turn(s) identified'
+        LabelMilestone = 'Size after turn {0:D2}:'
+        MilestoneUnavailable = 'Unavailable (no explicit terminal boundary)'
+        LabelLatestTurn = 'Latest turn and file:'
+        ValueLatestTurn = 'turn {0} ({1}); {2}'
+        ValueNoTurns = 'no turns identified; {0}'
+        LabelReport = 'Detailed report:'
+        SectionAdvice = '3. Handoff recommendation'
+        ScoreSummary = 'Handoff reference score: {0} (0-1 continue, 2 prepare, 3 or more handoff recommended).'
+        AdviceSummary = 'Recommendation: {0}'
+        BasisHeading = 'Basis:'
+        ExperienceRule = '  4. These thresholds and the 85% observation level are local heuristics, not official OpenAI limits.'
+        HumanReminderHeading = 'Manual review reminder:'
+        HumanReminder = 'Check whether the AI is forgetting constraints, repeating work, or contradicting itself. If so, raise the handoff priority.'
+        ScanWarningsHeading = 'Scan warnings:'
+        WarningParse = '  - {0} key record(s) could not be parsed. Retry after the active task stops writing.'
+        WarningTokenReset = '  - The cumulative token counter moved backward {0} time(s). A new baseline was established; rankings may undercount but will not count old totals twice.'
+        WarningTokenBaseline = '  - The first cumulative token snapshot in a later turn or segment was used only as a baseline {0} time(s). Rankings may undercount, but historical totals will not be assigned to one turn again.'
+        WarningOffset = '  - Mixed encoding or line endings were detected. Final file usage was corrected to scanned bytes; historical milestones may differ slightly.'
+        WarningDuplicateContext = '  - One UI turn may contain multiple internal context records. {0} duplicate record(s) were merged, producing {1} identified turn(s).'
+        WarningMetadataParse = '  - session_meta could not be parsed for {0} filename candidate(s). They were excluded from aggregation.'
+        WarningCandidateExcluded = '  - {0} filename candidate(s) had a different internal task ID and were excluded.'
+        WarningVersion = '  - Session segments record different CLI versions. Each segment was parsed separately; review version differences if needed.'
+        WarningFormat = '  - Session segments use different encodings or line endings. Each format was detected before aggregation.'
+        WarningLocation = '  - The task has segments in both active and archived storage. The storage state is marked as mixed.'
+        WarningTime = '  - Multiple segments have the same session_meta timestamp. Full paths were used as a stable secondary order.'
+        WarningIncompleteMetadata = '  - {0} session_meta field type(s) are missing from some segments. Aggregation continued, but compatibility should be reviewed.'
+        WarningTaskNameParse = '  - {0} local task index record(s) could not be parsed, so the task name may be outdated.'
+        WarningTaskNameMissing = '  - The task name was not found in the local task index. The task ID and other analysis results are unaffected.'
+        WarningFileChanged = '  - A session file changed during the scan. Turn, token, and composition results reflect the data read in this scan.'
+    }
+}
+$script:Ui = $uiCatalog[$Language]
+
+function Get-UiText {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Key,
+
+        [object[]]$Arguments = @()
+    )
+
+    if (-not $script:Ui.ContainsKey($Key)) {
+        throw "Missing localized text key: $Key"
+    }
+
+    $template = [string]$script:Ui[$Key]
+    if ($Arguments.Count -gt 0) {
+        return $template -f $Arguments
+    }
+    return $template
+}
+
 if ([string]::IsNullOrWhiteSpace($TaskId)) {
-    $TaskId = Read-Host '请输入 Codex 任务 ID'
+    $TaskId = Read-Host (Get-UiText 'PromptTaskId')
 }
 
 $TaskId = $TaskId.Trim()
 $taskIdPattern = '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
 
 if ($TaskId -notmatch $taskIdPattern) {
-    throw "任务 ID 格式无效：$TaskId`n正确示例：00000000-0000-0000-0000-000000000000"
+    throw (Get-UiText 'InvalidTaskId' @($TaskId))
 }
 
 function Format-StatusLine {
@@ -167,8 +454,9 @@ function Get-DetailedReportPath {
         $localAppData = Join-Path $env:USERPROFILE 'AppData\Local'
     }
 
-    $reportDirectory = Join-Path $localAppData 'Codex会话交接评估\报告'
-    return Join-Path $reportDirectory "$CurrentTaskId-详细分析报告.md"
+    $reportDirectory = Join-Path $localAppData (Get-UiText 'ReportDirectory')
+    $reportFileName = Get-UiText 'ReportFileName' @($CurrentTaskId)
+    return Join-Path $reportDirectory $reportFileName
 }
 
 function Get-TaskNameFromLocalIndex {
@@ -177,7 +465,7 @@ function Get-TaskNameFromLocalIndex {
         [string]$CurrentTaskId
     )
 
-    $fallbackName = '未取得（本地任务索引未记录）'
+    $fallbackName = Get-UiText 'TaskNameNotIndexed'
     $codexHome = Join-Path $env:USERPROFILE '.codex'
     $indexPath = Join-Path $codexHome 'session_index.jsonl'
 
@@ -265,7 +553,7 @@ function Get-TaskNameFromLocalIndex {
     }
     catch {
         return [pscustomobject]@{
-            TaskName = '未取得（读取本地任务索引失败）'
+            TaskName = Get-UiText 'TaskNameReadFailed'
             IndexFound = $false
             ParseWarnings = $parseWarnings
         }
@@ -298,7 +586,7 @@ function Write-Utf8BomFileAtomic {
     $fullPath = [IO.Path]::GetFullPath($Path)
     $directory = [IO.Path]::GetDirectoryName($fullPath)
     if ([string]::IsNullOrWhiteSpace($directory)) {
-        throw "详细报告路径缺少目录：$Path"
+        throw (Get-UiText 'ReportPathMissingDirectory' @($Path))
     }
 
     [void][IO.Directory]::CreateDirectory($directory)
@@ -319,12 +607,12 @@ function Write-Utf8BomFileAtomic {
             $bytes[1] -ne 0xBB -or
             $bytes[2] -ne 0xBF
         ) {
-            throw '详细报告没有写入 UTF-8 BOM。'
+            throw (Get-UiText 'ReportNoBom')
         }
 
         $roundTrip = [IO.File]::ReadAllText($temporaryPath, $encoding)
         if ($roundTrip -cne $Content) {
-            throw '详细报告写后回读内容不一致。'
+            throw (Get-UiText 'ReportRoundTripMismatch')
         }
 
         if ([IO.File]::Exists($fullPath)) {
@@ -360,7 +648,7 @@ function Write-Utf8BomFileAtomic {
                 # 保留旧备份比在错误处理中再次破坏目标文件更安全。
             }
         }
-        throw "写入详细分析报告失败，旧报告未被破坏：$($_.Exception.Message)"
+        throw (Get-UiText 'ReportWriteFailed' @($_.Exception.Message))
     }
 
     return $fullPath
@@ -523,46 +811,78 @@ function Get-RecordCategory {
     )
 
     if ($TopType -eq 'compacted') {
-        return '压缩历史快照（不含内联附件）'
+        return 'compacted'
     }
 
     if ($TopType -eq 'turn_context') {
-        return '回合上下文与指令'
+        return 'turn_context'
     }
 
     if ($TopType -eq 'session_meta') {
-        return '会话元数据'
+        return 'session_meta'
     }
 
     if ($TopType -eq 'response_item') {
         if ($PayloadType -match '(?i)(tool|function_call|command|web_search|computer|mcp|apply_patch)') {
-            return '工具调用与输出'
+            return 'tools'
         }
 
         if ($PayloadType -match '(?i)(message|reasoning|summary)') {
-            return '用户、助手与推理文本'
+            return 'conversation'
         }
 
-        return '其他响应记录'
+        return 'other_response'
     }
 
     if ($TopType -eq 'event_msg') {
         if ($PayloadType -eq 'token_count') {
-            return 'Token 与速率元数据'
+            return 'token_metadata'
         }
 
         if ($PayloadType -match '(?i)(exec|tool|command|patch|web|computer|mcp)') {
-            return '工具调用与输出'
+            return 'tools'
         }
 
         if ($PayloadType -match '(?i)(user_message|agent_message|reasoning|summary)') {
-            return '用户、助手与推理文本'
+            return 'conversation'
         }
 
-        return '其他事件记录'
+        return 'other_event'
     }
 
-    return '其他事件与结构'
+    return 'other'
+}
+
+function Get-CategoryDisplayName {
+    param([string]$Category)
+
+    $keys = @{
+        compacted = 'CategoryCompacted'
+        turn_context = 'CategoryTurnContext'
+        session_meta = 'CategorySessionMeta'
+        tools = 'CategoryTools'
+        conversation = 'CategoryConversation'
+        other_response = 'CategoryOtherResponse'
+        token_metadata = 'CategoryTokenMetadata'
+        other_event = 'CategoryOtherEvent'
+        other = 'CategoryOther'
+        inline_data = 'CategoryInlineData'
+    }
+    if ($keys.ContainsKey($Category)) {
+        return Get-UiText $keys[$Category]
+    }
+    return $Category
+}
+
+function Get-StatusDisplayName {
+    param([string]$Status)
+
+    switch ($Status) {
+        'completed' { return Get-UiText 'StatusCompleted' }
+        'aborted' { return Get-UiText 'StatusAborted' }
+        'unfinished' { return Get-UiText 'StatusUnfinished' }
+        default { return Get-UiText 'StatusUnknown' }
+    }
 }
 
 function Get-InlineDataByteCount {
@@ -699,7 +1019,7 @@ function Get-OrCreateTurnUsage {
         $Table[$TurnIndex] = [pscustomobject]@{
             TurnIndex = $TurnIndex
             TurnId = $TurnId
-            Status = '未结束'
+            Status = 'unfinished'
             HasTurnContext = $false
             StartBytes = $StartBytes
             EndBytes = [long]-1
@@ -783,17 +1103,17 @@ function Get-SessionSegmentMetadata {
     }
 
     if ($null -eq $sessionRecord -or $null -eq $sessionRecord.payload) {
-        throw '未找到可解析的 session_meta。'
+        throw (Get-UiText 'SessionMetaMissing')
     }
 
     $payload = $sessionRecord.payload
     $idProperty = $payload.PSObject.Properties['id']
     if ($null -eq $idProperty -or [string]::IsNullOrWhiteSpace([string]$idProperty.Value)) {
-        throw 'session_meta.payload.id 缺失。'
+        throw (Get-UiText 'SessionIdMissing')
     }
 
     if ([string]::IsNullOrWhiteSpace($sessionTimestampText)) {
-        throw 'session_meta.timestamp 缺失，无法稳定排序。'
+        throw (Get-UiText 'SessionTimestampMissing')
     }
     try {
         $sessionStart = [DateTimeOffset]::Parse(
@@ -803,7 +1123,7 @@ function Get-SessionSegmentMetadata {
         )
     }
     catch {
-        throw 'session_meta.timestamp 格式无效，无法稳定排序。'
+        throw (Get-UiText 'SessionTimestampInvalid')
     }
 
     $file = Get-Item -LiteralPath $Path -ErrorAction Stop
@@ -846,7 +1166,7 @@ $roots = @(
 ) | Where-Object { Test-Path -LiteralPath $_ }
 
 if (-not $roots) {
-    throw '未找到 Codex 会话目录。'
+    throw (Get-UiText 'SessionDirectoryMissing')
 }
 
 $candidateFiles = @(
@@ -855,7 +1175,7 @@ $candidateFiles = @(
 )
 
 if ($candidateFiles.Count -eq 0) {
-    throw "未找到任务 $taskId 的本地会话文件。"
+    throw (Get-UiText 'SessionFileMissing' @($taskId))
 }
 
 $segmentMetadataParseWarnings = 0
@@ -882,7 +1202,7 @@ foreach ($candidate in $candidateFiles) {
 }
 
 if ($segments.Count -eq 0) {
-    throw "候选文件均未通过 session_meta.payload.id 核验，无法确认任务 $taskId 的本地会话分段。"
+    throw (Get-UiText 'SessionCandidatesRejected' @($taskId))
 }
 
 $files = @(
@@ -900,7 +1220,7 @@ foreach ($field in @('Originator', 'Source', 'ModelProvider')) {
             Sort-Object -Unique
     )
     if ($values.Count -gt 1) {
-        throw "会话分段元数据冲突：$field 存在多个不一致值，拒绝静默拼接。"
+        throw (Get-UiText 'SegmentMetadataConflict' @($field))
     }
 }
 
@@ -965,7 +1285,7 @@ $categoryBytes = @{}
 $categoryRecords = @{}
 $cumulativeBytes = [long]0
 $scanEndPosition = [long]0
-$lastResidualCategory = '其他事件与结构'
+$lastResidualCategory = 'other'
 $lastTerminalTurnIndex = 0
 $lastLineWasTerminal = $false
 $lastLineHadNewline = $true
@@ -980,7 +1300,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
     $segmentBaseBytes = $cumulativeBytes
     $segmentScanEndPosition = [long]0
     $segmentLastEventTime = $file.SessionStart
-    $lastResidualCategory = '其他事件与结构'
+    $lastResidualCategory = 'other'
     $lastTerminalTurnIndex = 0
     $lastLineWasTerminal = $false
     $lastLineHadNewline = $true
@@ -991,7 +1311,10 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
         $null -ne $previousSegmentEndTime -and
         $file.SessionStart -lt $previousSegmentEndTime
     ) {
-        throw "会话分段时间范围发生重叠：当前分段开始 $($file.SessionStart.ToString('o'))，上一分段结束 $($previousSegmentEndTime.ToString('o'))；无法在没有可靠记录标识的情况下安全聚合。"
+        throw (Get-UiText 'SegmentRangeOverlap' @(
+            $file.SessionStart.ToString('o'),
+            $previousSegmentEndTime.ToString('o')
+        ))
     }
 
     if ($segmentIndex -gt 0) {
@@ -1004,7 +1327,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
     Add-CategoryStat `
         $categoryBytes `
         $categoryRecords `
-        '其他事件与结构' `
+        'other' `
         $textFormat.BomBytes `
         $false
     }
@@ -1056,7 +1379,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
                     $null -ne $previousSegmentEndTime -and
                     $recordTime -lt $previousSegmentEndTime
                 ) {
-                    throw '会话分段记录时间发生重叠，拒绝静默重复统计。'
+                    throw (Get-UiText 'SegmentRecordOverlap')
                 }
                 if ($recordTime -gt $segmentLastEventTime) {
                     $segmentLastEventTime = $recordTime
@@ -1072,7 +1395,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
             Add-CategoryStat `
                 $categoryBytes `
                 $categoryRecords `
-                '内联图片与附件数据' `
+                'inline_data' `
                 $inlineDataBytes
         }
 
@@ -1101,7 +1424,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
             elseif (-not [string]::IsNullOrWhiteSpace($recordTurnId)) {
                 if (
                     $currentTurnIndex -gt 0 -and
-                    (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -eq '未结束' -and
+                    (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -eq 'unfinished' -and
                     [string]::IsNullOrWhiteSpace((Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).TurnId)
                 ) {
                     # 兼容先出现无 ID 用户消息、稍后才补 turn_id 的旧记录。
@@ -1114,7 +1437,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
             }
             elseif (
                 $currentTurnIndex -le 0 -or
-                (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -ne '未结束'
+                (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -ne 'unfinished'
             ) {
                 $turnSequenceCount++
                 $currentTurnIndex = $turnSequenceCount
@@ -1139,7 +1462,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
             elseif (-not [string]::IsNullOrWhiteSpace($recordTurnId)) {
                 if (
                     $currentTurnIndex -gt 0 -and
-                    (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -eq '未结束' -and
+                    (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -eq 'unfinished' -and
                     [string]::IsNullOrWhiteSpace((Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).TurnId)
                 ) {
                     # 兼容旧格式在 turn_context 才首次提供 turn_id。
@@ -1152,7 +1475,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
             }
             elseif (
                 $currentTurnIndex -le 0 -or
-                (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -ne '未结束'
+                (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -ne 'unfinished'
             ) {
                 $turnSequenceCount++
                 $currentTurnIndex = $turnSequenceCount
@@ -1183,7 +1506,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
             elseif (-not [string]::IsNullOrWhiteSpace($recordTurnId)) {
                 if (
                     $currentTurnIndex -gt 0 -and
-                    (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -eq '未结束' -and
+                    (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -eq 'unfinished' -and
                     [string]::IsNullOrWhiteSpace((Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).TurnId)
                 ) {
                     # 当前匿名回合取得正式 ID，不创建重复回合。
@@ -1196,7 +1519,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
             }
             elseif (
                 $currentTurnIndex -le 0 -or
-                (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -ne '未结束'
+                (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -ne 'unfinished'
             ) {
                 $turnSequenceCount++
                 $currentTurnIndex = $turnSequenceCount
@@ -1371,14 +1694,14 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
                 elseif (
                     -not [string]::IsNullOrWhiteSpace($turnId) -and
                     $currentTurnIndex -gt 0 -and
-                    (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -eq '未结束' -and
+                    (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -eq 'unfinished' -and
                     [string]::IsNullOrWhiteSpace((Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).TurnId)
                 ) {
                     $turnIdToIndex[$turnId] = $currentTurnIndex
                 }
                 elseif (
                     $currentTurnIndex -le 0 -or
-                    (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -ne '未结束' -or
+                    (Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).Status -ne 'unfinished' -or
                     (
                         -not [string]::IsNullOrWhiteSpace($turnId) -and
                         -not [string]::IsNullOrWhiteSpace((Get-OrCreateTurnUsage $turnUsages $currentTurnIndex).TurnId) -and
@@ -1404,11 +1727,11 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
                 $lastLineWasTerminal = $true
 
                 if ($isCompleteEvent) {
-                    $turnUsage.Status = '已完成'
+                    $turnUsage.Status = 'completed'
                     $completedTurnCount++
                 }
                 else {
-                    $turnUsage.Status = '已中止'
+                    $turnUsage.Status = 'aborted'
                     $abortedTurnCount++
                 }
 
@@ -1426,7 +1749,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
     }
     }
     catch {
-        throw "读取会话分段失败：$($_.Exception.Message)"
+        throw (Get-UiText 'SegmentReadFailed' @($_.Exception.Message))
     }
     finally {
     if ($reader) {
@@ -1500,13 +1823,13 @@ foreach ($turnUsage in $turnUsages.Values) {
 }
 
 $completedTurnCount = @(
-    $turnUsages.Values | Where-Object { $_.Status -eq '已完成' }
+    $turnUsages.Values | Where-Object { $_.Status -eq 'completed' }
 ).Count
 $abortedTurnCount = @(
-    $turnUsages.Values | Where-Object { $_.Status -eq '已中止' }
+    $turnUsages.Values | Where-Object { $_.Status -eq 'aborted' }
 ).Count
 $unfinishedTurnCount = @(
-    $turnUsages.Values | Where-Object { $_.Status -eq '未结束' }
+    $turnUsages.Values | Where-Object { $_.Status -eq 'unfinished' }
 ).Count
 
 $latestLength = [long](
@@ -1518,22 +1841,23 @@ $latestLastWriteTime = (
 $sizeMiB = $latestLength / 1MB
 $sizeText = Format-MiB $latestLength
 $storageState = if ($segmentLocationWarnings -gt 0) {
-    '混合（活动与归档分段并存）'
+    Get-UiText 'StorageMixed'
 }
 elseif ($primaryFile.StorageKind -eq 'archived') {
-    '已归档'
+    Get-UiText 'StorageArchived'
 }
 else {
-    '未归档（不代表应用正在运行）'
+    Get-UiText 'StorageActive'
 }
 $segmentEndTime = (
     $files | Sort-Object -Property ScanEndTime -Descending | Select-Object -First 1
 ).ScanEndTime
-$segmentTimeRangeText = '{0} 至 {1}' -f `
+$segmentTimeRangeText = '{0}{1}{2}' -f `
     (Format-EventTimestamp $primaryFile.SessionStart.ToString('o')), `
+    (Get-UiText 'RangeSeparator'), `
     (Format-EventTimestamp $segmentEndTime.ToString('o'))
 
-$contextText = '无法取得'
+$contextText = Get-UiText 'Unavailable'
 $contextPercent = $null
 
 if ($null -ne $lastTokenInfo) {
@@ -1601,27 +1925,30 @@ else {
 }
 
 if ($null -eq $contextPercent) {
-    $contextBasis = '未取得最近上下文占比；该指标不参与综合评分。'
+    $contextBasis = Get-UiText 'ContextUnavailableBasis'
 }
 elseif ($contextPercent -ge 85) {
-    $contextBasis = "最近输入占窗口 $contextText，达到 85% 观察线；建议自动压缩后复查。"
+    $contextBasis = Get-UiText 'ContextHighBasis' @($contextText)
 }
 else {
-    $contextBasis = "最近输入占窗口 $contextText，尚未达到 85% 观察线。"
+    $contextBasis = Get-UiText 'ContextNormalBasis' @($contextText)
 }
 
 $totalScore = $sizeScore + $compressionScore
-$sizeBasis = "聚合文件为 $sizeText，大小评分 $sizeScore 分；分级线为 30、50、100 和 200 MiB。"
-$compressionBasis = "已自动压缩 $compactCount 次，压缩评分 $compressionScore 分；分级线为 4、7 和 10 次。"
+$sizeBasis = Get-UiText 'SizeBasis' @($sizeText, $sizeScore)
+$compressionBasis = Get-UiText 'CompressionBasis' @(
+    $compactCount,
+    $compressionScore
+)
 
 if ($totalScore -ge 3) {
-    $advice = '建议交接：当前技术指标已达到交接线。请确定当前阶段的任务已完成，或至少处在一个可交接的断点处。'
+    $advice = Get-UiText 'AdviceHandoff'
 }
 elseif ($totalScore -eq 2) {
-    $advice = '建议准备交接：当前技术指标已进入观察区，但不必打断正在执行的复杂步骤。'
+    $advice = Get-UiText 'AdvicePrepare'
 }
 else {
-    $advice = '暂不建议交接：可以继续当前任务。'
+    $advice = Get-UiText 'AdviceContinue'
 }
 
 $tokenRankings = @(
@@ -1646,7 +1973,7 @@ $resolvedReportPath = Get-DetailedReportPath `
     -RequestedPath $ReportPath `
     -CurrentTaskId $taskId
 if ([IO.Path]::GetExtension($resolvedReportPath) -ine '.md') {
-    throw "详细报告必须使用 .md 扩展名：$resolvedReportPath"
+    throw (Get-UiText 'ReportExtensionInvalid' @($resolvedReportPath))
 }
 if (@(
     $files | Where-Object {
@@ -1657,35 +1984,58 @@ if (@(
         )
     }
 ).Count -gt 0) {
-    throw '详细报告路径不能与会话 JSONL 文件相同。'
+    throw (Get-UiText 'ReportMatchesSession')
 }
 $pathSummary = if ($segmentCount -eq 1) {
     $primaryFile.FullName
 }
 else {
-    "$($primaryFile.FullName)（另有 $($segmentCount - 1) 个分段）"
+    $primaryFile.FullName + (
+        Get-UiText 'AdditionalSegments' @(($segmentCount - 1))
+    )
 }
 $reportBuilder = [Text.StringBuilder]::new()
-Add-ReportLine -Builder $reportBuilder -Value '# Codex 会话详细分析报告'
+Add-ReportLine -Builder $reportBuilder -Value (Get-UiText 'ReportTitle')
 Add-ReportLine -Builder $reportBuilder
-Add-ReportLine -Builder $reportBuilder -Value "- 任务 ID：$taskId"
-Add-ReportLine -Builder $reportBuilder -Value "- 任务名称：$taskName"
-Add-ReportLine -Builder $reportBuilder -Value "- 会话分段数：$segmentCount"
-Add-ReportLine -Builder $reportBuilder -Value "- 聚合字节数：$(Format-Integer $latestLength) B（$sizeText）"
-Add-ReportLine -Builder $reportBuilder -Value "- 分段时间范围：$segmentTimeRangeText"
-Add-ReportLine -Builder $reportBuilder -Value "- 分段路径：$pathSummary"
-Add-ReportLine -Builder $reportBuilder -Value "- 生成时间：$([DateTimeOffset]::Now.ToString('yyyy-MM-dd HH:mm:ss zzz'))"
-Add-ReportLine -Builder $reportBuilder -Value '- 编码：UTF-8 BOM'
+Add-ReportLine -Builder $reportBuilder -Value (
+    Get-UiText 'ReportTaskId' @($taskId)
+)
+Add-ReportLine -Builder $reportBuilder -Value (
+    Get-UiText 'ReportTaskName' @($taskName)
+)
+Add-ReportLine -Builder $reportBuilder -Value (
+    Get-UiText 'ReportSegmentCount' @($segmentCount)
+)
+Add-ReportLine -Builder $reportBuilder -Value (
+    Get-UiText 'ReportAggregateBytes' @(
+        (Format-Integer $latestLength),
+        $sizeText
+    )
+)
+Add-ReportLine -Builder $reportBuilder -Value (
+    Get-UiText 'ReportTimeRange' @($segmentTimeRangeText)
+)
+Add-ReportLine -Builder $reportBuilder -Value (
+    Get-UiText 'ReportPaths' @($pathSummary)
+)
+Add-ReportLine -Builder $reportBuilder -Value (
+    Get-UiText 'ReportGeneratedAt' @(
+        [DateTimeOffset]::Now.ToString('yyyy-MM-dd HH:mm:ss zzz')
+    )
+)
+Add-ReportLine -Builder $reportBuilder -Value (Get-UiText 'ReportEncoding')
 Add-ReportLine -Builder $reportBuilder
-Add-ReportLine -Builder $reportBuilder -Value '> 本报告包含完整用户输入，可能带有本地路径、内部信息或其他敏感内容；请只在本地受控范围内使用。'
+Add-ReportLine -Builder $reportBuilder -Value (Get-UiText 'ReportPrivacy')
 Add-ReportLine -Builder $reportBuilder
-Add-ReportLine -Builder $reportBuilder -Value '## Token 消耗最高回合'
+Add-ReportLine -Builder $reportBuilder -Value (Get-UiText 'ReportTokenHeading')
 Add-ReportLine -Builder $reportBuilder
-Add-ReportLine -Builder $reportBuilder -Value '按本地累计 Token 快照增量排序。M tokens 表示百万 Token；MiB 表示本地文件字节，二者不能固定换算。'
+Add-ReportLine -Builder $reportBuilder -Value (
+    Get-UiText 'ReportTokenExplanation'
+)
 Add-ReportLine -Builder $reportBuilder
 
 if ($tokenRankings.Count -gt 0 -and $tokenAdvanceCount -gt 0) {
-    $rankNames = @('第一', '第二', '第三')
+    $rankNames = @($script:Ui['RankNames'])
     for ($index = 0; $index -lt $tokenRankings.Count; $index++) {
         $item = $tokenRankings[$index]
         $totalText = Format-TokenValue $item.TotalTokens
@@ -1693,9 +2043,24 @@ if ($tokenRankings.Count -gt 0 -and $tokenAdvanceCount -gt 0) {
         $cachedText = Format-TokenValue $item.CachedInputTokens
         $outputText = Format-TokenValue $item.OutputTokens
         $reasoningText = Format-TokenValue $item.ReasoningTokens
-        Add-ReportLine -Builder $reportBuilder -Value "### $($rankNames[$index])：第 $($item.TurnIndex) 轮（$($item.Status)）"
+        $statusText = Get-StatusDisplayName $item.Status
+        Add-ReportLine -Builder $reportBuilder -Value (
+            Get-UiText 'ReportTurnHeading' @(
+                $rankNames[$index],
+                $item.TurnIndex,
+                $statusText
+            )
+        )
         Add-ReportLine -Builder $reportBuilder
-        Add-ReportLine -Builder $reportBuilder -Value "$totalText tokens；输入 $inputText（其中缓存 $cachedText），输出 $outputText（其中推理 $reasoningText）。"
+        Add-ReportLine -Builder $reportBuilder -Value (
+            Get-UiText 'ReportTokenUsage' @(
+                $totalText,
+                $inputText,
+                $cachedText,
+                $outputText,
+                $reasoningText
+            )
+        )
 
         $locatorParts = @()
         $timestamp = if (-not [string]::IsNullOrWhiteSpace($item.EndTimestamp)) {
@@ -1705,20 +2070,27 @@ if ($tokenRankings.Count -gt 0 -and $tokenAdvanceCount -gt 0) {
             Format-EventTimestamp $item.StartTimestamp
         }
         if (-not [string]::IsNullOrWhiteSpace($timestamp)) {
-            $locatorParts += "事件时间 $timestamp"
+            $locatorParts += Get-UiText 'LocatorEventTime' @($timestamp)
         }
         if (-not [string]::IsNullOrWhiteSpace($item.TurnId)) {
             $suffixStart = [Math]::Max(0, $item.TurnId.Length - 8)
-            $locatorParts += "回合 ID 尾号 $($item.TurnId.Substring($suffixStart))"
+            $locatorParts += Get-UiText 'LocatorTurnSuffix' @(
+                $item.TurnId.Substring($suffixStart)
+            )
         }
         $turnFileBytes = [Math]::Max(
             0,
             [long]$item.EndBytes - [long]$item.StartBytes
         )
-        $locatorParts += "本轮 JSONL 增长 $(Format-MiB $turnFileBytes)"
-        Add-ReportLine -Builder $reportBuilder -Value "定位：$($locatorParts -join '；')。"
+        $locatorParts += Get-UiText 'LocatorGrowth' @(
+            (Format-MiB $turnFileBytes)
+        )
+        $locatorSeparator = if ($Language -eq 'en-US') { '; ' } else { '；' }
+        Add-ReportLine -Builder $reportBuilder -Value (
+            Get-UiText 'ReportLocator' @(($locatorParts -join $locatorSeparator))
+        )
         Add-ReportLine -Builder $reportBuilder
-        Add-ReportLine -Builder $reportBuilder -Value '用户输入（完整）：'
+        Add-ReportLine -Builder $reportBuilder -Value (Get-UiText 'ReportUserInput')
         Add-ReportLine -Builder $reportBuilder
         if (-not [string]::IsNullOrWhiteSpace($item.UserInput)) {
             $fence = Get-MarkdownFence $item.UserInput
@@ -1733,22 +2105,26 @@ if ($tokenRankings.Count -gt 0 -and $tokenAdvanceCount -gt 0) {
             Add-ReportLine -Builder $reportBuilder -Value $fence
         }
         else {
-            Add-ReportLine -Builder $reportBuilder -Value '未从本地记录取得该回合的用户输入。'
+            Add-ReportLine -Builder $reportBuilder -Value (
+                Get-UiText 'ReportUserInputMissing'
+            )
         }
         Add-ReportLine -Builder $reportBuilder
     }
 }
 else {
-    Add-ReportLine -Builder $reportBuilder -Value '无法可靠取得：当前文件没有可用的累计 Token 增量。'
+    Add-ReportLine -Builder $reportBuilder -Value (
+        Get-UiText 'ReportTokenUnavailable'
+    )
     Add-ReportLine -Builder $reportBuilder
 }
 
-Add-ReportLine -Builder $reportBuilder -Value '## 本地会话文件占用前三'
+Add-ReportLine -Builder $reportBuilder -Value (Get-UiText 'ReportFileHeading')
 Add-ReportLine -Builder $reportBuilder
-Add-ReportLine -Builder $reportBuilder -Value '本节反映 JSONL 文件构成，不等同于 Token 消耗。'
+Add-ReportLine -Builder $reportBuilder -Value (Get-UiText 'ReportFileExplanation')
 Add-ReportLine -Builder $reportBuilder
 if ($fileRankings.Count -gt 0 -and $scanEndPosition -gt 0) {
-    $rankNames = @('第一', '第二', '第三')
+    $rankNames = @($script:Ui['RankNames'])
     for ($index = 0; $index -lt $fileRankings.Count; $index++) {
         $item = $fileRankings[$index]
         $percentage = [Math]::Round(
@@ -1762,12 +2138,23 @@ if ($fileRankings.Count -gt 0 -and $scanEndPosition -gt 0) {
             0
         }
         $byteText = Format-ByteSize $item.Value
-        Add-ReportLine -Builder $reportBuilder -Value "$($rankNames[$index])：$($item.Key)，$byteText，占 $percentage%，涉及 $recordCount 条记录。"
+        $categoryText = Get-CategoryDisplayName $item.Key
+        Add-ReportLine -Builder $reportBuilder -Value (
+            Get-UiText 'ReportFileRank' @(
+                $rankNames[$index],
+                $categoryText,
+                $byteText,
+                $percentage,
+                $recordCount
+            )
+        )
         Add-ReportLine -Builder $reportBuilder
     }
 }
 else {
-    Add-ReportLine -Builder $reportBuilder -Value '无法取得：未扫描到完整的本地会话记录。'
+    Add-ReportLine -Builder $reportBuilder -Value (
+        Get-UiText 'ReportFileUnavailable'
+    )
 }
 
 $reportText = $reportBuilder.ToString()
@@ -1775,60 +2162,91 @@ $resolvedReportPath = Write-Utf8BomFileAtomic `
     -Path $resolvedReportPath `
     -Content $reportText
 
-'一、基本信息'
-Format-StatusLine '任务 ID：' $taskId
-Format-StatusLine '任务名称：' $taskName
-Format-StatusLine '会话存储状态：' $storageState
-Format-StatusLine '会话分段数：' "$segmentCount 个"
-Format-StatusLine '聚合字节数：' "$(Format-Integer $latestLength) B（$sizeText）"
-Format-StatusLine '分段时间范围：' $segmentTimeRangeText
-Format-StatusLine '路径：' $pathSummary
-Format-StatusLine '最后修改：' $latestLastWriteTime.ToString('yyyy-MM-dd HH:mm:ss zzz')
-Format-StatusLine '最近输入占窗口：' $contextText
+Get-UiText 'SectionBasic'
+Format-StatusLine (Get-UiText 'LabelTaskId') $taskId
+Format-StatusLine (Get-UiText 'LabelTaskName') $taskName
+Format-StatusLine (Get-UiText 'LabelStorage') $storageState
+Format-StatusLine (Get-UiText 'LabelSegmentCount') (
+    Get-UiText 'ValueSegmentCount' @($segmentCount)
+)
+Format-StatusLine (Get-UiText 'LabelAggregateBytes') (
+    Get-UiText 'ValueAggregateBytes' @(
+        (Format-Integer $latestLength),
+        $sizeText
+    )
+)
+Format-StatusLine (Get-UiText 'LabelTimeRange') $segmentTimeRangeText
+Format-StatusLine (Get-UiText 'LabelPath') $pathSummary
+Format-StatusLine (Get-UiText 'LabelLastModified') (
+    $latestLastWriteTime.ToString('yyyy-MM-dd HH:mm:ss zzz')
+)
+Format-StatusLine (Get-UiText 'LabelContext') $contextText
 ''
-'二、文件资源'
-Format-StatusLine '上下文压缩：' "$compactCount 次"
-Format-StatusLine '回合统计：' "已完成 $completedTurnCount 轮；已中止 $abortedTurnCount 轮；未结束 $unfinishedTurnCount 轮"
-Format-StatusLine '回合识别：' "原始 turn_context $turnContextRecordCount 条；按 turn_id/终止边界合并重复 $duplicateTurnContextCount 条；识别 $startedTurnCount 轮"
+Get-UiText 'SectionResources'
+Format-StatusLine (Get-UiText 'LabelCompactions') (
+    Get-UiText 'ValueCompactions' @($compactCount)
+)
+Format-StatusLine (Get-UiText 'LabelTurnStats') (
+    Get-UiText 'ValueTurnStats' @(
+        $completedTurnCount,
+        $abortedTurnCount,
+        $unfinishedTurnCount
+    )
+)
+Format-StatusLine (Get-UiText 'LabelTurnDetection') (
+    Get-UiText 'ValueTurnDetection' @(
+        $turnContextRecordCount,
+        $duplicateTurnContextCount,
+        $startedTurnCount
+    )
+)
 
 for ($milestone = 5; $milestone -lt $startedTurnCount; $milestone += 5) {
-    $milestoneLabel = '{0:D2} 轮结束后文件大小：' -f $milestone
+    $milestoneLabel = Get-UiText 'LabelMilestone' @($milestone)
     if ($turnEndSizeByIndex.ContainsKey($milestone)) {
         $milestoneText = Format-MiB $turnEndSizeByIndex[$milestone]
     }
     else {
-        $milestoneText = '无法取得（未发现明确终止边界）'
+        $milestoneText = Get-UiText 'MilestoneUnavailable'
     }
     Format-StatusLine $milestoneLabel $milestoneText
 }
 
 if ($startedTurnCount -gt 0) {
     $latestTurnStatus = if ($turnUsages.ContainsKey($startedTurnCount)) {
-        $turnUsages[$startedTurnCount].Status
+        Get-StatusDisplayName $turnUsages[$startedTurnCount].Status
     }
     else {
-        '状态待确认'
+        Get-UiText 'StatusUnknown'
     }
-    Format-StatusLine '最新回合与文件：' "第 $startedTurnCount 轮（$latestTurnStatus）；$sizeText"
+    Format-StatusLine (Get-UiText 'LabelLatestTurn') (
+        Get-UiText 'ValueLatestTurn' @(
+            $startedTurnCount,
+            $latestTurnStatus,
+            $sizeText
+        )
+    )
 }
 else {
-    Format-StatusLine '最新回合与文件：' "未识别到回合；$sizeText"
+    Format-StatusLine (Get-UiText 'LabelLatestTurn') (
+        Get-UiText 'ValueNoTurns' @($sizeText)
+    )
 }
-Format-StatusLine '详细分析报告：' $resolvedReportPath
+Format-StatusLine (Get-UiText 'LabelReport') $resolvedReportPath
 
 ''
-'三、交接建议'
-"交接参考综合评分：$totalScore 分（0～1 分继续，2 分准备交接，3 分及以上建议交接。）"
-"交接建议：$advice"
+Get-UiText 'SectionAdvice'
+Get-UiText 'ScoreSummary' @($totalScore)
+Get-UiText 'AdviceSummary' @($advice)
 ''
-'参考依据：'
+Get-UiText 'BasisHeading'
 "  1. $sizeBasis"
 "  2. $contextBasis"
 "  3. $compressionBasis"
-'  4. 上述分级和 85% 观察线都是本地经验规则，并非 OpenAI 官方限制。'
+Get-UiText 'ExperienceRule'
 ''
-'人工判断提醒：'
-'请主动判断 AI 是否已出现明显理解不足，例如忘记约束、重复执行或前后矛盾；如已出现，应提高交接优先级。'
+Get-UiText 'HumanReminderHeading'
+Get-UiText 'HumanReminder'
 
 if (
     $parseWarnings -gt 0 -or
@@ -1848,51 +2266,56 @@ if (
     $fileChangedDuringScan
 ) {
     ''
-    '扫描提醒：'
+    Get-UiText 'ScanWarningsHeading'
     if ($parseWarnings -gt 0) {
-        "  - $parseWarnings 条关键记录未能解析；活动任务写入结束后可重试。"
+        Get-UiText 'WarningParse' @($parseWarnings)
     }
     if ($tokenResetWarnings -gt 0) {
-        "  - 累计 Token 计数回退 $tokenResetWarnings 次；回退点已重新建立基线，排名可能少计但不会把旧累计量重复计算。"
+        Get-UiText 'WarningTokenReset' @($tokenResetWarnings)
     }
     if ($tokenBaselineWarnings -gt 0) {
-        "  - 后续回合或新分段的首个累计 Token 快照有 $tokenBaselineWarnings 次仅作为基线；排名可能少计，但不会把历史累计量重复算到单一回合。"
+        Get-UiText 'WarningTokenBaseline' @($tokenBaselineWarnings)
     }
     if ($offsetWarnings -gt 0) {
-        "  - 检测到非统一编码或换行；最终文件占用已按实际扫描字节校正，历史里程碑大小可能有轻微偏差。"
+        Get-UiText 'WarningOffset'
     }
     if ($duplicateTurnContextCount -gt 0) {
-        "  - 同一界面回合可能包含多条内部上下文记录。本次发现并合并了 $duplicateTurnContextCount 条重复记录，最终识别为 $startedTurnCount 个回合。"
+        Get-UiText 'WarningDuplicateContext' @(
+            $duplicateTurnContextCount,
+            $startedTurnCount
+        )
     }
     if ($segmentMetadataParseWarnings -gt 0) {
-        "  - 有 $segmentMetadataParseWarnings 个文件名候选的 session_meta 无法解析，已排除且未参与聚合。"
+        Get-UiText 'WarningMetadataParse' @($segmentMetadataParseWarnings)
     }
     if ($excludedCandidateCount -gt 0) {
-        "  - 有 $excludedCandidateCount 个文件名候选的内部任务 ID 不匹配，已排除且未参与聚合。"
+        Get-UiText 'WarningCandidateExcluded' @($excludedCandidateCount)
     }
     if ($segmentVersionWarnings -gt 0) {
-        '  - 会话分段记录了不同 CLI 版本；已按各分段格式读取，版本差异需人工留意。'
+        Get-UiText 'WarningVersion'
     }
     if ($segmentFormatWarnings -gt 0) {
-        '  - 会话分段的编码或换行格式不一致；已逐段识别并聚合。'
+        Get-UiText 'WarningFormat'
     }
     if ($segmentLocationWarnings -gt 0) {
-        '  - 同一任务同时存在活动目录和归档目录分段；已明确标记为混合存储状态。'
+        Get-UiText 'WarningLocation'
     }
     if ($segmentTimeWarnings -gt 0) {
-        '  - 多个分段的 session_meta 时间相同；已使用完整路径作为稳定次序。'
+        Get-UiText 'WarningTime'
     }
     if ($segmentIncompleteMetadataWarnings -gt 0) {
-        "  - 有 $segmentIncompleteMetadataWarnings 类 session_meta 字段在部分分段中缺失；已继续聚合，但兼容性需人工留意。"
+        Get-UiText 'WarningIncompleteMetadata' @(
+            $segmentIncompleteMetadataWarnings
+        )
     }
     if ($taskNameIndexWarnings -gt 0) {
-        "  - 本地任务索引中有 $taskNameIndexWarnings 条记录无法解析；任务名称可能不是最新值。"
+        Get-UiText 'WarningTaskNameParse' @($taskNameIndexWarnings)
     }
     if (-not $taskNameInfo.IndexFound) {
-        '  - 未能从本地任务索引取得任务名称；任务 ID 和其余会话分析结果不受影响。'
+        Get-UiText 'WarningTaskNameMissing'
     }
     if ($fileChangedDuringScan) {
-        '  - 文件在扫描期间仍有写入；轮次、Token 和内容占比以本次已读取数据为准。'
+        Get-UiText 'WarningFileChanged'
     }
 }
 
