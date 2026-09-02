@@ -201,6 +201,12 @@ function Test-PipelineStepDeckTemplate {
         throw '链路分步演示模板不得通过历史最大页高制造空白'
     }
 
+    $contextStripIndex = $content.IndexOf('<section class="context-strip"')
+    $topbarIndex = $content.IndexOf('<header class="topbar"')
+    if ($contextStripIndex -lt 0 -or $topbarIndex -lt 0 -or $contextStripIndex -gt $topbarIndex) {
+        throw '链路分步演示模板必须先显示基线信息栏，再显示步骤导航栏。'
+    }
+
     if ($content.Contains('.innerHTML')) {
         throw '链路分步演示模板不得用 innerHTML 注入任务数据。'
     }

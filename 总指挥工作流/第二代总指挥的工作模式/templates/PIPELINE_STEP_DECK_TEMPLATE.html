@@ -478,6 +478,11 @@
 </head>
 <body>
   <main class="shell">
+    <section class="context-strip" aria-label="演示基线">
+      <span><strong>基线：</strong><span id="baselineLabel"></span></span>
+      <span><strong>事实截点：</strong><span id="cutoffLabel"></span></span>
+    </section>
+
     <header class="topbar">
       <div class="nav-group" aria-label="步骤导航">
         <button class="button" id="previousStep" type="button">← 上一步</button>
@@ -494,11 +499,6 @@
       </div>
       <button class="button primary" id="toggleOverview" type="button">查看全部</button>
     </header>
-
-    <section class="context-strip" aria-label="演示基线">
-      <span><strong>基线：</strong><span id="baselineLabel"></span></span>
-      <span><strong>事实截点：</strong><span id="cutoffLabel"></span></span>
-    </section>
 
     <section class="content">
       <div class="single-view" id="singleView">
