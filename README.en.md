@@ -70,6 +70,22 @@ Use the target project's workspace, not this repository's workspace, unless you 
 - Reusable prompt patterns and Windows-oriented local utilities.
 - Repository checks for Markdown, PowerShell, rule-version consistency, and generated artifacts.
 
+## Optional local operator collaboration profile
+
+The profile helps Codex remember verified technical preferences, current familiarity, effective collaboration patterns, and recurring operational mistakes. Its purpose is to reduce repeated explanations and add timely safeguards—not to build an identity file or infer permissions.
+
+It is off by default. When a commander is first established for a project, Codex introduces it once after answering the main request. Only an explicit opt-in enables it; declining or ignoring the question keeps it off and suppresses repeated prompts in that project. When enabled, it performs a local review only at a stable major milestone, before a commander handoff, when the same collaboration issue recurs, or on request. It creates no scheduled job or background monitor.
+
+Natural-language controls:
+
+- Enable: `开启本地操作者协作画像`
+- Pause or resume: `暂停本地操作者协作画像` / `继续本地操作者协作画像`
+- Disable: `关闭本地操作者协作画像`
+- Disable and delete local data: `关闭并删除本地操作者协作画像`
+- Check safety status only: `查看本地操作者协作画像状态`
+
+The privacy claims are auditable: the real profile stays in an exact `.gitignore`-excluded local path and must also be verified as untracked; it excludes identity, contact details, real projects, local paths, chat transcripts, sensitive attributes, and personality judgements; handoffs carry only state and a generic pointer, never the profile body or content hash; the active set is capped at 20 entries with expiry and supersession rules. Any derived public copy requires Codex to show the final sanitized payload first, followed by a second precise approval in a separate user message. `.gitignore` is not encryption or operating-system access control, so highly sensitive material still does not belong in the profile. See the [operator profile specification (Chinese)](总指挥工作流/第二代总指挥的工作模式/11-操作者协作画像规范.md). Deleting that public specification is not an off switch and does not delete local data.
+
 ## Current scope and limitations
 
 - The workflow is Windows-first and documentation-heavy.
