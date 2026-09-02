@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Codex 会话交接评估终端输出示意</title>
+  <desc id="desc">使用虚构任务、占位路径和示例数值重绘的 PowerShell 输出，不包含真实身份或本地路径。</desc>
+  <rect width="1600" height="900" rx="18" fill="#0c0f12" />
+  <rect x="0" y="0" width="1600" height="58" rx="18" fill="#171b20" />
+  <circle cx="30" cy="29" r="8" fill="#ff5f57" />
+  <circle cx="56" cy="29" r="8" fill="#febc2e" />
+  <circle cx="82" cy="29" r="8" fill="#28c840" />
+  <text x="112" y="38" fill="#aeb7c2" font-family="Cascadia Mono, Consolas, monospace" font-size="20">PowerShell · 脱敏示意</text>
+  <g font-family="Cascadia Mono, Microsoft YaHei UI, Consolas, monospace" font-size="23" fill="#f2f5f7">
+    <text x="34" y="92" fill="#73d0ff">PS &lt;TOOL_DIR&gt;&gt;</text>
+    <text x="310" y="92">powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\check-codex-session.ps1" -TaskId "&lt;TASK_ID&gt;"</text>
+    <text x="34" y="142" fill="#8bd5ca">一、基本信息</text>
+    <text x="34" y="180">任务 ID：           &lt;TASK_ID&gt;</text>
+    <text x="34" y="216">任务名称：          示例任务</text>
+    <text x="34" y="252">会话存储状态：      已归档</text>
+    <text x="34" y="288">会话分段数：        2 个</text>
+    <text x="34" y="324">聚合字节数：        148.32 MiB</text>
+    <text x="34" y="360">最近输入占窗口：    61.4%</text>
+    <text x="34" y="410" fill="#8bd5ca">二、文件资源</text>
+    <text x="34" y="448">上下文压缩：        4 次</text>
+    <text x="34" y="484">回合统计：          已完成 24 轮；已中止 1 轮；未结束 0 轮</text>
+    <text x="34" y="520">05 轮结束后文件大小： 4.50 MiB</text>
+    <text x="34" y="556">10 轮结束后文件大小： 37.80 MiB</text>
+    <text x="34" y="592">20 轮结束后文件大小： 112.64 MiB</text>
+    <text x="34" y="628">最新回合与文件：      第 25 轮（已完成）；148.32 MiB</text>
+    <text x="34" y="664">详细分析报告：         &lt;REPORT_DIR&gt;\示例任务-详细分析报告.md</text>
+    <text x="34" y="714" fill="#8bd5ca">三、交接建议</text>
+    <text x="34" y="752">交接参考综合评分：2 分（0～1 分继续，2 分准备交接，3 分及以上建议交接。）</text>
+    <text x="34" y="788">交接建议：准备交接；请结合当前任务阶段和 AI 理解状态作最终判断。</text>
+    <text x="34" y="838" fill="#f5a97f">说明：示意图中的任务、路径和数值均为虚构内容。</text>
+  </g>
+</svg>

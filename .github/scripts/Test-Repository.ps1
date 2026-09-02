@@ -128,6 +128,10 @@ function Test-CommanderDurableWorkflowContract {
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/06-复盘与优化规则.md'
             Required = @('公开可复制提示词', '私聊中的临时示例')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/11-操作者协作画像规范.md'
+            Required = @('两次操作者授权', '下一条独立消息', 'active_entry_limit', '独立应用能力未验证')
         }
     )
 
@@ -141,6 +145,32 @@ function Test-CommanderDurableWorkflowContract {
         }
     }
     Write-Host 'Commander durable workflow contract: PASS'
+}
+
+function Test-LocalProfilePrivacyBoundary {
+    $requiredIgnoreRules = @(
+        '/总指挥工作流/第二代总指挥的工作模式/操作者协作画像.local.md',
+        '/总指挥工作流/第二代总指挥的工作模式/操作者画像资料.local/'
+    )
+    $gitignore = Get-Content -LiteralPath (Join-Path $repoRoot '.gitignore')
+    foreach ($requiredRule in $requiredIgnoreRules) {
+        if ($gitignore -cnotcontains $requiredRule) {
+            throw "缺少操作者画像本地专用规则：$requiredRule"
+        }
+    }
+
+    $privatePathspecs = @(
+        '总指挥工作流/第二代总指挥的工作模式/操作者协作画像.local.md',
+        '总指挥工作流/第二代总指挥的工作模式/操作者画像资料.local/**'
+    )
+    $tracked = @(git -c "safe.directory=$repoRoot" -c core.quotepath=false -C $repoRoot ls-files -- $privatePathspecs)
+    if ($LASTEXITCODE -ne 0) {
+        throw '无法核对操作者画像私有路径的 Git 跟踪状态。'
+    }
+    if ($tracked.Count -gt 0) {
+        throw "操作者画像私有路径已被 Git 跟踪：$($tracked -join ', ')"
+    }
+    Write-Host 'Local operator profile privacy boundary: PASS'
 }
 
 function Get-CSharpCompiler {
@@ -226,5 +256,6 @@ Test-MarkdownFiles
 Test-PowerShellFiles
 Test-CommanderRuleVersion
 Test-CommanderDurableWorkflowContract
+Test-LocalProfilePrivacyBoundary
 Test-ArchiveRepairLauncher
 Write-Host 'Repository quality checks: PASS'
