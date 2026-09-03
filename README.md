@@ -20,6 +20,10 @@
 </div>
 
 <p align="center">
+  <strong><a href="SHOWCASE.md">查看真实运行效果 / View real-world previews</a></strong>
+</p>
+
+<p align="center">
   <a href="#先选入口">先选入口</a> ·
   <a href="#30-秒开始">30 秒开始</a> ·
   <a href="#仓库里有什么">仓库内容</a> ·

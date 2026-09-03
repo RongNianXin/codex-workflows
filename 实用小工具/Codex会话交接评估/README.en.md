@@ -2,11 +2,13 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: cb0aae7afd608cf0a7944781fd5bded63b3907cd1579e7b7c32168ff7108347b -->
+<!-- README-SOURCE-SHA256: e757f418547c29a8b0f29642821a28649aae49fd2006f1143aed91c5728ba1cd -->
 
 This directory provides a read-only PowerShell tool for assessing a local Codex task before handing work to a new task. It reports session size, detected turns, compaction count, recent context usage, and a heuristic handoff recommendation. It also writes a Markdown report with token and local file composition details.
 
 The Chinese repository rules remain the normative source. This English file covers the public entry point for this tool and is not a line-by-line English mirror of the repository.
+
+The [real-world preview page](../../SHOWCASE.md) includes the owner-approved terminal screenshot. Its task ID is redacted, while local directory labels, the task name, and runtime statistics remain visible by explicit permission.
 
 ## Requirements
 

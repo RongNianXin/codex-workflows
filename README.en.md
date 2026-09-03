@@ -8,7 +8,7 @@ Personal workflow rules, Windows troubleshooting notes, and small local utilitie
 
 [简体中文](README.md) | **English**
 
-<!-- README-SOURCE-SHA256: b09abccbc44ebe86c7ea35a0eea0eac49a3dcf6508decfc564b5205f9dbaea84 -->
+<!-- README-SOURCE-SHA256: 8e610b77566ecae65e1c899a1af57079cafa620fd8245fd9fd7941f42357f5ef -->
 
 [![Repository quality](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml)
 [![Last commit](https://img.shields.io/github/last-commit/RongNianXin/codex-workflows?label=last%20commit)](https://github.com/RongNianXin/codex-workflows/commits/main)
@@ -20,6 +20,10 @@ Personal workflow rules, Windows troubleshooting notes, and small local utilitie
 <img src="assets/repository-cover.png" alt="Codex Workflows repository cover" width="100%" />
 
 </div>
+
+<p align="center">
+  <strong><a href="SHOWCASE.md">View real-world previews / 查看真实运行效果</a></strong>
+</p>
 
 > [!NOTE]
 > This is an independent community experiment. It is not affiliated with or endorsed by OpenAI.
