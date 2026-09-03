@@ -28,7 +28,7 @@ if (/data-pipeline-step-deck-enhancements=/i.test(html)) throw new Error("输入
 
 const safeRuntime = runtime.replace(/<\/script/gi, "<\\/script");
 const injection = [
-  "  <script data-pipeline-step-deck-enhancements=\"1.0.0\">",
+  "  <script data-pipeline-step-deck-enhancements=\"2.0.1\">",
   safeRuntime,
   "  </script>"
 ].join("\n");
@@ -39,6 +39,6 @@ await writeFile(outputPath, output, "utf8");
 console.log(JSON.stringify({
   input: inputPath,
   output: outputPath,
-  runtimeVersion: "1.0.0",
+  runtimeVersion: "2.0.1",
   bytes: Buffer.byteLength(output)
 }, null, 2));

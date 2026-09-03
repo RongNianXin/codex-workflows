@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "2.0.1";
   const CONTROL_ATTRIBUTE = "data-deck-control";
   const STYLE_ID = "pipeline-step-deck-enhancement-style";
 
@@ -54,6 +54,45 @@
     }
 
     .deck-copyable-output > .deck-copy-button:hover { background: #23363e; }
+
+    .deck-key-parameter-label,
+    .deck-comparison-identity-label {
+      display: block;
+      margin-top: 3px;
+      color: #4f6970;
+      font: 600 11px/1.35 system-ui, sans-serif;
+    }
+
+    .deck-comparison-identity-label { color: #5d747a; }
+
+    .deck-card-heading > .deck-copy-button {
+      position: static;
+      min-width: 40px;
+      min-height: 22px;
+      padding: 2px 6px;
+    }
+
+    .deck-identical-artifact-summary {
+      margin: 0;
+      padding: 7px 10px;
+      border-top: 1px solid #c9d9dc;
+      background: #f4f8f8;
+      color: #47646b;
+      font: 12px/1.45 system-ui, sans-serif;
+    }
+
+    .deck-identical-artifact-toggle {
+      display: block;
+      margin-top: 5px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #08776c;
+      font: 700 11px/1.4 system-ui, sans-serif;
+      cursor: pointer;
+    }
+
+    .comparison-card[hidden] { display: none !important; }
   `;
 
   function installStyle() {
@@ -104,6 +143,165 @@
     return String(node.textContent || "");
   }
 
+  function nullableText(value) {
+    if (value === undefined || value === null) return null;
+    const text = String(value).trim();
+    return text || null;
+  }
+
+  function normalizeAttributes(value) {
+    if (Array.isArray(value)) {
+      return value.map((item, index) => {
+        if (item && typeof item === "object") {
+          return {
+            name: nullableText(item.name || item.key || item.label) || `attribute-${index + 1}`,
+            value: item.value === undefined ? null : item.value
+          };
+        }
+        return { name: `attribute-${index + 1}`, value: item };
+      });
+    }
+    if (value && typeof value === "object") {
+      return Object.entries(value).map(([name, attributeValue]) => ({ name, value: attributeValue }));
+    }
+    return [];
+  }
+
+  function parseLegacyColumnIdentity(title) {
+    const parts = String(title || "").split(/\s*[｜|]\s*/).map((part) => part.trim()).filter(Boolean);
+    if (!parts.length) return null;
+    const attributes = parts.slice(1).map((part, index) => {
+      const explicit = part.match(/^(.+?)\s*[=:]\s*(.+)$/);
+      if (explicit) return { name: explicit[1].trim(), value: explicit[2].trim() };
+      const parenthesized = part.match(/^(.+?)\s*(\([^)]*\))$/);
+      if (parenthesized) return { name: parenthesized[1].trim(), value: parenthesized[2].trim() };
+      return { name: `attribute-${index + 1}`, value: part };
+    });
+    return { label: parts[0], attributes, provenance: "legacy-column-label" };
+  }
+
+  function comparisonIdentityFor(column) {
+    if (!column) return null;
+    const data = column.__pipelineColumn || {};
+    const explicit = data.comparisonIdentity;
+    if (typeof explicit === "string") {
+      return { label: nullableText(explicit), attributes: [], provenance: "declared" };
+    }
+    if (explicit && typeof explicit === "object") {
+      return {
+        label: nullableText(explicit.label || explicit.name || explicit.role),
+        attributes: normalizeAttributes(explicit.attributes || explicit.parameters || explicit.metadata),
+        provenance: "declared"
+      };
+    }
+    return parseLegacyColumnIdentity(textWithoutControls(column.querySelector(":scope > h3")));
+  }
+
+  function nodeDescriptionFor(step) {
+    const data = step || {};
+    const renderedFacts = Array.from(document.querySelectorAll("#factList .fact dd"))
+      .map((element) => nullableText(element.textContent));
+    return {
+      input: nullableText(data.input) || renderedFacts[0] || null,
+      processing: nullableText(data.process || data.processing) || renderedFacts[1] || null,
+      output: nullableText(data.output) || renderedFacts[2] || null,
+      invariants: nullableText(data.invariant || data.invariants) || renderedFacts[3] || null,
+      failureSignals: nullableText(data.failureSignal || data.failureSignals) || renderedFacts[4] || null,
+      relationToCurrentIssue: nullableText(data.relation || data.relationToCurrentIssue) || renderedFacts[5] || null
+    };
+  }
+
+  function visualLegendFor(step) {
+    const legend = step && step.visualLegend;
+    if (!legend) return null;
+    if (Array.isArray(legend)) {
+      const normalized = legend.map((item, index) => {
+        if (item && typeof item === "object") {
+          return {
+            symbol: nullableText(item.symbol || item.key || item.label) || `legend-${index + 1}`,
+            meaning: nullableText(item.meaning || item.value || item.description)
+          };
+        }
+        return { symbol: `legend-${index + 1}`, meaning: nullableText(item) };
+      }).filter((item) => item.meaning);
+      return normalized.length ? normalized : null;
+    }
+    if (typeof legend === "object") return Object.keys(legend).length ? legend : null;
+    return nullableText(legend);
+  }
+
+  function evidenceIdentityFor(entry) {
+    if (!entry || typeof entry !== "object") return null;
+    const identity = {
+      executionIdentity: entry.executionIdentity === undefined ? null : entry.executionIdentity,
+      artifactIdentity: entry.artifactIdentity === undefined ? null : entry.artifactIdentity,
+      comparisonKey: nullableText(entry.comparisonKey),
+      keyParameters: entry.keyParameters === undefined ? null : entry.keyParameters,
+      changeSet: entry.changeSet === undefined ? null : entry.changeSet
+    };
+    return Object.values(identity).some((value) => value !== null) ? identity : null;
+  }
+
+  function contentHeadingText(heading) {
+    if (!heading) return "";
+    const clone = heading.cloneNode(true);
+    clone.querySelectorAll(
+      `[${CONTROL_ATTRIBUTE}], .deck-key-parameter-label, .deck-comparison-identity-label`
+    ).forEach((element) => element.remove());
+    return String(clone.textContent || "").trim();
+  }
+
+  function makeStructuredCopyText(node) {
+    const stage = node.closest("#evidenceStage");
+    const step = (stage && stage.__pipelineStep) || {};
+    const column = node.closest(".comparison-column");
+    const card = node.closest(".comparison-card");
+    const columnLabel = column ? textWithoutControls(column.querySelector(":scope > h3")) : null;
+    const contentTitle = card
+      ? contentHeadingText(card.querySelector(":scope > h4"))
+      : nullableText((step.stageOutput || {}).title) || "结构化运行证据";
+    const comparisonContext = {
+      presentation: nullableText((document.getElementById("deckTitle") || {}).textContent),
+      node: {
+        id: step.id === undefined ? nullableText((document.getElementById("stepNumber") || {}).textContent) : String(step.id),
+        title: nullableText(step.title || step.name || (document.getElementById("stepName") || {}).textContent)
+      },
+      comparisonIdentity: comparisonIdentityFor(column),
+      columnLabel,
+      contentTitle,
+      evidenceIdentity: evidenceIdentityFor(card && card.__pipelineEntry)
+    };
+    const sections = [
+      "[comparison-context]",
+      JSON.stringify(comparisonContext, null, 2),
+      "[/comparison-context]",
+      "",
+      "[node-description]",
+      JSON.stringify(nodeDescriptionFor(step), null, 2),
+      "[/node-description]"
+    ];
+    const legend = visualLegendFor(step);
+    if (legend) sections.push("", "[visual-legend]", JSON.stringify(legend, null, 2), "[/visual-legend]");
+    sections.push("", "[content]", textFromNode(node), "[/content]");
+    return sections.join("\n");
+  }
+
+  function formatIdentity(identity) {
+    if (!identity) return "";
+    const parts = [];
+    if (identity.label) parts.push(identity.label);
+    normalizeAttributes(identity.attributes).forEach((item) => {
+      parts.push(`${item.name}=${item.value === null ? "未提供" : String(item.value)}`);
+    });
+    return parts.join("；");
+  }
+
+  function formatKeyParameters(value) {
+    return normalizeAttributes(value).map((item) =>
+      `${item.name}=${item.value === null ? "未提供" : String(item.value)}`
+    ).join("；");
+  }
+
   function makeCopyButton(textProvider) {
     const button = makeButton("复制", "一键复制完整文本", "deck-copy-button");
     button.addEventListener("click", async () => {
@@ -148,12 +346,19 @@
     if (node.dataset.deckCopyEnhanced === VERSION) return;
     node.dataset.deckCopyEnhanced = VERSION;
     const card = node.closest(".comparison-card");
-    const button = makeCopyButton(() => textFromNode(node));
+    const button = makeCopyButton(() => makeStructuredCopyText(node));
     if (card) {
       const heading = card.querySelector(":scope > h4");
       if (!heading) return;
       heading.classList.add("deck-card-heading");
-      wrapHeadingText(heading, "deck-card-title");
+      const title = wrapHeadingText(heading, "deck-card-title");
+      const identityText = formatIdentity(comparisonIdentityFor(card.closest(".comparison-column")));
+      if (identityText && !title.querySelector(".deck-comparison-identity-label")) {
+        const label = document.createElement("span");
+        label.className = "deck-comparison-identity-label";
+        label.textContent = `对照身份：${identityText}`;
+        title.appendChild(label);
+      }
       heading.appendChild(button);
       return;
     }
@@ -169,6 +374,83 @@
       .replace(/\s+/g, " ")
       .trim()
       .slice(0, 96) || "阶段输出";
+  }
+
+  function artifactIdentityFor(entry) {
+    const artifact = entry && entry.artifactIdentity;
+    if (!artifact || typeof artifact !== "object") return null;
+    const sha256 = nullableText(artifact.sha256 || artifact.sha || artifact.hash);
+    const stage = nullableText(artifact.stage);
+    const role = nullableText(artifact.role);
+    const kind = nullableText(artifact.kind || artifact.type);
+    if (!sha256 || !/^[a-f0-9]{64}$/i.test(sha256) || !stage || !role || !kind) return null;
+    return { sha256: sha256.toLowerCase(), stage, role, kind };
+  }
+
+  function executionIdentityLabel(entry, index) {
+    const identity = entry && entry.executionIdentity;
+    if (typeof identity === "string" && identity.trim()) return identity.trim();
+    if (identity && typeof identity === "object") return JSON.stringify(identity);
+    const parameters = formatKeyParameters(entry && entry.keyParameters);
+    return parameters || `执行记录 ${index + 1}`;
+  }
+
+  function enhanceCardMetadata(card) {
+    if (card.dataset.deckMetadataEnhanced === VERSION) return;
+    card.dataset.deckMetadataEnhanced = VERSION;
+    const entry = card.__pipelineEntry;
+    if (!entry || typeof entry !== "object") return;
+    const parameters = formatKeyParameters(entry.keyParameters);
+    if (!parameters) return;
+    const heading = card.querySelector(":scope > h4");
+    if (!heading) return;
+    const title = wrapHeadingText(heading, "deck-card-title");
+    if (title.querySelector(".deck-key-parameter-label")) return;
+    const label = document.createElement("span");
+    label.className = "deck-key-parameter-label";
+    label.textContent = `关键参数：${parameters}`;
+    title.appendChild(label);
+  }
+
+  function applyExactArtifactDedupe(column) {
+    if (column.dataset.deckArtifactDedupeEnhanced === VERSION) return;
+    column.dataset.deckArtifactDedupeEnhanced = VERSION;
+    const cards = Array.from(column.querySelectorAll(":scope > .comparison-items > .comparison-card"));
+    const diagnosticMode = column.closest(".comparison-output")?.dataset.viewMode === "diagnostic-comparison";
+    const groups = new Map();
+    cards.forEach((card, index) => {
+      const identity = artifactIdentityFor(card.__pipelineEntry);
+      if (!identity || !card.querySelector(".comparison-card-output img")) return;
+      const comparisonKey = diagnosticMode ? nullableText(card.__pipelineEntry && card.__pipelineEntry.comparisonKey) : null;
+      const key = [identity.stage, identity.role, identity.kind, identity.sha256, comparisonKey || ""].join("|");
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({ card, index });
+    });
+    let folded = false;
+    groups.forEach((records) => {
+      if (records.length < 2) return;
+      folded = true;
+      const keeper = records[0].card;
+      const hiddenCards = records.slice(1).map((record) => record.card);
+      hiddenCards.forEach((card) => { card.hidden = true; });
+      const summary = document.createElement("p");
+      summary.className = "deck-identical-artifact-summary";
+      summary.setAttribute(CONTROL_ATTRIBUTE, "true");
+      const origins = records.map((record) => executionIdentityLabel(record.card.__pipelineEntry, record.index));
+      summary.append(`该阶段内 SHA-256 完全相同的产物同时来自：${origins.join(" / ")}`);
+      const toggle = makeButton(`展开 ${hiddenCards.length} 条同产物记录`, "展开或收起视觉相同但执行身份不同的完整记录", "deck-identical-artifact-toggle");
+      toggle.addEventListener("click", () => {
+        const shouldShow = hiddenCards.some((card) => card.hidden);
+        hiddenCards.forEach((card) => { card.hidden = !shouldShow; });
+        toggle.textContent = shouldShow
+          ? `收起 ${hiddenCards.length} 条同产物记录`
+          : `展开 ${hiddenCards.length} 条同产物记录`;
+        window.dispatchEvent(new Event("resize"));
+      });
+      summary.appendChild(toggle);
+      keeper.appendChild(summary);
+    });
+    if (folded) window.dispatchEvent(new Event("resize"));
   }
 
   function canvasToPngBlob(canvas) {
@@ -406,7 +688,18 @@
     measureContext.font = '700 18px "Segoe UI","Microsoft YaHei",sans-serif';
     const title = textWithoutControls(column.querySelector(":scope > h3"));
     const heading = wrapText(measureContext, title, naturalWidth - 24, 3);
-    const headingHeight = Math.max(54, 20 + heading.lines.length * 24);
+    const step = (column.closest("#evidenceStage") || {}).__pipelineStep || {};
+    const legend = visualLegendFor(step);
+    const legendText = legend
+      ? (Array.isArray(legend)
+        ? legend.map((item) => `${item.symbol}=${item.meaning}`).join("；")
+        : (typeof legend === "object"
+          ? Object.entries(legend).map(([symbol, meaning]) => `${symbol}=${meaning}`).join("；")
+          : String(legend)))
+      : "";
+    measureContext.font = '12px "Segoe UI","Microsoft YaHei",sans-serif';
+    const legendLines = legendText ? wrapText(measureContext, `图例：${legendText}`, naturalWidth - 24, 6).lines : [];
+    const headingHeight = Math.max(54, 20 + heading.lines.length * 24 + (legendLines.length ? 10 + legendLines.length * 18 : 0));
     const naturalHeight = Math.ceil(headingHeight + 12 + layouts.reduce((sum, layout) => sum + layout.height + 12, 0));
     const maximumDimension = 30000;
     const maximumPixels = 64000000;
@@ -431,6 +724,12 @@
     context.fillStyle = "#153039";
     context.font = '700 18px "Segoe UI","Microsoft YaHei",sans-serif';
     heading.lines.forEach((line, index) => context.fillText(line, 12, 26 + index * 24));
+    if (legendLines.length) {
+      context.fillStyle = "#47646b";
+      context.font = '12px "Segoe UI","Microsoft YaHei",sans-serif';
+      const legendY = 30 + heading.lines.length * 24;
+      legendLines.forEach((line, index) => context.fillText(line, 12, legendY + index * 18));
+    }
     let y = headingHeight + 12;
     layouts.forEach((layout) => {
       drawCard(context, layout, 12, y, cardWidth);
@@ -440,7 +739,8 @@
       blob: await canvasToPngBlob(canvas),
       width: outputWidth,
       height: outputHeight,
-      scale
+      scale,
+      cardCount: models.length
     };
   }
 
@@ -455,22 +755,71 @@
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  async function requestPngSaveHandle(fileName) {
+    if (typeof window.showSaveFilePicker !== "function") return null;
+    const options = {
+      id: "pipeline-step-deck-long-image",
+      suggestedName: fileName,
+      startIn: "downloads",
+      types: [{ description: "PNG 图像", accept: { "image/png": [".png"] } }]
+    };
+    try {
+      return await window.showSaveFilePicker(options);
+    } catch (error) {
+      if (error && error.name === "AbortError") throw error;
+      const fallbackOptions = { ...options };
+      delete fallbackOptions.startIn;
+      return window.showSaveFilePicker(fallbackOptions);
+    }
+  }
+
+  async function saveBlob(blob, fileName, handle) {
+    if (!handle) {
+      downloadBlob(blob, fileName);
+      return "browser-download";
+    }
+    const writable = await handle.createWritable();
+    try {
+      await writable.write(blob);
+      await writable.close();
+    } catch (error) {
+      if (typeof writable.abort === "function") {
+        try { await writable.abort(); } catch { /* 原错误优先。 */ }
+      }
+      throw error;
+    }
+    return "save-file-picker";
+  }
+
   async function exportColumn(column, button) {
     const original = "导出长图";
     button.disabled = true;
     button.textContent = "生成中…";
     try {
-      const result = await renderColumn(column);
       const stepNumber = String((document.getElementById("stepNumber") || {}).textContent || "步骤").trim();
       const title = textWithoutControls(column.querySelector(":scope > h3"));
-      downloadBlob(result.blob, safeFileName(stepNumber + "-" + title + "-长图.png"));
+      const fileName = safeFileName(stepNumber + "-" + title + "-长图.png");
+      const handle = await requestPngSaveHandle(fileName);
+      const result = await renderColumn(column);
+      const saveMode = await saveBlob(result.blob, fileName, handle);
       button.textContent = "已导出";
       button.dataset.state = "success";
-      button.dataset.lastExport = JSON.stringify({ width: result.width, height: result.height, scale: result.scale });
+      button.dataset.lastExport = JSON.stringify({
+        width: result.width,
+        height: result.height,
+        scale: result.scale,
+        cardCount: result.cardCount,
+        saveMode
+      });
     } catch (error) {
-      console.error("长图导出失败", error);
-      button.textContent = "导出失败";
-      button.dataset.state = "error";
+      if (error && error.name === "AbortError") {
+        button.textContent = "已取消";
+        button.dataset.state = "cancelled";
+      } else {
+        console.error("长图导出失败", error);
+        button.textContent = "导出失败";
+        button.dataset.state = "error";
+      }
     } finally {
       window.setTimeout(() => {
         button.textContent = original;
@@ -490,10 +839,36 @@
     const button = makeButton("导出长图", "一键导出本栏全部阶段卡片", "deck-export-button");
     button.addEventListener("click", () => exportColumn(column, button));
     heading.appendChild(button);
+    column.querySelectorAll(":scope > .comparison-items > .comparison-card").forEach(enhanceCardMetadata);
+    applyExactArtifactDedupe(column);
+  }
+
+  function legacyStepIdFromChip(chip, fallbackPosition) {
+    if (!chip) return String(fallbackPosition);
+    const declared = String(chip.dataset.stepId || "").trim();
+    if (declared) return declared;
+    const visibleText = String(chip.textContent || "").trim();
+    const firstToken = visibleText.match(/^\S+/);
+    return firstToken ? firstToken[0] : String(fallbackPosition);
+  }
+
+  function synchronizeProgressCounter() {
+    const counter = document.getElementById("stepCounter");
+    const nav = document.getElementById("stageNav");
+    if (!counter || !nav) return;
+    const chips = Array.from(nav.querySelectorAll(".stage-chip"));
+    if (!chips.length) return;
+    const active = nav.querySelector('.stage-chip[aria-current="step"]') || chips[0];
+    const activeIndex = Math.max(0, chips.indexOf(active));
+    const visibleStepId = String((document.getElementById("stepNumber") || {}).textContent || "").trim();
+    const currentId = visibleStepId || legacyStepIdFromChip(active, activeIndex + 1);
+    const finalId = legacyStepIdFromChip(chips[chips.length - 1], chips.length);
+    counter.textContent = `${currentId} / ${finalId}`;
   }
 
   function enhance() {
     installStyle();
+    synchronizeProgressCounter();
     document.querySelectorAll("#evidenceStage pre.evidence-code, #evidenceStage table.evidence-table")
       .forEach(enhanceCopyNode);
     document.querySelectorAll("#evidenceStage .comparison-column").forEach(enhanceColumn);
@@ -507,7 +882,7 @@
     observer.observe(stage, { childList: true, subtree: true });
   }
 
-  window.PipelineStepDeckEnhancements = Object.freeze({ version: VERSION, enhance });
+  window.PipelineStepDeckEnhancements = Object.freeze({ version: VERSION, enhance, synchronizeProgressCounter });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
   else start();
 }());

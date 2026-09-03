@@ -301,6 +301,17 @@
       font-size: 17px;
     }
 
+    .evidence-title-group { min-width: 0; }
+
+    .evidence-legend {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .evidence-legend[hidden] { display: none; }
+
     .evidence-kind {
       padding: 5px 9px;
       border: 1px solid var(--line);
@@ -621,7 +632,10 @@
           </section>
           <section class="evidence-panel" aria-labelledby="evidenceTitle">
             <div class="evidence-head">
-              <h2 id="evidenceTitle">本步骤输出效果</h2>
+              <div class="evidence-title-group">
+                <h2 id="evidenceTitle">本步骤输出效果</h2>
+                <div class="evidence-legend" id="evidenceLegend" hidden></div>
+              </div>
               <span class="evidence-kind" id="evidenceKind"></span>
             </div>
             <div class="evidence-stage" id="evidenceStage"></div>
@@ -644,6 +658,8 @@
     "use strict";
 
     // AI 复用时只替换本对象。证据图片使用相对路径；不要写入凭据、真实账号或不应公开的绝对路径。
+    // 可选通用字段：step.visualLegend；comparison column.comparisonIdentity；entry.comparisonKey、
+    // entry.executionIdentity、entry.artifactIdentity、entry.keyParameters、entry.changeSet。
     const PRESENTATION = {
       title: "图像对象分割｜输入到输出链路",
       baseline: "BASELINE-EXAMPLE / 请替换为实际代码与配置指纹",
@@ -728,6 +744,7 @@
       evidenceStatus: document.getElementById("evidenceStatus"),
       factList: document.getElementById("factList"),
       evidenceKind: document.getElementById("evidenceKind"),
+      evidenceLegend: document.getElementById("evidenceLegend"),
       evidenceStage: document.getElementById("evidenceStage"),
       evidenceCaption: document.getElementById("evidenceCaption"),
       stageNav: document.getElementById("stageNav")
@@ -738,6 +755,18 @@
 
     function valueOrPending(value) {
       return typeof value === "string" && value.trim() ? value.trim() : "待填写";
+    }
+
+    function stableStepId(step, fallbackPosition) {
+      const value = step && step.id;
+      if (typeof value === "number" && Number.isFinite(value)) return String(value);
+      if (typeof value === "string" && value.trim()) return value.trim();
+      return String(fallbackPosition);
+    }
+
+    function formatStepCounter(steps, index) {
+      const lastIndex = Math.max(0, steps.length - 1);
+      return `${stableStepId(steps[index], index + 1)} / ${stableStepId(steps[lastIndex], steps.length)}`;
     }
 
     function readInitialIndex() {
@@ -778,7 +807,54 @@
       return wrapper;
     }
 
-    function makeStageOutput(stageOutput) {
+    function comparisonKeyOf(entry) {
+      return entry && typeof entry.comparisonKey === "string" ? entry.comparisonKey.trim() : "";
+    }
+
+    function prepareComparisonColumns(item) {
+      const sourceColumns = Array.isArray(item && item.columns) ? item.columns : [];
+      if (item.viewMode !== "diagnostic-comparison" || sourceColumns.length < 2) {
+        return { mode: "execution-order", columns: sourceColumns };
+      }
+      const seenPerColumn = sourceColumns.map(() => new Set());
+      const union = [];
+      const unionSeen = new Set();
+      let complete = true;
+      sourceColumns.forEach((column, columnIndex) => {
+        const entries = Array.isArray(column && column.items) ? column.items : [];
+        entries.forEach((entry) => {
+          const key = comparisonKeyOf(entry);
+          if (!key || seenPerColumn[columnIndex].has(key)) complete = false;
+          if (key) {
+            seenPerColumn[columnIndex].add(key);
+            if (!unionSeen.has(key)) {
+              unionSeen.add(key);
+              union.push(key);
+            }
+          }
+        });
+      });
+      if (!complete || !union.length) return { mode: "execution-order", columns: sourceColumns };
+      return {
+        mode: "diagnostic-comparison",
+        columns: sourceColumns.map((column) => {
+          const entries = Array.isArray(column && column.items) ? column.items : [];
+          const byKey = new Map(entries.map((entry) => [comparisonKeyOf(entry), entry]));
+          return {
+            ...column,
+            items: union.map((key) => byKey.get(key) || {
+              kind: "no-visual",
+              comparisonKey: key,
+              title: `未执行的对照项｜${key}`,
+              body: "本次路径未产生该对照项；请结合上游状态判断是提前返回、未进入分支或不适用。",
+              caption: "这是显式缺席记录，不是拿相邻产物补位。"
+            })
+          };
+        })
+      };
+    }
+
+    function makeStageOutput(stageOutput, step) {
       const item = stageOutput || {
         kind: "not-captured",
         title: "真实阶段结果尚未采集",
@@ -843,11 +919,15 @@
       if (kind === "comparison" && Array.isArray(item.columns)) {
         const wrapper = document.createElement("div");
         wrapper.className = "comparison-output";
+        const prepared = prepareComparisonColumns(item);
+        wrapper.dataset.viewMode = prepared.mode;
         const columns = document.createElement("div");
         columns.className = "comparison-columns";
-        item.columns.forEach((column) => {
+        prepared.columns.forEach((column) => {
           const section = document.createElement("section");
           section.className = "comparison-column";
+          section.__pipelineColumn = column;
+          section.__pipelineStep = step || null;
           const heading = document.createElement("h3");
           heading.textContent = valueOrPending(column && column.title);
           const items = document.createElement("div");
@@ -856,11 +936,13 @@
           entries.forEach((entry) => {
             const card = document.createElement("article");
             card.className = "comparison-card";
+            card.__pipelineEntry = entry;
+            card.__pipelineColumn = column;
             const cardTitle = document.createElement("h4");
             cardTitle.textContent = valueOrPending(entry && entry.title);
             const cardOutput = document.createElement("div");
             cardOutput.className = "comparison-card-output";
-            cardOutput.appendChild(makeStageOutput(entry));
+            cardOutput.appendChild(makeStageOutput(entry, step));
             card.append(cardTitle, cardOutput);
             if (entry && typeof entry.caption === "string" && entry.caption.trim()) {
               const caption = document.createElement("p");
@@ -900,6 +982,13 @@
 
     function stageOutputKindLabel(stageOutput) {
       const kind = valueOrPending(stageOutput && stageOutput.kind).toLowerCase();
+      if (kind === "comparison") {
+        const preparedMode = prepareComparisonColumns(stageOutput).mode;
+        if (preparedMode === "diagnostic-comparison") return "对照运行证据｜诊断对照";
+        return stageOutput && stageOutput.viewMode === "diagnostic-comparison"
+          ? "对照运行证据｜真实执行顺序（配对键缺失或重复）"
+          : "对照运行证据｜真实执行顺序";
+      }
       const labels = {
         image: "真实阶段图像",
         table: "结构化阶段输出",
@@ -907,7 +996,6 @@
         log: "运行日志",
         json: "结构化阶段输出",
         metric: "阶段指标",
-        comparison: "成功/失败真实对照",
         "no-visual": "无直观图像",
         "not-captured": "尚未采集"
       };
@@ -918,7 +1006,7 @@
 
     function synchronizeComparisonRows() {
       const columns = Array.from(ui.evidenceStage.querySelectorAll(".comparison-column"));
-      const cardsByColumn = columns.map((column) => Array.from(column.querySelectorAll(".comparison-card")));
+      const cardsByColumn = columns.map((column) => Array.from(column.querySelectorAll(".comparison-card:not([hidden])")));
       const allCards = cardsByColumn.flat();
       const partSelectors = ["h4", ".comparison-card-output", ".comparison-item-caption"];
 
@@ -957,15 +1045,31 @@
       });
     }
 
+    function visualLegendText(legend) {
+      if (!legend) return "";
+      if (Array.isArray(legend)) {
+        return legend.map((item, index) => {
+          if (item && typeof item === "object") {
+            return `${item.symbol || item.key || item.label || `legend-${index + 1}`}=${item.meaning || item.value || item.description || "未提供"}`;
+          }
+          return `legend-${index + 1}=${item}`;
+        }).join("；");
+      }
+      if (typeof legend === "object") {
+        return Object.entries(legend).map(([symbol, meaning]) => `${symbol}=${meaning}`).join("；");
+      }
+      return String(legend).trim();
+    }
+
     function renderStep() {
       const step = PRESENTATION.steps[currentIndex];
       const count = PRESENTATION.steps.length;
-      ui.counter.textContent = `${currentIndex + 1} / ${count}`;
+      ui.counter.textContent = formatStepCounter(PRESENTATION.steps, currentIndex);
       ui.deckTitle.textContent = valueOrPending(PRESENTATION.title);
       ui.progress.style.width = `${((currentIndex + 1) / count) * 100}%`;
       ui.baseline.textContent = valueOrPending(PRESENTATION.baseline);
       ui.cutoff.textContent = valueOrPending(PRESENTATION.factCutoff);
-      ui.stepNumber.textContent = valueOrPending(step.id);
+      ui.stepNumber.textContent = stableStepId(step, currentIndex + 1);
       ui.stepSection.textContent = valueOrPending(step.section);
       ui.stepName.textContent = valueOrPending(step.name);
       ui.evidenceStatus.textContent = `诊断覆盖：${valueOrPending(step.evidenceStatus)}`;
@@ -974,6 +1078,9 @@
       const stageOutputKind = valueOrPending(stageOutput && stageOutput.kind).toLowerCase();
       ui.evidenceKind.textContent = stageOutputKindLabel(stageOutput);
       ui.evidenceKind.dataset.state = valueOrPending(stageOutput && stageOutput.kind);
+      const legendText = visualLegendText(step.visualLegend);
+      ui.evidenceLegend.textContent = legendText ? `图例：${legendText}` : "";
+      ui.evidenceLegend.hidden = !legendText;
       ui.evidenceStage.dataset.kind = stageOutputKind;
       ui.evidenceCaption.textContent = valueOrPending(stageOutput && stageOutput.caption);
       replaceChildren(ui.factList, [
@@ -984,7 +1091,8 @@
         makeFact("失败信号", step.failureSignal),
         makeFact("与当前异常的关系", step.relation)
       ]);
-      replaceChildren(ui.evidenceStage, [makeStageOutput(stageOutput)]);
+      ui.evidenceStage.__pipelineStep = step;
+      replaceChildren(ui.evidenceStage, [makeStageOutput(stageOutput, step)]);
       scheduleComparisonRowSync();
       ui.previous.disabled = currentIndex === 0;
       ui.next.disabled = currentIndex === count - 1;
@@ -998,7 +1106,8 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = "stage-chip";
-        button.textContent = `${valueOrPending(step.id)} ${valueOrPending(step.name)}`;
+        button.dataset.stepId = stableStepId(step, index + 1);
+        button.textContent = `${button.dataset.stepId} ${valueOrPending(step.name)}`;
         if (index === currentIndex) button.setAttribute("aria-current", "step");
         button.addEventListener("click", () => showStep(index));
         return button;
@@ -1014,7 +1123,7 @@
         const meta = document.createElement("span");
         meta.className = "badge";
         meta.dataset.state = valueOrPending(step.evidenceStatus);
-        meta.textContent = `${valueOrPending(step.id)} · ${valueOrPending(step.evidenceStatus)}`;
+        meta.textContent = `${stableStepId(step, index + 1)} · ${valueOrPending(step.evidenceStatus)}`;
         const title = document.createElement("h3");
         title.textContent = valueOrPending(step.name);
         const copy = document.createElement("p");
