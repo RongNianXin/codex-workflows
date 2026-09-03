@@ -258,6 +258,54 @@ function Test-CommanderDurableWorkflowContract {
     Write-Host 'Commander durable workflow contract: PASS'
 }
 
+function Test-TextFlowchartTemplateContract {
+    $templatePath = '其他 Codex 技巧性提示词/文字版流程图提示词.md'
+    $tracked = @(Get-TrackedFiles -Pattern $templatePath)
+    if ($tracked.Count -ne 1) {
+        throw "文字版流程图模板尚未被 Git 精确跟踪：$templatePath"
+    }
+
+    $contracts = @(
+        @{
+            Path = $templatePath
+            Required = @(
+                'template_id: text-flowchart-renderer',
+                'interface_version: 1',
+                '【调用方式】',
+                '【工作流调用载荷】',
+                '工作流调用失败时不要输出猜测图',
+                '文字版流程图模块不可用：<最小精确缺口>'
+            )
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/00-第二代工作流总览.md'
+            Required = @('核心设计目标与新功能审查基线', '协作净收益', '不在总指挥启动时预加载')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
+            Required = @($templatePath, 'template_id: text-flowchart-renderer', 'interface_version: 1', '我不需要另行打开或复制该模板', '文字版流程图模块不可用')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
+            Required = @($templatePath, 'template_id: text-flowchart-renderer', 'interface_version: 1', '不得静默使用另一套画法冒充同等结果')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/docs/PIPELINE_DIAGNOSIS_AND_ALGORITHM_TUNING_STANDARD.md'
+            Required = @('文字版流程图提示词', 'template_id: text-flowchart-renderer', 'interface_version: 1', '同一任务内模板指纹未变化时可以复用已读结果', '不得静默改用另一套画法冒充同等结果')
+        }
+    )
+
+    foreach ($contract in $contracts) {
+        $content = Get-Content -LiteralPath (Join-Path $repoRoot $contract.Path) -Raw
+        foreach ($requiredText in $contract.Required) {
+            if (-not $content.Contains($requiredText)) {
+                throw "文字版流程图调用契约缺失：$($contract.Path) -> $requiredText"
+            }
+        }
+    }
+    Write-Host 'Text flowchart template contract: PASS'
+}
+
 function Test-PipelineStepDeckTemplate {
     $relativePath = '总指挥工作流/第二代总指挥的工作模式/templates/PIPELINE_STEP_DECK_TEMPLATE.html'
     $tracked = @(Get-TrackedFiles -Pattern $relativePath)
@@ -440,6 +488,7 @@ Test-BilingualReadmes
 Test-PowerShellFiles
 Test-CommanderRuleVersion
 Test-CommanderDurableWorkflowContract
+Test-TextFlowchartTemplateContract
 Test-PipelineStepDeckTemplate
 Test-LocalProfilePrivacyBoundary
 Test-ExplicitAttachmentBoundary
