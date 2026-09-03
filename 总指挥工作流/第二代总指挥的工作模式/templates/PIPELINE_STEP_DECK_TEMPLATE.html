@@ -386,6 +386,91 @@
 
     .evidence-table th { background: #edf5f3; }
 
+    .comparison-output {
+      align-self: stretch;
+      width: 100%;
+      max-height: 620px;
+      overflow: auto;
+      padding: 16px;
+    }
+
+    .comparison-columns {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+
+    .comparison-column {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafb;
+    }
+
+    .comparison-column > h3 {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      margin: -12px -12px 12px;
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      border-radius: 12px 12px 0 0;
+      background: #edf5f3;
+      font-size: 15px;
+    }
+
+    .comparison-items {
+      display: grid;
+      gap: 12px;
+    }
+
+    .comparison-card {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    .comparison-card > h4 {
+      margin: 0;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .comparison-card img {
+      width: 100%;
+      height: auto;
+      max-height: 360px;
+      object-fit: contain;
+    }
+
+    .comparison-card .evidence-code {
+      min-height: 0;
+      max-height: 280px;
+    }
+
+    .comparison-card .placeholder {
+      padding: 22px 16px;
+    }
+
+    .comparison-item-caption {
+      margin: 0;
+      padding: 8px 12px 10px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 860px) {
+      .comparison-columns { grid-template-columns: 1fr; }
+    }
+
     .evidence-caption {
       margin: 0;
       color: var(--muted);
@@ -729,6 +814,47 @@
         return table;
       }
 
+      if (kind === "comparison" && Array.isArray(item.columns)) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "comparison-output";
+        const columns = document.createElement("div");
+        columns.className = "comparison-columns";
+        item.columns.forEach((column) => {
+          const section = document.createElement("section");
+          section.className = "comparison-column";
+          const heading = document.createElement("h3");
+          heading.textContent = valueOrPending(column && column.title);
+          const items = document.createElement("div");
+          items.className = "comparison-items";
+          const entries = Array.isArray(column && column.items) ? column.items : [];
+          entries.forEach((entry) => {
+            const card = document.createElement("article");
+            card.className = "comparison-card";
+            const cardTitle = document.createElement("h4");
+            cardTitle.textContent = valueOrPending(entry && entry.title);
+            card.append(cardTitle, makeStageOutput(entry));
+            if (entry && typeof entry.caption === "string" && entry.caption.trim()) {
+              const caption = document.createElement("p");
+              caption.className = "comparison-item-caption";
+              caption.textContent = entry.caption.trim();
+              card.appendChild(caption);
+            }
+            items.appendChild(card);
+          });
+          if (!entries.length) {
+            items.appendChild(makePlaceholder(
+              "本次路径未执行该节点",
+              "控制流在到达本节点前已经转入其他分支；这属于真实的不适用状态，不是产物缺失。",
+              "no-visual"
+            ));
+          }
+          section.append(heading, items);
+          columns.appendChild(section);
+        });
+        wrapper.appendChild(columns);
+        return wrapper;
+      }
+
       if (["code", "log", "json", "metric"].includes(kind)) {
         const pre = document.createElement("pre");
         pre.className = "evidence-code";
@@ -752,6 +878,7 @@
         log: "运行日志",
         json: "结构化阶段输出",
         metric: "阶段指标",
+        comparison: "成功/失败真实对照",
         "no-visual": "无直观图像",
         "not-captured": "尚未采集"
       };
