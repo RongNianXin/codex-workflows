@@ -8,6 +8,8 @@ Personal workflow rules, Windows troubleshooting notes, and small local utilitie
 
 [简体中文](README.md) | **English**
 
+<!-- README-SOURCE-SHA256: b09abccbc44ebe86c7ea35a0eea0eac49a3dcf6508decfc564b5205f9dbaea84 -->
+
 [![Repository quality](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml)
 [![Last commit](https://img.shields.io/github/last-commit/RongNianXin/codex-workflows?label=last%20commit)](https://github.com/RongNianXin/codex-workflows/commits/main)
 ![License: MIT](https://img.shields.io/badge/license-MIT-2F855A.svg)
@@ -48,6 +50,7 @@ The material is deliberately inspectable. Most of it is Markdown and PowerShell 
 | Reuse a focused prompt | [Prompt collection](其他%20Codex%20技巧性提示词/) |
 | Try a local helper | [Local utilities](实用小工具/) |
 | Decide whether a Codex task is ready for handoff | [Session handoff assessment](实用小工具/Codex会话交接评估/README.en.md) |
+| Install userscripts for ChatGPT on the web | [ChatGPT-Web](ChatGPT-Web/README.en.md) |
 
 The detailed manuals are currently written in Chinese. This page is an evaluation and navigation guide for English-speaking visitors.
 
@@ -68,7 +71,14 @@ Use the target project's workspace, not this repository's workspace, unless you 
 - A commander workflow for task intake, authorization, delegation, validation, state recovery, and handoff.
 - Sanitized troubleshooting records for reproduced Codex Desktop and CC Switch issues.
 - Reusable prompt patterns and Windows-oriented local utilities.
+- Reviewable userscripts and setup notes for ChatGPT on the web.
 - Repository checks for Markdown, PowerShell, rule-version consistency, and generated artifacts.
+
+## Bilingual README contract
+
+Every public directory that contains a tracked `README.md` also contains a `README.en.md`, with language links in both files. The Chinese page is the content source. The English page records a SHA-256 marker for the Chinese source, and the repository check scans every directory for missing pairs, broken language links, or an English page that has not been reviewed after its Chinese source changed.
+
+This gate detects missing or stale pages; it cannot prove that a translation is semantically correct. Before committing, the maintainer must still compare the purpose, prerequisites, steps, commands, permissions, security boundaries, and limitations. Ambiguous product terms or behavior remain explicitly unverified.
 
 ## Optional local operator collaboration profile
 

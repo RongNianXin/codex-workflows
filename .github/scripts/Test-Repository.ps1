@@ -50,6 +50,89 @@ function Test-MarkdownFiles {
     Write-Host 'Markdown links and fences: PASS'
 }
 
+function Get-NormalizedTextSha256 {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $content = Get-Content -LiteralPath $Path -Raw
+    $normalized = $content.Replace("`r`n", "`n").Replace("`r", "`n")
+    $bytes = [Text.Encoding]::UTF8.GetBytes($normalized)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try {
+        return ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-', '').ToLowerInvariant()
+    }
+    finally {
+        $sha.Dispose()
+    }
+}
+
+function Get-ReadmeSiblingPath {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$FileName
+    )
+
+    $directory = [IO.Path]::GetDirectoryName($Path)
+    if ([string]::IsNullOrWhiteSpace($directory)) { return $FileName }
+    return "$($directory.Replace('\', '/'))/$FileName"
+}
+
+function Test-BilingualReadmes {
+    $errors = [Collections.Generic.List[string]]::new()
+    $trackedFiles = @(git -c "safe.directory=$repoRoot" -c core.quotepath=false -C $repoRoot ls-files)
+    if ($LASTEXITCODE -ne 0) {
+        throw '无法读取 Git 跟踪文件以核对双语 README。'
+    }
+
+    $tracked = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($relativePath in $trackedFiles) { [void]$tracked.Add($relativePath) }
+
+    $chineseReadmes = @($trackedFiles | Where-Object { [IO.Path]::GetFileName($_) -ceq 'README.md' })
+    $englishReadmes = @($trackedFiles | Where-Object { [IO.Path]::GetFileName($_) -ceq 'README.en.md' })
+
+    foreach ($relativePath in $chineseReadmes) {
+        $englishPath = Get-ReadmeSiblingPath -Path $relativePath -FileName 'README.en.md'
+        if (-not $tracked.Contains($englishPath)) {
+            $errors.Add("缺少英文 README：$relativePath -> $englishPath")
+            continue
+        }
+
+        $content = Get-Content -LiteralPath (Join-Path $repoRoot $relativePath) -Raw
+        if ($content -notmatch '(?i)\[[^\]]+\]\((?:\./)?README\.en\.md(?:#[^)]+)?\)') {
+            $errors.Add("中文 README 缺少英文切换链接：$relativePath")
+        }
+    }
+
+    foreach ($relativePath in $englishReadmes) {
+        $chinesePath = Get-ReadmeSiblingPath -Path $relativePath -FileName 'README.md'
+        if (-not $tracked.Contains($chinesePath)) {
+            $errors.Add("缺少中文 README：$relativePath -> $chinesePath")
+            continue
+        }
+
+        $content = Get-Content -LiteralPath (Join-Path $repoRoot $relativePath) -Raw
+        if ($content -notmatch '(?i)\[[^\]]+\]\((?:\./)?README\.md(?:#[^)]+)?\)') {
+            $errors.Add("英文 README 缺少中文切换链接：$relativePath")
+        }
+
+        $hashMatch = [regex]::Match(
+            $content,
+            '(?im)^<!--\s*README-SOURCE-SHA256:\s*(?<hash>[0-9a-f]{64})\s*-->\s*$'
+        )
+        $expectedHash = Get-NormalizedTextSha256 -Path (Join-Path $repoRoot $chinesePath)
+        if (-not $hashMatch.Success) {
+            $errors.Add("英文 README 缺少中文源同步标记：$relativePath（应为 $expectedHash）")
+        }
+        elseif ($hashMatch.Groups['hash'].Value.ToLowerInvariant() -ne $expectedHash) {
+            $errors.Add("英文 README 的中文源同步标记已过期：$relativePath（应为 $expectedHash）")
+        }
+    }
+
+    if ($errors.Count -gt 0) {
+        throw ($errors -join [Environment]::NewLine)
+    }
+    Write-Host "Bilingual README pairs, links and source hashes ($($chineseReadmes.Count)): PASS"
+}
+
 function Test-PowerShellFiles {
     $errors = [Collections.Generic.List[string]]::new()
     foreach ($relativePath in (Get-TrackedFiles -Pattern '*.ps1')) {
@@ -198,7 +281,11 @@ function Test-PipelineStepDeckTemplate {
         'captureNavigationPosition',
         'stageNavVisible',
         'window.scrollBy',
-        'window.requestAnimationFrame(restorePosition)'
+        'window.requestAnimationFrame(restorePosition)',
+        'comparison-output',
+        'comparison-columns',
+        'kind === "comparison"',
+        '成功/失败真实对照'
     )) {
         if (-not $content.Contains($requiredText)) {
             throw "链路分步演示模板缺少耐久契约：$requiredText"
@@ -349,6 +436,7 @@ function Test-ArchiveRepairLauncher {
 }
 
 Test-MarkdownFiles
+Test-BilingualReadmes
 Test-PowerShellFiles
 Test-CommanderRuleVersion
 Test-CommanderDurableWorkflowContract
