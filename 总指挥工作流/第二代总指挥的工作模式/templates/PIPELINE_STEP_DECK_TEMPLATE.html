@@ -794,7 +794,11 @@
         image.alt = valueOrPending(item.alt);
         image.loading = "lazy";
         image.addEventListener("error", () => {
-          replaceChildren(ui.evidenceStage, [makePlaceholder("图片无法读取", "检查相对路径、文件名和资产是否与 HTML 一同交付。", "not-captured")]);
+          image.replaceWith(makePlaceholder(
+            "图片无法读取",
+            "检查相对路径、文件名和资产是否与 HTML 一同交付。",
+            "not-captured"
+          ));
         }, { once: true });
         return image;
       }
