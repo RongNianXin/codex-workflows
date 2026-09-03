@@ -20,5 +20,6 @@
 - [Pull Request 提交、更新与审查协作标准](PR_SUBMISSION_AND_REVIEW_STANDARD.md)：创建或更新 PR、请求审查、回复阻断意见和判断可合并状态时完整读取；它不产生远端写入、Approve 或 Merge 授权。
 - [输入到输出链路排查与算法调优标准](PIPELINE_DIAGNOSIS_AND_ALGORITHM_TUNING_STANDARD.md)：输出异常、跨环境不一致或根因不明时完整读取；默认使用紧凑文本执行图，必要时再生成矢量图或分步 HTML。
 - [链路分步演示 HTML 模板](../templates/PIPELINE_STEP_DECK_TEMPLATE.html)：用于把同一组稳定节点编号和实际证据做成可翻页说明；模板本身不生成中间证据，也不改变权限或验收状态。
+- [链路分步演示增强器](../tools/pipeline-step-deck/PIPELINE_STEP_DECK_ENHANCEMENTS.js)：由构建脚本按需注入本地演示页，提供同源结构化复制、精确视觉折叠和带路径选择的完整长图导出；操作者仍只从 `01` 启动，不需要单独调用。
 - [Codex 会话交接评估](../../../实用小工具/Codex会话交接评估/README.md)：只读检查本地会话文件容量、自动压缩次数和最近输入占窗口比例，辅助判断是否准备交接。
 - 工具阈值属于本地经验规则，不替代任务阶段、交接断点和实际理解质量判断。

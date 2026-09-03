@@ -282,7 +282,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/docs/PIPELINE_DIAGNOSIS_AND_ALGORITHM_TUNING_STANDARD.md'
-            Required = @('分层展示与 HTML 步骤演示', 'PIPELINE_STEP_DECK_TEMPLATE.html', '唯一拓扑表', '默认不生成矢量图', '单一整图', '历史最大页高', '本步骤输出效果', '本步骤没有可展示的直观视觉样例', '真实阶段结果尚未采集', '示意，不是运行证据')
+            Required = @('分层展示与 HTML 步骤演示', 'PIPELINE_STEP_DECK_TEMPLATE.html', '唯一拓扑表', '默认不生成矢量图', '单一整图', '历史最大页高', '本步骤输出效果', '本步骤没有可展示的直观视觉样例', '真实阶段结果尚未采集', '示意，不是运行证据', '[node-description]', 'comparisonIdentity', 'executionIdentity', 'artifactIdentity', 'comparisonKey', '真实执行顺序', '诊断对照')
         }
     )
 
@@ -365,15 +365,33 @@ function Test-PipelineStepDeckTemplate {
         '本步骤输出效果',
         '本步骤没有可展示的直观视觉样例',
         '真实阶段结果尚未采集',
-        'stageNavX',
+        'scene2c-compact-flush-b-v2',
         'captureNavigationPosition',
         'stageNavVisible',
         'window.scrollBy',
-        'window.requestAnimationFrame(restorePosition)',
+        'ensureActiveStageChipVisible',
+        'ui.stageNav.scrollLeft = targetLeft',
+        'window.requestAnimationFrame(restoreAndReveal)',
+        'height: clamp(660px, calc(100vh - 100px), 820px)',
+        'padding: 0 10px 8px',
         'comparison-output',
         'comparison-columns',
+        'comparison-card-output',
+        'synchronizeComparisonRows',
+        'scheduleComparisonRowSync',
+        'formatStepCounter',
+        'button.dataset.stepId',
+        'padding: 5px 9px 6px',
+        'font-size: 11px',
+        'overflow-wrap: anywhere',
         'kind === "comparison"',
-        '成功/失败真实对照'
+        '对照运行证据',
+        'visualLegend',
+        'comparisonIdentity',
+        'comparisonKey',
+        'diagnostic-comparison',
+        '__pipelineStep',
+        '.comparison-card:not([hidden])'
     )) {
         if (-not $content.Contains($requiredText)) {
             throw "链路分步演示模板缺少耐久契约：$requiredText"
@@ -382,6 +400,10 @@ function Test-PipelineStepDeckTemplate {
 
     if ($content.Contains('stableSingleViewHeight')) {
         throw '链路分步演示模板不得通过历史最大页高制造空白'
+    }
+
+    if ($content.Contains('ui.stageNav.scrollLeft = position.stageNavX')) {
+        throw '链路分步演示模板不得把阶段索引锁在旧横向位置；当前节点标签必须自动进入可见区域。'
     }
 
     $contextStripIndex = $content.IndexOf('<section class="context-strip"')
@@ -400,6 +422,51 @@ function Test-PipelineStepDeckTemplate {
         throw '链路分步演示模板不得固化 Windows 绝对路径。'
     }
     Write-Host 'Pipeline step deck template: PASS'
+}
+
+function Test-PipelineStepDeckEnhancementTool {
+    $runtimePath = '总指挥工作流/第二代总指挥的工作模式/tools/pipeline-step-deck/PIPELINE_STEP_DECK_ENHANCEMENTS.js'
+    $builderPath = '总指挥工作流/第二代总指挥的工作模式/tools/pipeline-step-deck/build-enhanced-deck.mjs'
+    foreach ($path in @($runtimePath, $builderPath)) {
+        $tracked = @(Get-TrackedFiles -Pattern $path)
+        if ($tracked.Count -ne 1) {
+            throw "链路分步演示增强工具尚未被 Git 精确跟踪：$path"
+        }
+    }
+
+    $runtime = Get-Content -LiteralPath (Join-Path $repoRoot $runtimePath) -Raw
+    foreach ($requiredText in @(
+        'const VERSION = "2.0.1"',
+        '[comparison-context]',
+        '[node-description]',
+        'comparisonIdentity',
+        'executionIdentity',
+        'artifactIdentity',
+        'comparisonKey',
+        'keyParameters',
+        'visualLegend',
+        'showSaveFilePicker',
+        'pipeline-step-deck-long-image',
+        'synchronizeProgressCounter',
+        'stage-chip[aria-current="step"]',
+        'cardCount',
+        '同产物记录',
+        '.comparison-card[hidden]'
+    )) {
+        if (-not $runtime.Contains($requiredText)) {
+            throw "链路分步演示增强器缺少耐久契约：$requiredText"
+        }
+    }
+    if ($runtime -match '(?i)source(?:[ _-])?seed|failure(?:[ _-])?code') {
+        throw '链路分步演示增强器不得硬编码具体算法的运行字段。'
+    }
+
+    $builder = Get-Content -LiteralPath (Join-Path $repoRoot $builderPath) -Raw
+    if (-not $builder.Contains('data-pipeline-step-deck-enhancements=\"2.0.1\"') -or
+        -not $builder.Contains('runtimeVersion: "2.0.1"')) {
+        throw '链路分步演示构建器与增强器版本不一致。'
+    }
+    Write-Host 'Pipeline step deck enhancement tool: PASS'
 }
 
 function Test-LocalProfilePrivacyBoundary {
@@ -531,6 +598,7 @@ Test-CommanderRuleVersion
 Test-CommanderDurableWorkflowContract
 Test-TextFlowchartTemplateContract
 Test-PipelineStepDeckTemplate
+Test-PipelineStepDeckEnhancementTool
 Test-LocalProfilePrivacyBoundary
 Test-ExplicitAttachmentBoundary
 Test-ArchiveRepairLauncher
