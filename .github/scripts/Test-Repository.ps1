@@ -365,11 +365,15 @@ function Test-PipelineStepDeckTemplate {
         '本步骤输出效果',
         '本步骤没有可展示的直观视觉样例',
         '真实阶段结果尚未采集',
-        'stageNavX',
+        'scene2c-compact-flush-b-v1',
         'captureNavigationPosition',
         'stageNavVisible',
         'window.scrollBy',
-        'window.requestAnimationFrame(restorePosition)',
+        'ensureActiveStageChipVisible',
+        'ui.stageNav.scrollLeft = targetLeft',
+        'window.requestAnimationFrame(restoreAndReveal)',
+        'height: clamp(660px, calc(100vh - 100px), 820px)',
+        'padding: 0 10px 8px',
         'comparison-output',
         'comparison-columns',
         'kind === "comparison"',
@@ -382,6 +386,10 @@ function Test-PipelineStepDeckTemplate {
 
     if ($content.Contains('stableSingleViewHeight')) {
         throw '链路分步演示模板不得通过历史最大页高制造空白'
+    }
+
+    if ($content.Contains('ui.stageNav.scrollLeft = position.stageNavX')) {
+        throw '链路分步演示模板不得把阶段索引锁在旧横向位置；当前节点标签必须自动进入可见区域。'
     }
 
     $contextStripIndex = $content.IndexOf('<section class="context-strip"')
