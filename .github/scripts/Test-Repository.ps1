@@ -365,7 +365,7 @@ function Test-PipelineStepDeckTemplate {
         '本步骤输出效果',
         '本步骤没有可展示的直观视觉样例',
         '真实阶段结果尚未采集',
-        'scene2c-compact-flush-b-v1',
+        'scene2c-compact-flush-b-v2',
         'captureNavigationPosition',
         'stageNavVisible',
         'window.scrollBy',
@@ -376,6 +376,12 @@ function Test-PipelineStepDeckTemplate {
         'padding: 0 10px 8px',
         'comparison-output',
         'comparison-columns',
+        'comparison-card-output',
+        'synchronizeComparisonRows',
+        'scheduleComparisonRowSync',
+        'padding: 5px 9px 6px',
+        'font-size: 11px',
+        'overflow-wrap: anywhere',
         'kind === "comparison"',
         '成功/失败真实对照'
     )) {

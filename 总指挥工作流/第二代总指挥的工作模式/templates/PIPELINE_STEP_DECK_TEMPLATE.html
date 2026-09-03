@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- layout_contract: scene2c-compact-flush-b-v1 / 场景2C·紧凑顶格版（B版） -->
+<!-- layout_contract: scene2c-compact-flush-b-v2 / 场景2C·紧凑顶格版（B版，同排对齐修订） -->
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -458,8 +458,12 @@
     .comparison-card img {
       width: 100%;
       height: auto;
-      max-height: 360px;
+      max-height: none;
       object-fit: contain;
+    }
+
+    .comparison-card-output {
+      min-width: 0;
     }
 
     .comparison-card .evidence-code {
@@ -473,11 +477,12 @@
 
     .comparison-item-caption {
       margin: 0;
-      padding: 8px 12px 10px;
+      padding: 5px 9px 6px;
       border-top: 1px solid var(--line);
       color: var(--muted);
-      font-size: 12px;
-      line-height: 1.55;
+      font-size: 11px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
     }
 
     @media (max-width: 860px) {
@@ -808,12 +813,14 @@
         image.src = source;
         image.alt = valueOrPending(item.alt);
         image.loading = "lazy";
+        image.addEventListener("load", scheduleComparisonRowSync, { once: true });
         image.addEventListener("error", () => {
           image.replaceWith(makePlaceholder(
             "图片无法读取",
             "检查相对路径、文件名和资产是否与 HTML 一同交付。",
             "not-captured"
           ));
+          scheduleComparisonRowSync();
         }, { once: true });
         return image;
       }
@@ -851,7 +858,10 @@
             card.className = "comparison-card";
             const cardTitle = document.createElement("h4");
             cardTitle.textContent = valueOrPending(entry && entry.title);
-            card.append(cardTitle, makeStageOutput(entry));
+            const cardOutput = document.createElement("div");
+            cardOutput.className = "comparison-card-output";
+            cardOutput.appendChild(makeStageOutput(entry));
+            card.append(cardTitle, cardOutput);
             if (entry && typeof entry.caption === "string" && entry.caption.trim()) {
               const caption = document.createElement("p");
               caption.className = "comparison-item-caption";
@@ -904,6 +914,49 @@
       return labels[kind] || "尚未采集";
     }
 
+    let comparisonSyncFrame = 0;
+
+    function synchronizeComparisonRows() {
+      const columns = Array.from(ui.evidenceStage.querySelectorAll(".comparison-column"));
+      const cardsByColumn = columns.map((column) => Array.from(column.querySelectorAll(".comparison-card")));
+      const allCards = cardsByColumn.flat();
+      const partSelectors = ["h4", ".comparison-card-output", ".comparison-item-caption"];
+
+      allCards.forEach((card) => {
+        card.style.minHeight = "";
+        partSelectors.forEach((selector) => {
+          const part = card.querySelector(selector);
+          if (part) part.style.minHeight = "";
+        });
+      });
+
+      if (columns.length < 2 || window.matchMedia("(max-width: 860px)").matches) return;
+
+      const rowCount = Math.max(0, ...cardsByColumn.map((cards) => cards.length));
+      for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+        const rowCards = cardsByColumn.map((cards) => cards[rowIndex]).filter(Boolean);
+        if (rowCards.length < 2) continue;
+
+        partSelectors.forEach((selector) => {
+          const parts = rowCards.map((card) => card.querySelector(selector)).filter(Boolean);
+          if (parts.length < 2) return;
+          const maxHeight = Math.ceil(Math.max(...parts.map((part) => part.getBoundingClientRect().height)));
+          parts.forEach((part) => { part.style.minHeight = `${maxHeight}px`; });
+        });
+
+        const maxCardHeight = Math.ceil(Math.max(...rowCards.map((card) => card.getBoundingClientRect().height)));
+        rowCards.forEach((card) => { card.style.minHeight = `${maxCardHeight}px`; });
+      }
+    }
+
+    function scheduleComparisonRowSync() {
+      if (comparisonSyncFrame) window.cancelAnimationFrame(comparisonSyncFrame);
+      comparisonSyncFrame = window.requestAnimationFrame(() => {
+        comparisonSyncFrame = 0;
+        synchronizeComparisonRows();
+      });
+    }
+
     function renderStep() {
       const step = PRESENTATION.steps[currentIndex];
       const count = PRESENTATION.steps.length;
@@ -932,6 +985,7 @@
         makeFact("与当前异常的关系", step.relation)
       ]);
       replaceChildren(ui.evidenceStage, [makeStageOutput(stageOutput)]);
+      scheduleComparisonRowSync();
       ui.previous.disabled = currentIndex === 0;
       ui.next.disabled = currentIndex === count - 1;
       window.history.replaceState(null, "", `#step=${currentIndex + 1}`);
@@ -1054,6 +1108,8 @@
       if (event.key === "Home") showStep(0);
       if (event.key === "End") showStep(PRESENTATION.steps.length - 1);
     });
+
+    window.addEventListener("resize", scheduleComparisonRowSync);
 
     if (!Array.isArray(PRESENTATION.steps) || PRESENTATION.steps.length === 0) {
       PRESENTATION.steps = [{
