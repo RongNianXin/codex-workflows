@@ -14,6 +14,46 @@ function Get-TrackedFiles {
     return $files
 }
 
+function Test-RepositoryPathPortability {
+    $errors = [Collections.Generic.List[string]]::new()
+    $trackedFiles = @(git -c "safe.directory=$repoRoot" -c core.quotepath=false -C $repoRoot ls-files)
+    if ($LASTEXITCODE -ne 0) {
+        throw '无法读取 Git 跟踪文件以核对路径可移植性。'
+    }
+
+    $textExtensions = [Collections.Generic.HashSet[string]]::new(
+        [string[]]@('.md', '.txt', '.ps1', '.psm1', '.psd1', '.cs', '.cmd', '.bat', '.sh', '.mjs', '.cjs', '.js', '.ts', '.tsx', '.jsx', '.html', '.htm', '.yml', '.yaml', '.json', '.toml', '.xml', '.svg', '.css'),
+        [StringComparer]::OrdinalIgnoreCase
+    )
+
+    foreach ($relativePath in $trackedFiles) {
+        git -c "safe.directory=$repoRoot" -C $repoRoot check-ignore --no-index --quiet -- $relativePath 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            $errors.Add("命中 .gitignore 的文件仍被 Git 跟踪：$relativePath")
+        }
+
+        $extension = [IO.Path]::GetExtension($relativePath)
+        if (-not $textExtensions.Contains($extension)) { continue }
+
+        $fullPath = Join-Path $repoRoot $relativePath
+        $content = [IO.File]::ReadAllText($fullPath)
+        if ($content -match '(?i)(?<![A-Za-z0-9])[A-Z]:[\\/](?!\.\.\.|<)') {
+            $errors.Add("文本包含机器绑定的 Windows 绝对路径：$relativePath")
+        }
+        if ($content -match '(?i)(?<![A-Za-z0-9])/(?:Users|home)/(?!\.\.\.|<)') {
+            $errors.Add("文本包含机器绑定的用户目录绝对路径：$relativePath")
+        }
+        if ($content -match '(?i)file:///(?:[A-Z]:|Users/|home/)') {
+            $errors.Add("文本包含机器绑定的 file URI：$relativePath")
+        }
+    }
+
+    if ($errors.Count -gt 0) {
+        throw ($errors -join [Environment]::NewLine)
+    }
+    Write-Host "Tracked path portability ($($trackedFiles.Count) files): PASS"
+}
+
 function Test-MarkdownFiles {
     $errors = [Collections.Generic.List[string]]::new()
     foreach ($relativePath in (Get-TrackedFiles -Pattern '*.md')) {
@@ -186,7 +226,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
-            Required = @('低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化')
+            Required = @('低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/03-专项任务卡模板.md'
@@ -198,7 +238,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/10-自动状态索引规范.md'
-            Required = @('COMMIT-LEDGER', '人工核验运行身份清单', '规范启动命令及自检输出', '并存实现决议矩阵', '节点覆盖状态', 'TASK-RESUME', '恢复提示词不能把普通或专项任务升级为总指挥', '恢复收益门禁', 'unasked / enabled / paused / disabled / unavailable', 'not-shown / shown / answered / ignored', '不创建定时任务或后台轮询')
+            Required = @('COMMIT-LEDGER', '人工核验运行身份清单', '规范启动命令及自检输出', '并存实现决议矩阵', '节点覆盖状态', 'TASK-RESUME', '恢复提示词不能把普通或专项任务升级为总指挥', '恢复收益门禁', 'unasked / enabled / paused / disabled / unavailable', 'not-shown / shown / answered / ignored', '不创建定时任务或后台轮询', '重新绑定到当前仓库根目录')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/07-总指挥交接记录模板.md'
@@ -206,7 +246,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/总指挥轻量交接启动配置.md'
-            Required = @('KEY_NODE', 'canonical_start_command', 'startup_check', 'commit_ledger', 'step_deck_pointer_and_hash', '场景 6B 是角色中立的任务中断恢复入口', '候选阶段不得询问是否启用', 'introduction: not-shown / shown / answered / ignored')
+            Required = @('KEY_NODE', 'canonical_start_command', 'startup_check', 'commit_ledger', 'step_deck_pointer_and_hash', '场景 6B 是角色中立的任务中断恢复入口', '候选阶段不得询问是否启用', 'introduction: not-shown / shown / answered / ignored', '旧机器绝对路径')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/docs/PR_SUBMISSION_AND_REVIEW_STANDARD.md'
@@ -483,6 +523,7 @@ function Test-ArchiveRepairLauncher {
     Write-Host 'Windows archive repair tool: PASS'
 }
 
+Test-RepositoryPathPortability
 Test-MarkdownFiles
 Test-BilingualReadmes
 Test-PowerShellFiles
