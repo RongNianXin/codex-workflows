@@ -1,14 +1,14 @@
 <div align="center">
 
-# Codex Workflows
+# ChatGPT Workflows
 
-**A documentation-first workflow kit for planning, execution, verification, and reliable handoffs in Codex Desktop.**
+**Usage tips, workflows, troubleshooting notes, and local tools for ChatGPT on the web and Codex work in the ChatGPT desktop app.**
 
-Personal workflow rules, Windows troubleshooting notes, and small local utilities.
+An independently maintained and continuously verified knowledge base, currently focused on local Codex collaboration and ChatGPT web enhancements.
 
 [简体中文](README.md) | **English**
 
-<!-- README-SOURCE-SHA256: 8e610b77566ecae65e1c899a1af57079cafa620fd8245fd9fd7941f42357f5ef -->
+<!-- README-SOURCE-SHA256: 828095b7dcfad68f603539e427f2bb954eca462ebe1490968487f7bbdaf26108 -->
 
 [![Repository quality](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml)
 [![Last commit](https://img.shields.io/github/last-commit/RongNianXin/codex-workflows?label=last%20commit)](https://github.com/RongNianXin/codex-workflows/commits/main)
@@ -17,7 +17,7 @@ Personal workflow rules, Windows troubleshooting notes, and small local utilitie
 
 <br />
 
-<img src="assets/repository-cover.png" alt="Codex Workflows repository cover" width="100%" />
+<img src="assets/repository-cover.png" alt="ChatGPT Workflows repository cover" width="100%" />
 
 </div>
 
@@ -33,32 +33,34 @@ Personal workflow rules, Windows troubleshooting notes, and small local utilitie
 
 ## Why this repository exists
 
-Long Codex tasks can lose their exact stopping point, blur the boundary between local and remote authorization, or treat an old completion claim as current evidence. This repository turns those failure modes into explicit files and checks.
+The public content currently falls into five groups: ChatGPT web enhancements, the Codex commander workflow, reusable prompts, troubleshooting and recovery notes, and local helper tools. It brings practical material that would otherwise be scattered across conversations into files that can be downloaded, inspected, tested, and reused.
 
-The core workflow covers:
-
-- durable goals, checkpoints, and recovery state;
-- single-writer commander handoffs without inheriting old permissions;
-- verification evidence and human decision boundaries;
-- Windows-first troubleshooting notes and small local tools.
-
-The material is deliberately inspectable. Most of it is Markdown and PowerShell rather than a hosted service or opaque automation layer.
+Most of the repository is Markdown and PowerShell rather than a hosted service or opaque automation layer. Public files are designed not to contain local identities, real task IDs, credentials, or private prompts.
 
 ## Start here
 
 | If you want to... | Open... |
 | --- | --- |
+| Improve the ChatGPT web experience | [ChatGPT-Web](ChatGPT-Web/README.en.md) |
 | Use the commander workflow | [Operator manual (Chinese)](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md) |
 | Understand the rule architecture | [Workflow overview (Chinese)](总指挥工作流/第二代总指挥的工作模式/00-第二代工作流总览.md) |
-| Troubleshoot Codex Desktop or CC Switch | [Troubleshooting notes](故障排查与解决经验/) |
+| Troubleshoot Codex or CC Switch | [Troubleshooting notes](故障排查与解决经验/) |
 | Reuse a focused prompt | [Prompt collection](其他%20Codex%20技巧性提示词/) |
 | Try a local helper | [Local utilities](实用小工具/) |
 | Decide whether a Codex task is ready for handoff | [Session handoff assessment](实用小工具/Codex会话交接评估/README.en.md) |
-| Install userscripts for ChatGPT on the web | [ChatGPT-Web](ChatGPT-Web/README.en.md) |
+| See real-world results | [Showcase](SHOWCASE.md) |
 
 The detailed manuals are currently written in Chinese. This page is an evaluation and navigation guide for English-speaking visitors.
 
 ## Quick start
+
+### Use the ChatGPT web userscripts
+
+1. Open [ChatGPT-Web](ChatGPT-Web/README.en.md) and follow its instructions to install Tampermonkey.
+2. Enable the browser permission that allows userscripts to run.
+3. Install the script you need, refresh ChatGPT on the web, and verify the result.
+
+### Use the Codex commander workflow
 
 1. Download or clone this repository.
 2. Open the [operator manual](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md).
@@ -72,11 +74,18 @@ Use the target project's workspace, not this repository's workspace, unless you 
 
 ## What is included
 
-- A commander workflow for task intake, authorization, delegation, validation, state recovery, and handoff.
-- Sanitized troubleshooting records for reproduced Codex Desktop and CC Switch issues.
-- Reusable prompt patterns and Windows-oriented local utilities.
-- Reviewable userscripts and setup notes for ChatGPT on the web.
-- Repository checks for Markdown, PowerShell, rule-version consistency, and generated artifacts.
+- [ChatGPT-Web](ChatGPT-Web/README.en.md): reviewable userscripts, installation steps, and browser-permission notes for ChatGPT on the web.
+- [Second-generation commander workflow](总指挥工作流/第二代总指挥的工作模式/): task intake, authorization, delegation, validation, state recovery, and handoff for Codex work.
+- [Prompt collection](其他%20Codex%20技巧性提示词/): reusable prompts for first-principles reviews, complex tasks, image work, automated testing, and text flowcharts.
+- [Troubleshooting and recovery](故障排查与解决经验/): sanitized records and recovery tools for reproduced Codex Desktop and CC Switch issues.
+- [Local utilities](实用小工具/): read-only or reversible helpers, including the Codex session handoff assessment.
+- [Showcase](SHOWCASE.md): privacy-reviewed screenshots of real runs so visitors can see what the workflows and tools produce.
+
+## ChatGPT and Codex naming boundary
+
+The repository uses **ChatGPT Workflows** as its public umbrella title so visitors can enter through familiar ChatGPT use cases. **Codex** remains the accurate name for coding and local-project work, the CLI, session formats, and modules that only apply to Codex.
+
+For that reason, product-specific directory names, script names, commands, and technical documentation are not renamed merely for branding consistency. The ChatGPT title also does not imply that every module runs in an ordinary web chat; each module README defines its audience, prerequisites, and limitations.
 
 ## Bilingual README contract
 
@@ -102,8 +111,9 @@ The privacy claims are auditable: the real profile stays in an exact `.gitignore
 
 ## Current scope and limitations
 
-- The workflow is Windows-first and documentation-heavy.
-- The detailed rules are primarily in Chinese.
+- Userscripts and usage notes for ChatGPT on the web are included.
+- Codex coverage includes desktop and local-project workflows, handoffs, validation, troubleshooting, and recovery.
+- Tools and reproduced tests are currently Windows-first, and the detailed rule manuals are primarily in Chinese.
 - It is a personal project, not an official standard or a guarantee of professional, legal, security, or business acceptance.
 - Product behavior and third-party tooling can change; re-check time-sensitive instructions before relying on them.
 
