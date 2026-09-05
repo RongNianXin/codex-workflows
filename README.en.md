@@ -4,11 +4,11 @@
 
 **Usage tips, workflows, troubleshooting notes, and local tools for ChatGPT on the web and Codex work in the ChatGPT desktop app.**
 
-An independently maintained and continuously verified knowledge base, currently focused on local Codex collaboration and ChatGPT web enhancements.
+Connect natural-language goals, execution evidence, and resumable checkpoints, alongside ChatGPT web enhancements and local tools.
 
 [简体中文](README.md) | **English**
 
-<!-- README-SOURCE-SHA256: 828095b7dcfad68f603539e427f2bb954eca462ebe1490968487f7bbdaf26108 -->
+<!-- README-SOURCE-SHA256: 143483ae63d948740c6aa212a02ac32c9ae62d85437abe1907a11a2e33ecab64 -->
 
 [![Repository quality](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml)
 [![Last commit](https://img.shields.io/github/last-commit/RongNianXin/codex-workflows?label=last%20commit)](https://github.com/RongNianXin/codex-workflows/commits/main)
@@ -36,6 +36,19 @@ An independently maintained and continuously verified knowledge base, currently 
 The public content currently falls into five groups: ChatGPT web enhancements, the Codex commander workflow, reusable prompts, troubleshooting and recovery notes, and local helper tools. It brings practical material that would otherwise be scattered across conversations into files that can be downloaded, inspected, tested, and reused.
 
 Most of the repository is Markdown and PowerShell rather than a hosted service or opaque automation layer. Public files are designed not to contain local identities, real task IDs, credentials, or private prompts.
+
+## What the commander workflow provides
+
+Collaboration follows a clear path: state a goal, implement and verify, save a checkpoint, then resume delivery. You provide the goal and necessary decisions; the AI retrieves facts, prepares parameters, and checks results. Short instructions still lead to explicit validation requirements.
+
+| Capability you can use | How the workflow supports it |
+| --- | --- |
+| Less repetitive work | A [single operator entry](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md), with parameters retrieved or prefilled by the AI and necessary manual steps paired with expected results and failure feedback. |
+| Results you can understand and inspect | [Diagnosis along the actual execution path](SHOWCASE.md), separating observations, inferences, and unverified claims. Generated output, automated tests, and professional acceptance are reported separately. |
+| A clear place to resume after changing tasks | A [standard four-part handoff report](总指挥工作流/第二代总指挥的工作模式/总指挥轻量交接启动配置.md#7-统一接管汇报模板): identity, handoff result, checkpoint, and next steps with permissions. Switching requires a verified single writer. |
+| Rules that can be updated and simplified | [On-demand review and retirement](总指挥工作流/第二代总指挥的工作模式/06-复盘与优化规则.md#按需时效核验与退役), triggered by use, upgrade signals, or relevant maintenance. Updates and retirement require evidence; no recurring scanner is created. |
+
+Specific model names, prices, and reasoning levels are not permanent prerequisites. The [model policy](总指挥工作流/第二代总指挥的工作模式/05-模型选择与资源策略.md) keeps the user's selected configuration when it remains suitable and considers changes only when there is a practical benefit. These are reviewable workflow rules, not guarantees of outcomes or consistent compliance across models. Instructions that have not been used or triggered for review may still become outdated.
 
 ## Start here
 

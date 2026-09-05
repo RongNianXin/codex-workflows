@@ -242,11 +242,11 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/07-总指挥交接记录模板.md'
-            Required = @('KEY_NODE', '运行身份', '规范启动命令及自检输出', '并存实现决议', '当前分步展示产物', '节点维护结果', '新总指挥不会重新询问')
+            Required = @('KEY_NODE', '运行身份', '规范启动命令及自检输出', '并存实现决议', '当前分步展示产物', '节点维护结果', '新总指挥不会重新询问', '统一接管汇报模板', '固定四段标题与字段')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/总指挥轻量交接启动配置.md'
-            Required = @('KEY_NODE', 'canonical_start_command', 'startup_check', 'commit_ledger', 'step_deck_pointer_and_hash', '场景 6B 是角色中立的任务中断恢复入口', '候选阶段不得询问是否启用', 'introduction: not-shown / shown / answered / ignored', '旧机器绝对路径')
+            Required = @('KEY_NODE', 'canonical_start_command', 'startup_check', 'commit_ledger', 'step_deck_pointer_and_hash', '场景 6B 是角色中立的任务中断恢复入口', '候选阶段不得询问是否启用', 'introduction: not-shown / shown / answered / ignored', '旧机器绝对路径', '## 7. 统一接管汇报模板', '1. 总指挥身份', '2. 交接结论', '3. 接续断点', '4. 下一步与边界', '当前任务 ID：', '当前范围交接条件：', '没有证据支持遗漏时写“无”', '不得承诺任意账号或窗口凭 ID 即可跨权限访问')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/docs/PR_SUBMISSION_AND_REVIEW_STANDARD.md'
@@ -254,7 +254,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/06-复盘与优化规则.md'
-            Required = @('公开可复制提示词', '私聊中的临时示例')
+            Required = @('公开可复制提示词', '私聊中的临时示例', '专业表达与低操作负担', '不依赖未分发的私有指令', '减少人工步骤不减少安全、权限、测试或领域专业验收')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/05-模型选择与资源策略.md'
