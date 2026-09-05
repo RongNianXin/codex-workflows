@@ -69,3 +69,6 @@ coverage/
 
 # Local browser validation artifacts
 /.playwright-cli/
+
+# Persistent local state, isolated fixtures and reports for the Windows desk
+/实用小工具/Codex会话交接评估/windows-local/.local/
