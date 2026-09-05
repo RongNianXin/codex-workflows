@@ -2,13 +2,17 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: 13e0e96fa86793e37efb9a154a968e7d11271e306d9679b362a3130c99c50973 -->
+<!-- README-SOURCE-SHA256: 8c9ff04ea83d04917e30a7cc40d7a04cef01bb035c4966e9f8b7eab9c231389a -->
 
 This directory provides a read-only PowerShell tool for assessing a local Codex task before handing work to a new task. It reports session size, detected turns, compaction count, recent context usage, and a heuristic handoff recommendation. It also writes a Markdown report with token and local file composition details.
 
 The Chinese repository rules remain the normative source. This English file covers the public entry point for this tool and is not a line-by-line English mirror of the repository.
 
 The [real-world preview page](../../SHOWCASE.md) includes the owner-approved terminal screenshot. Its task ID is redacted, while local directory labels, the task name, and runtime statistics remain visible by explicit permission.
+
+## Integrated synthetic-data validation page
+
+[Open the integrated desk](session-desk-validation.html): search and favorite tasks, explicitly select segments, check integrity, and view statistical summaries and details. Results come from selected synthetic files and remain in page memory only; reloading clears them. Projects and IDs distinguish duplicate task names, and files belonging to another task are rejected. No real sessions or automatic directory discovery are connected. See [usage and validation limits](SESSION_DESK_VALIDATION.md) (Chinese).
 
 ## Local task panel prototype
 

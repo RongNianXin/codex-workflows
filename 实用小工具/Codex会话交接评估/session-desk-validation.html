@@ -1,0 +1,94 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'"><title>会话工作台 · 虚构数据验证版</title>
+<style>
+:root{font:15px/1.7 'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;color:#203647;background:#edf3f7}*{box-sizing:border-box}body{margin:0}main{max-width:1200px;margin:auto;padding:30px 24px}header{border-left:5px solid #126d83;padding-left:20px;margin-bottom:26px}h1{font-size:30px;margin:5px 0}h2{font-size:20px;margin:0 0 12px}p{margin:10px 0}.muted,small{color:#536979}.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:22px}.panel{background:white;border:1px solid #cad8e1;border-radius:12px;padding:22px;margin-bottom:16px}button,input{font:inherit}button{cursor:pointer;padding:9px 13px;border-radius:7px;border:1px solid #a9bdc8;background:white;color:#203647}button:hover:not(:disabled){background:#edf7fa}button:disabled{opacity:.5;cursor:default}button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #126d83;outline-offset:3px}.primary{background:#126d83;color:white}.primary:hover:not(:disabled){background:#09576b}.actions{display:flex;gap:8px;flex-wrap:wrap}#search{width:100%;padding:10px;border:1px solid #a9bdc8;border-radius:7px;margin:7px 0 12px}.task{display:grid;grid-template-columns:1fr auto;gap:7px;margin:10px 0}.task button{text-align:left}.task[aria-current=true] .select{border-color:#126d83;box-shadow:inset 3px 0 #126d83}.select small{display:block;font-size:12px}.task .star{align-self:start}.id{font-family:Consolas,monospace;font-size:12px;overflow-wrap:anywhere}.status{display:inline-block;padding:5px 10px;background:#edf3f7;border-radius:6px}#state[data-state=blocked],#state[data-state=failed]{color:#923e25;background:#fff1e8}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}.stat{padding:15px;background:#f0f6f8;border-radius:8px}.stat strong{font:26px Consolas,monospace;display:block}.filelist,pre{white-space:pre-wrap;overflow-wrap:anywhere}pre{font:12px/1.8 Consolas,monospace;max-height:420px;overflow:auto}summary{cursor:pointer}#notice{min-height:26px}footer{font-size:12px;color:#536979;margin:22px 0}label{display:block}#onlyFavLabel{display:flex;gap:7px;align-items:center}[hidden]{display:none!important}@media(max-width:760px){main{padding:20px 14px}.layout{grid-template-columns:1fr}.stats{gap:5px}.stat{padding:10px}.stat strong{font-size:22px}h1{font-size:26px}}
+</style></head><body><main><header><small>CODEX · 会话交接评估 / 虚构数据验证版</small><h1>选择快照，核对任务状态</h1><p>只分析主动选择的虚构文件。当前结果对应所选集合，不代表全部历史或正式交接结论。</p></header>
+<div class="layout"><aside class="panel"><h2>任务</h2><label for="search">搜索名称、项目或 ID</label><input id="search" type="search" placeholder="查找虚构任务"><label id="onlyFavLabel"><input id="onlyFav" type="checkbox">只看收藏</label><div id="tasks"></div><small>收藏和结果仅留在当前页面；刷新后清除。</small></aside>
+<section><div class="panel"><h2 id="title"></h2><p id="identity" class="id"></p><div class="actions"><button id="choose" class="primary">选择分段并分析</button><button id="clear">清空当前任务</button></div><input id="files" type="file" accept=".jsonl" multiple hidden><p class="muted">每次重新选择替换整个分段集合。获取磁盘新内容需要再次选文件；本页不会按 ID 查找日志。</p><details><summary>准备当前任务的虚构样例</summary><p>首次可下载 A、B 后同时选择，预期 130 Token；选择截断样例则阻止统计。</p><div class="actions"><button data-sample="a">下载完整 A</button><button data-sample="b">下载完整 B</button><button data-sample="cut">下载截断样例</button></div></details></div>
+<div class="panel" aria-live="polite"><span id="state" class="status"></span><p id="notice" role="status"></p><p id="stamp" class="muted"></p><div class="stats" id="stats" hidden><div class="stat"><small>已识别回合</small><strong id="turns"></strong></div><div class="stat"><small>累计计入 Token</small><strong id="tokens"></strong></div><div class="stat"><small>有效分段</small><strong id="segments"></strong></div></div><p id="explain"></p><p id="filelist" class="filelist muted"></p><details id="details"><summary>查看详细统计与判定依据</summary><pre id="report"></pre></details></div></section></div><footer>仅虚构数据 · 单段最多 2 MiB，总计 16 MiB，最多 32 段。标记不是脱敏证明，请勿选择真实日志。不上传数据，不保存持久结果，不判断写入进程是否活跃。macOS/Safari 尚未验证。</footer></main>
+<script>'use strict';
+function parseCompatibility(segments,taskId){
+ const invalid=message=>{throw new Error(message);};
+ const safe=v=>{if(v===undefined||v===null)return 0;if(!Number.isSafeInteger(v))invalid('unsupported_numeric');return v;};
+ let excluded=0;
+ const files=[];
+ for(const segment of segments){
+  const rows=segment.text.replace(/^\uFEFF/,'').split(/\r?\n/);if(rows.at(-1)==='')rows.pop();
+  const records=rows.filter(x=>x.trim()).map(x=>{try{return JSON.parse(x);}catch(e){invalid('malformed_json');}});
+  const meta=records.find(x=>x.type==='session_meta'),p=meta?.payload;
+  if(!p||p.synthetic_test!==true||!/^00000000-0000-0000-0000-0000000000[0-9]{2}$/.test(p.id||''))invalid('synthetic_only');
+  if(p.id.toLowerCase()!==taskId.toLowerCase()){excluded++;continue;}
+  const start=Date.parse(meta.timestamp);if(!Number.isFinite(start))invalid('invalid_timestamp');
+  files.push({name:segment.name,records,meta:p,start});
+ }
+ if(!files.length)invalid('no_segments');
+ files.sort((a,b)=>a.start-b.start||a.name.localeCompare(b.name,'en'));
+ for(const field of ['originator','source','model_provider']){const values=new Set(files.map(f=>f.meta[field]?.toLowerCase()).filter(Boolean));if(values.size>1)invalid('metadata_conflict');}
+ const turns=[],ids=new Map(),terminal=new Set();let current=-1,completed=0,aborted=0,contexts=0,duplicates=0,baseline=0,resets=0,advances=0,compactions=0,previous=null,end=null;
+ const get=()=>turns[current];
+ const create=id=>{turns.push({id:id||'',status:'unfinished',context:false,input:0,cached:0,output:0,reasoning:0,total:0});current=turns.length-1;};
+ const assign=id=>{if(id&&!get().id)get().id=id;};
+ const identify=id=>{if(id&&ids.has(id))current=ids.get(id);else if(id){if(current<0||get().status!=='unfinished'||get().id)create(id);ids.set(id,current);}else if(current<0||get().status!=='unfinished')create('');assign(id);};
+ files.forEach((file,index)=>{
+  if(end!==null&&file.start<end)invalid('segment_range_overlap');if(index>0)previous=null;let segmentEnd=file.start;
+  for(const r of file.records){const p=r.payload||{},type=r.type,kind=p.type,id=p.turn_id||r.turn_id||'';
+   if(r.timestamp){const timestamp=Date.parse(r.timestamp);if(!Number.isFinite(timestamp))invalid('invalid_timestamp');if(index>0&&type!=='session_meta'&&timestamp<end)invalid('segment_record_overlap');segmentEnd=Math.max(segmentEnd,timestamp);}
+   if(type==='compacted')compactions++;
+   if(type==='turn_context'||(type==='event_msg'&&['task_started','turn_started','user_message'].includes(kind))){identify(id);if(type==='turn_context'){contexts++;if(get().context)duplicates++;get().context=true;}}
+   if(type==='event_msg'&&kind==='token_count'&&p.info?.total_token_usage){const u=p.info.total_token_usage,s={input:safe(u.input_tokens),cached:safe(u.cached_input_tokens),output:safe(u.output_tokens),reasoning:safe(u.reasoning_output_tokens),total:safe(u.total_tokens)};if(s.total<=0&&(s.input>0||s.output>0))s.total=s.input+s.output;
+    if(s.total>0){if(current<0)create('');let d={input:0,cached:0,output:0,reasoning:0,total:0};if(previous===null){if(index===0&&current<=0&&completed===0&&aborted===0)d=s;else baseline++;}else if(s.total>previous.total){for(const k of Object.keys(d))d[k]=Math.max(0,s[k]-previous[k]);}else if(s.total<previous.total)resets++;
+     if(d.total>0){for(const k of Object.keys(d)){get()[k]+=d[k];if(!Number.isSafeInteger(get()[k]))invalid('unsupported_numeric');}advances++;}previous=s;}
+   }
+   if(type==='event_msg'&&['task_complete','turn_complete','turn_aborted','task_aborted'].includes(kind)){
+    if(id&&terminal.has(id))continue;if(id)terminal.add(id);
+    if(id&&ids.has(id))current=ids.get(id);
+    else if(id&&current>=0&&get().status==='unfinished'&&!get().id)ids.set(id,current);
+    else if(current<0||get().status!=='unfinished'||(id&&get().id&&get().id!==id)){create(id);if(id)ids.set(id,current);}
+    assign(id);if(['task_complete','turn_complete'].includes(kind)){get().status='completed';completed++;}else{get().status='aborted';aborted++;}
+   }
+  }end=segmentEnd;
+ });
+ return {segments:files.length,excluded,contexts,duplicates,baseline,resets,advances,compactions,completed:turns.filter(t=>t.status==='completed').length,aborted:turns.filter(t=>t.status==='aborted').length,unfinished:turns.filter(t=>t.status==='unfinished').length,turns:turns.map(({context,...t})=>t)};
+}
+
+function inspectSegment(segment){
+ const input=segment.bytes,lines=[];let start=0;
+ for(let i=0;i<input.length;i++)if(input[i]===10){lines.push({bytes:input.subarray(start,i),terminated:true});start=i+1;}
+ if(start<input.length)lines.push({bytes:input.subarray(start),terminated:false});
+ const rows=lines.map((r,i)=>({...r,line:i+1})).filter(r=>!r.bytes.every(b=>[9,13,32].includes(b)));
+ const issues=[];const records=[];
+ for(const row of rows){try{const record=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(row.bytes));if(!record||Array.isArray(record)||typeof record.type!=='string'){issues.push({name:segment.name,line:row.line,status:'format_unsupported'});}else records.push(record);}catch{issues.push({name:segment.name,line:row.line,status:rows.some(r=>r.line>row.line)?'history_invalid':row.terminated?'terminated_invalid':'tail_unresolved'});}}
+ if(!rows.length)issues.push({name:segment.name,line:1,status:'empty'});
+ const m=records.find(r=>r.type==='session_meta')?.payload;
+ if(!m||m.synthetic_test!==true||!/^00000000-0000-0000-0000-0000000000[0-9]{2}$/.test(m.id||''))issues.push({name:segment.name,line:1,status:'synthetic_only'});
+ return issues;
+}
+function analyzeBridge(segments,taskId){
+ if(!segments.length)return {stage:'input_rejected',reason:'no_segments',parserCalls:0};
+ if(segments.length>32||segments.some(s=>s.bytes.length>2*1048576)||segments.reduce((n,s)=>n+s.bytes.length,0)>16*1048576)return {stage:'input_rejected',reason:'size_limit',parserCalls:0};
+ if(new Set(segments.map(s=>s.name)).size!==segments.length)return {stage:'input_rejected',reason:'duplicate_segment_name',parserCalls:0};
+ const issues=segments.flatMap(inspectSegment);
+ if(issues.length)return {stage:'integrity_blocked',issues,parserCalls:0,missingTokens:null};
+ for(const s of segments){const records=new TextDecoder().decode(s.bytes).replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim()).map(JSON.parse);if(records.find(r=>r.type==='session_meta').payload.id.toLowerCase()!==taskId.toLowerCase())return {stage:'input_rejected',reason:'task_mismatch',parserCalls:0};}
+ try{return {stage:'parsed',parserCalls:1,result:parseCompatibility(segments.map(s=>({name:s.name,text:new TextDecoder('utf-8',{fatal:true}).decode(s.bytes)})),taskId),completeAssessment:false};}
+ catch(e){return {stage:'parser_rejected',parserCalls:1,reason:e.message};}
+}
+
+const $=id=>document.getElementById(id);
+const tasks=[{id:'00000000-0000-0000-0000-000000000001',name:'资料整理',project:'虚构项目 · 北岸'},{id:'00000000-0000-0000-0000-000000000002',name:'资料整理',project:'虚构项目 · 灯塔'},{id:'00000000-0000-0000-0000-000000000003',name:'测试回归',project:'虚构项目 · 北岸'}].map(t=>({...t,favorite:false,epoch:0,state:'empty',result:null,message:'请选择本任务的虚构分段。',files:[],time:null}));
+let selected=tasks[0];
+const states={empty:'尚未选择',loading:'正在读取与检查',ready:'所选集合已分析',blocked:'输入未通过检查',failed:'读取或分析失败',cancelled:'已取消本次读取'};
+const reasons={metadata_conflict:'分段元数据冲突',segment_range_overlap:'分段时间范围重叠',segment_record_overlap:'分段记录时间重叠',task_mismatch:'文件不属于当前任务，请重新选择。',duplicate_segment_name:'存在同名分段，请明确区分文件后重新选择。',synthetic_only:'缺少虚构元数据标记',unsupported_numeric:'数值超出支持范围',invalid_timestamp:'时间戳无效',size_limit:'文件超过实验限制',no_segments:'没有分段'};
+const issueLabels={tail_unresolved:'末尾不完整，原因待确认',history_invalid:'历史记录损坏或格式不支持',terminated_invalid:'已换行记录无效',format_unsupported:'记录格式不支持',synthetic_only:'缺少虚构元数据标记',empty:'空分段'};
+function list(){const query=$('search').value.trim().toLowerCase();$('tasks').replaceChildren();for(const t of tasks.filter(t=>(!$('onlyFav').checked||t.favorite)&&[t.name,t.project,t.id].join(' ').toLowerCase().includes(query))){const row=document.createElement('div');row.className='task';row.setAttribute('aria-current',String(t===selected));const button=document.createElement('button');button.className='select';button.dataset.task=t.id;button.textContent=t.name;const note=document.createElement('small');note.textContent=t.project+' · '+t.id.slice(-4);button.append(note);button.onclick=()=>{if(selected.state==='loading')cancel(selected);selected=t;render();};const star=document.createElement('button');star.className='star';star.textContent=t.favorite?'★':'☆';star.setAttribute('aria-label',(t.favorite?'取消收藏':'收藏')+' '+t.project);star.setAttribute('aria-pressed',String(t.favorite));star.onclick=()=>{t.favorite=!t.favorite;list();};row.append(button,star);$('tasks').append(row);}if(!$('tasks').children.length){const p=document.createElement('p');p.textContent='没有匹配任务。';$('tasks').append(p);}}
+function cancel(t){t.epoch++;t.state='cancelled';t.result=null;t.time=null;t.message='旧读取结果不会再发布，请重新选择文件。';t.files=[];}
+function render(){list();const t=selected;$('title').textContent=t.name+' / '+t.project;$('identity').textContent=t.id;$('state').textContent=states[t.state];$('state').dataset.state=t.state;$('notice').textContent=t.message;$('choose').disabled=t.state==='loading';$('clear').textContent=t.state==='loading'?'取消并清空':'清空当前任务';$('stamp').textContent=t.time?'分析时间：'+new Date(t.time).toLocaleString()+' · 仅代表当次选择的快照':'';$('stats').hidden=!t.result;$('report').textContent=t.result?JSON.stringify(t.result,null,2):t.message;$('filelist').textContent=t.files.length?'本次选择：\n'+t.files.join('\n'):'';
+ if(t.result){$('turns').textContent=t.result.turns.length;const sum=t.result.turns.reduce((n,r)=>n+r.total,0);$('tokens').textContent=Number.isSafeInteger(sum)?sum:'超出精确显示范围';$('segments').textContent=t.result.segments;$('explain').textContent='基线提醒 '+t.result.baseline+' 次：后续累计快照只作比较起点，避免重复计入历史。未核验全部分段已选齐，不生成正式交接建议。';}else $('explain').textContent='未生成当前统计；缺失 Token 未知，不填零。';}
+function generateSamples(id){const record=(type,payload,n)=>({timestamp:'2025-01-01T00:00:'+String(n).padStart(2,'0')+'Z',type,payload});const meta=n=>record('session_meta',{id,synthetic_test:true,originator:'fixture',source:'fixture',model_provider:'fixture'},n);const token=(n,t)=>record('event_msg',{type:'token_count',info:{total_token_usage:{input_tokens:n,total_tokens:n}}},t);const a=[meta(0),record('turn_context',{turn_id:'fictional-turn'},1),token(100,2)].map(JSON.stringify).join('\n');const b=[meta(10),record('turn_context',{turn_id:'fictional-turn'},11),token(100,12),token(130,13),record('event_msg',{type:'task_complete',turn_id:'fictional-turn'},14)].map(JSON.stringify).join('\n');return {a,b,cut:a.slice(0,-2)};}
+for(const button of document.querySelectorAll('[data-sample]'))button.onclick=()=>{const kind=button.dataset.sample;const url=URL.createObjectURL(new Blob([generateSamples(selected.id)[kind]],{type:'application/x-ndjson'}));const a=document.createElement('a');a.href=url;a.download='fictional-'+selected.id.slice(-4)+'-'+kind+'.jsonl';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+function analyzeForTask(segments,id){const result=analyzeBridge(segments,id);if(result.stage==='parsed'&&result.result.excluded>0)return {stage:'input_rejected',reason:'task_mismatch'};return result;}
+$('search').oninput=list;$('onlyFav').onchange=list;$('choose').onclick=()=>$('files').click();
+$('clear').onclick=()=>{const t=selected;t.epoch++;Object.assign(t,{state:'empty',result:null,message:'已清空当前任务。',time:null,files:[]});$('files').value='';render();};
+$('files').onchange=async e=>{const files=[...e.target.files];e.target.value='';if(!files.length)return;const t=selected,epoch=++t.epoch;t.state='loading';t.result=null;t.time=null;t.files=files.map(f=>f.name);t.message='正在读取与核对虚构分段…';render();try{if(files.length>32||files.some(f=>f.size>2*1048576)||files.reduce((n,f)=>n+f.size,0)>16*1048576)throw Error('文件超过实验限制');const segments=[];for(const file of files){const bytes=new Uint8Array(await file.arrayBuffer());if(t.epoch!==epoch)return;segments.push({name:file.name,bytes});}const r=analyzeForTask(segments,t.id);if(t.epoch!==epoch)return;if(r.stage==='parsed'){t.result=r.result;t.state='ready';t.time=Date.now();t.message='分析完成。每次选择均重新计算，不沿用旧累计值。';}else{t.state='blocked';t.message=r.issues?r.issues.map(i=>i.name+' · 第 '+i.line+' 行 · '+issueLabels[i.status]).join('\n'):(reasons[r.reason]||r.reason);}}catch(error){if(t.epoch!==epoch)return;t.state='failed';t.message=error.message;}finally{if(t.epoch===epoch&&selected===t)render();}};
+render();
+
+</script></body></html>
