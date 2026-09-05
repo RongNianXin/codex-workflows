@@ -2,7 +2,7 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: e82bc6eb50d68f74bc5870103d7298731025a113750c9347377723dca7946f8b -->
+<!-- README-SOURCE-SHA256: 13e0e96fa86793e37efb9a154a968e7d11271e306d9679b362a3130c99c50973 -->
 
 This directory provides a read-only PowerShell tool for assessing a local Codex task before handing work to a new task. It reports session size, detected turns, compaction count, recent context usage, and a heuristic handoff recommendation. It also writes a Markdown report with token and local file composition details.
 
@@ -30,7 +30,7 @@ Headless Windows Edge tests cover a roughly 64 MiB synthetic log, background res
 
 ## Synthetic compatibility corpus for the existing record format
 
-The [compatibility page](browser-compatibility-check.html) runs a built-in cross-segment example or accepts marked synthetic JSONL segments for the same task. The [20 complete cases and paired outputs](compatibility-fixtures.json) and [difference report](BROWSER_COMPATIBILITY_RESULTS.md) (Chinese) retain the evidence. Headless Windows Edge and the original PowerShell algorithms with isolated input paths agree on 18 cases. Two differences expose a reference-script undercount caused by JSON key order and a different policy for truncated records. The original script is unchanged; this is not a complete replacement. Real data, macOS/Safari, full report metrics, and large-file performance of the compatibility parser remain unverified.
+The [compatibility page](browser-compatibility-check.html) runs a built-in cross-segment example or accepts marked synthetic JSONL segments for the same task. The [20 complete cases and paired outputs](compatibility-fixtures.json) and [difference report](BROWSER_COMPATIBILITY_RESULTS.md) (Chinese) retain the evidence. Headless Windows Edge and the original PowerShell algorithms with isolated input paths agree on 18 cases. Two differences expose a reference-script undercount caused by JSON key order and a different policy for truncated records. These are historical pre-fix results. The key-order undercount is now fixed. PowerShell 7 and Windows PowerShell 5.1 each completed 23 synthetic comparisons: 22 matches and the retained truncated-record policy difference. See the [fix report and proposed truncation policy](POWERSHELL_RECORD_SHAPE_FIX.md) (Chinese). This is still not a complete replacement. Real data, macOS/Safari, full report metrics, and large-file performance of this fix remain unverified.
 
 ## Script requirements
 

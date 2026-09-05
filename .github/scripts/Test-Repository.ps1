@@ -594,6 +594,7 @@ Test-RepositoryPathPortability
 Test-MarkdownFiles
 Test-BilingualReadmes
 Test-PowerShellFiles
+& (Join-Path $PSScriptRoot 'Test-SessionRecordShape.ps1')
 Test-CommanderRuleVersion
 Test-CommanderDurableWorkflowContract
 Test-TextFlowchartTemplateContract

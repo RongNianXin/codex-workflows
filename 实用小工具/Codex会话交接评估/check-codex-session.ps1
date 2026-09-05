@@ -764,33 +764,44 @@ function Get-JsonlTextFormat {
 }
 
 function Get-RecordShape {
-    param([string]$Head)
+    param([string]$Line)
 
-    $typeMatches = [regex]::Matches(
-        $Head,
-        '"type"\s*:\s*"([^"\\]+)"'
-    )
-
-    $topType = if ($typeMatches.Count -ge 1) {
-        $typeMatches[0].Groups[1].Value
+    # Valid records are classified by object structure, never by textual key order.
+    # Keep the object for downstream consumers so large records are parsed only once.
+    try {
+        $record = $Line | ConvertFrom-Json -ErrorAction Stop
+        $topType = if ($record.type -is [string]) { $record.type } else { '' }
+        $payloadType = if ($record.payload.type -is [string]) { $record.payload.type } else { '' }
+        $timestamp = if ($record.timestamp -is [string]) { $record.timestamp }
+            elseif ($record.timestamp -is [datetime] -or $record.timestamp -is [datetimeoffset]) {
+                # ConvertFrom-Json may materialize ISO timestamps as dates depending on PowerShell version.
+                $record.timestamp.ToString('o', [Globalization.CultureInfo]::InvariantCulture)
+            }
+            else { '' }
+        $turnId = if ($record.payload.turn_id -is [string]) { $record.payload.turn_id }
+            elseif ($record.turn_id -is [string]) { $record.turn_id } else { '' }
+        return [pscustomobject]@{
+            TopType = $topType
+            PayloadType = $payloadType
+            Timestamp = $timestamp
+            TurnId = $turnId
+            Record = $record
+        }
     }
-    else {
-        ''
-    }
-
-    $payloadType = if ($typeMatches.Count -ge 2) {
-        $typeMatches[1].Groups[1].Value
-    }
-    else {
-        ''
-    }
-
-    return [pscustomobject]@{
-        TopType = $topType
-        PayloadType = $payloadType
+    catch {
+        # Preserve the existing malformed-record policy in this narrow fix.
+        # Downstream token/user parsing still reports its existing parse warning.
+        $head = $Line.Substring(0, [Math]::Min(4096, $Line.Length))
+        $typeMatches = [regex]::Matches($head, '"type"\s*:\s*"([^"\\]+)"')
+        return [pscustomobject]@{
+            TopType = if ($typeMatches.Count -ge 1) { $typeMatches[0].Groups[1].Value } else { '' }
+            PayloadType = if ($typeMatches.Count -ge 2) { $typeMatches[1].Groups[1].Value } else { '' }
+            Timestamp = Get-HeadStringField $head 'timestamp'
+            TurnId = Get-HeadStringField $head 'turn_id'
+            Record = $null
+        }
     }
 }
-
 function Get-HeadStringField {
     param(
         [string]$Head,
@@ -1089,11 +1100,12 @@ function Get-SessionSegmentMetadata {
                 continue
             }
             $head = $line.Substring(0, [Math]::Min(4096, $line.Length))
-            if ((Get-RecordShape -Head $head).TopType -ne 'session_meta') {
+            $metadataShape = Get-RecordShape -Line $line
+            if ($metadataShape.TopType -ne 'session_meta') {
                 continue
             }
-            $sessionTimestampText = Get-HeadStringField -Head $head -Name 'timestamp'
-            $sessionRecord = $line | ConvertFrom-Json -ErrorAction Stop
+            $sessionTimestampText = $metadataShape.Timestamp
+            $sessionRecord = if ($null -ne $metadataShape.Record) { $metadataShape.Record } else { $line | ConvertFrom-Json -ErrorAction Stop }
             break
         }
     }
@@ -1358,9 +1370,9 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
         $lastLineWasTerminal = $false
 
         $head = $line.Substring(0, [Math]::Min(4096, $line.Length))
-        $shape = Get-RecordShape $head
-        $recordTurnId = Get-HeadStringField $head 'turn_id'
-        $recordTimestamp = Get-HeadStringField $head 'timestamp'
+        $shape = Get-RecordShape -Line $line
+        $recordTurnId = $shape.TurnId
+        $recordTimestamp = $shape.Timestamp
         $category = Get-RecordCategory $shape.TopType $shape.PayloadType
         $lastResidualCategory = $category
 
@@ -1547,7 +1559,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
 
             if ([string]::IsNullOrWhiteSpace($turnUsage.UserInput)) {
                 try {
-                    $userRecord = $line | ConvertFrom-Json -ErrorAction Stop
+                    $userRecord = if ($null -ne $shape.Record) { $shape.Record } else { $line | ConvertFrom-Json -ErrorAction Stop }
                     $messageProperty = $userRecord.payload.PSObject.Properties['message']
                     if (
                         $null -ne $messageProperty -and
@@ -1567,7 +1579,7 @@ for ($segmentIndex = 0; $segmentIndex -lt $files.Count; $segmentIndex++) {
             $shape.PayloadType -eq 'token_count'
         ) {
             try {
-                $record = $line | ConvertFrom-Json -ErrorAction Stop
+                $record = if ($null -ne $shape.Record) { $shape.Record } else { $line | ConvertFrom-Json -ErrorAction Stop }
                 $info = $record.payload.info
                 if ($null -ne $info) {
                     $candidateLastUsage = $info.last_token_usage

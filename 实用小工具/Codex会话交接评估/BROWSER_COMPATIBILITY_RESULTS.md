@@ -1,5 +1,7 @@
 # 浏览器与 PowerShell：虚构真实格式对照
 
+> 本文保留修复前的对照截点。字段顺序漏计现已修复；新增边界回归及未实施的截断记录提案见[修复报告](POWERSHELL_RECORD_SHAPE_FIX.md)。下文“本轮”均指修复前验证阶段。
+
 验证日期：2026-09-05。输入来源为本目录 `check-codex-session.ps1` 的实现规则，不是实际用户会话。交付：[单文件浏览器验证页](browser-compatibility-check.html)、[20 组完整虚构输入与逐项对照结果](compatibility-fixtures.json)。
 
 ## 结论

@@ -26,7 +26,7 @@ Windows Edge 无头验证已覆盖约 64 MiB 虚构日志、后台响应、内�
 
 ## 真实格式的虚构兼容样例
 
-[兼容验证页](browser-compatibility-check.html)可运行内置跨分段示例，或选择带虚构标记的同任务 JSONL；[完整 20 组样例与对照结果](compatibility-fixtures.json)和[差异报告](BROWSER_COMPATIBILITY_RESULTS.md)提供证据。Windows Edge 浏览器与隔离路径下的原 PowerShell 算法有 18 组一致，2 组分别暴露原脚本字段顺序漏计和截断记录处理策略差异。原脚本未修改，不能宣称完整替代；真实数据、Mac/Safari、完整报告指标和兼容算法的大文件性能仍未验证。
+[兼容验证页](browser-compatibility-check.html)可运行内置跨分段示例，或选择带虚构标记的同任务 JSONL；[完整 20 组样例与对照结果](compatibility-fixtures.json)和[差异报告](BROWSER_COMPATIBILITY_RESULTS.md)提供证据。Windows Edge 浏览器与隔离路径下的原 PowerShell 算法有 18 组一致，2 组分别暴露原脚本字段顺序漏计和截断记录处理策略差异。以上为修复前历史结果。字段顺序漏计现已修复；PowerShell 7 和 Windows PowerShell 5.1 各完成 23 组虚构对照，22 组一致，保留截断记录策略差异，详见[修复与截断方案](POWERSHELL_RECORD_SHAPE_FIX.md)。仍不能宣称完整替代；真实数据、Mac/Safari、完整报告指标和本修复的大文件性能尚未验证。
 
 ## 文件清单
 
