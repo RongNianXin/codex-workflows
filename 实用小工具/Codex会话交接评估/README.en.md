@@ -2,7 +2,7 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: afdf9c9dc6cc3ecab3dcc2bf8048e97d5fad3bfd4863c8f4c16564c2af55d9bb -->
+<!-- README-SOURCE-SHA256: 3596f697e8d78df520fa30e19ed802cda490bd78f7e7cdb1c37f88f2086c98e6 -->
 
 This directory provides a read-only PowerShell tool for assessing a local Codex task before handing work to a new task. It reports session size, detected turns, compaction count, recent context usage, and a heuristic handoff recommendation. It also writes a Markdown report with token and local file composition details.
 
@@ -22,7 +22,13 @@ Favorites and results are saved only in the current browser's local storage, wit
 
 The same HTML interface is intended for Windows and macOS browsers. Only headless Edge on Windows has been tested; macOS/Safari has not been tested on a real device. This does not establish cross-platform compatibility for real data access. Integration still requires a file-selection and permission design, an analyzer output contract, and verification of cache invalidation, large logs, and sensitive report handling.
 
-## Requirements
+## In-browser analysis validation
+
+[Open the synthetic-log validation page](browser-analysis-lab.html), download its small sample, and select the file to parse it. This is separate from the fixed-data task panel and does not connect to real Codex sessions. Only this HTML file is needed, without a local server or dependency installation.
+
+Headless Windows Edge tests cover a roughly 64 MiB synthetic log, background responsiveness, content-based cache invalidation, malformed input, and cancellation. Up to five successful summaries stay in page memory only. Reselect a file after it changes on disk; an existing browser file object must not be presented as current disk contents. macOS/Safari has not been tested, and the simplified format is not equivalent to the existing analyzer. See the [feasibility report, measurements, and integration requirements](BROWSER_ANALYSIS_FEASIBILITY.md) (Chinese).
+
+## Script requirements
 
 - Windows PowerShell 5.1 or PowerShell 7
 - A Codex task stored on the same computer

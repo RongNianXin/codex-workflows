@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; worker-src blob:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>浏览器分析验证 · 仅限虚构日志</title>
+<style>
+:root{font:15px/1.8 "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:#20324a;background:#f2f6fb;color-scheme:light}*{box-sizing:border-box}body{margin:0}main{max-width:970px;margin:45px auto;padding:0 24px}h1{font-size:30px;line-height:1.4;margin:12px 0}h2{font-size:18px;margin:0 0 15px}p{color:#60748b}.eyebrow{color:#2859ce;font-size:12px;letter-spacing:2px}.tag{background:#e8efff;color:#2859ce;border-radius:6px;font-size:12px;padding:5px 9px;float:right}.notice{border-left:3px solid #2859ce;padding:12px 16px;background:#e8efff;font-size:13px}.card{background:white;padding:24px;border:1px solid #dbe4ee;border-radius:13px;margin:20px 0}.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}button,.picker{font:inherit;font-size:13px;background:white;border:1px solid #b9cbe3;border-radius:8px;padding:9px 15px;cursor:pointer;color:#20324a}.primary{background:#2859ce;border-color:#2859ce;color:white}button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visible,.picker:focus-within{outline:3px solid #759aef;outline-offset:3px}input[type=file]{max-width:100%;font:inherit;font-size:13px;display:block;margin:15px 0}progress{display:block;width:100%;height:12px;accent-color:#2859ce;margin-top:20px}#status{min-height:30px;margin-top:12px;color:#456384;font-size:13px}#result{overflow-wrap:anywhere}dl{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:20px 0}dt{font-size:12px;color:#60748b}dd{font:25px/1.5 Consolas,monospace;margin:4px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.8 Consolas,monospace;background:#f4f7fb;padding:15px;border-radius:7px}.error{color:#a52f43!important}.ok{color:#187569}small{font-size:12px;color:#60748b}.hidden,[hidden]{display:none!important}summary{cursor:pointer}footer{font-size:12px;color:#60748b;margin:25px 0}.pulse{margin-left:auto;font-size:12px;color:#60748b}@media(max-width:640px){main{margin:24px auto;padding:0 16px}h1{font-size:25px}.card{padding:18px}dl{grid-template-columns:1fr 1fr}.tag{float:none;display:inline-block;margin-bottom:10px}.pulse{margin-left:0}}
+</style>
+</head>
+<body><main>
+<span class="tag">验证页 · 不是正式分析器</span><div class="eyebrow">SESSION DESK / FILE LAB</div>
+<h1>选择文件，在浏览器内完成分析。</h1><p>检验读取、后台统计与内容缓存。所有输入必须是本页格式的虚构日志。</p>
+<div class="notice">不扫描目录，不读取真实 Codex 会话，不发送数据。文件选择只授予本次读取，不会持续监视磁盘变化。</div>
+<section class="card"><h2>选择虚构日志</h2><div class="actions"><button id="download">下载小型虚构样例</button><button id="clear">清空本页结果缓存</button><span class="pulse" id="heartbeat">界面响应计数：0</span></div>
+<label for="file"><small>下载样例后，选择该文件开始分析；也可选择符合说明的自建虚构日志。</small></label><input type="file" id="file" accept=".jsonl"><div class="actions"><button id="again" disabled>重新分析所选快照</button><button id="cancel" disabled>取消</button></div>
+<progress id="progress" max="100" value="0" aria-label="文件处理进度"></progress><div id="status" role="status" aria-live="polite">等待选择文件。仅接受 synthetic-session-lab / schema 1。</div><small>若磁盘文件已修改，请重新选择文件。上面的“重新分析”使用浏览器已取得的文件对象，不保证代表磁盘最新状态。</small></section>
+<section id="result" class="card" hidden aria-label="分析结果"><div id="cacheLabel" class="ok"></div><h2 id="identity"></h2><p id="filename"></p><dl id="metrics"></dl><small id="timing"></small><pre id="fingerprint"></pre><p>这是对所选虚构日志的实际统计，不是对真实 Codex 会话的分析或交接建议。</p></section>
+<details class="card"><summary>格式、缓存与兼容边界</summary><p>UTF-8 JSONL，每行一个对象。首行必须是以下标记；此标记只是格式门禁，不能证明任意外部文件已经脱敏，请仅选择自己生成的虚构样例。</p>
+<pre>{"type":"synthetic-session-lab","schema":1,"synthetic":true,"task_id":"DEMO-LAB"}
+{"type":"turn_end","turn_id":"DEMO-TURN-1","input_tokens":100,"output_tokens":20}
+{"type":"padding","text":"fictional payload"}</pre>
+<p>仅统计唯一 turn_end 的回合和输入/输出 Token 整数；不支持真实日志、模型判断、跨文件分段聚合或真实账单。重复回合、损坏 JSON、非法 UTF-8、未知类型及不完整末行均报错，不缓存部分结果。完整末行可没有换行。</p>
+<p>后台按 256 KiB 分块读取。首次先验证内容指纹，再解析；复用缓存也要完整读取一次以核验内容。指纹是版本、分块大小、文件字节数及有序块 SHA-256 的组合摘要，不是普通文件 SHA-256。缓存只保留最近五个成功摘要在内存中，关闭或刷新页面即清除，不保存正文。</p>
+<p>本验证页限制：单文件不超过 256 MiB、单行不超过 1,048,576 个字符、最多 100,000 个唯一回合；这些是本页保护范围，不是浏览器极限。内存占用还包括浏览器、解码缓冲、最长记录和回合去重表，不能宣称固定内存峰值。</p>
+<p>只依赖文件选择、Blob、Web Worker、TextDecoder 和 Web Crypto，不依赖目录选择接口或浏览器扩展。缺少能力会明确停止；Windows Edge 实测情况见模块说明，macOS/Safari 仍需实机验证。</p></details>
+<footer>本地离线 · 不修改原文件 · 不安装任何程序</footer>
+</main>
+<script id="workerSource" type="text/plain">
+'use strict';
+const CHUNK=256*1024,MAX_LINE=1048576,VERSION='synthetic-parser-1/chunk-sha256-1';
+let file,header,key;
+function fail(message){throw new Error(message);}
+function parse(line,n){try{return JSON.parse(line);}catch(e){fail('第 '+n+' 行不是完整 JSON；未保存部分结果。');}}
+function checkHeader(h){if(!h||h.type!=='synthetic-session-lab'||h.schema!==1||h.synthetic!==true||typeof h.task_id!=='string'||!/^DEMO-[A-Z0-9-]{1,64}$/.test(h.task_id))fail('仅接受明确标记的虚构日志（schema 1）。请使用下载样例，不要选择真实会话。');}
+const hex=buf=>Array.from(new Uint8Array(buf),x=>x.toString(16).padStart(2,'0')).join('');
+async function digest(buf){return hex(await crypto.subtle.digest('SHA-256',buf));}
+async function fingerprint(){
+ if(!crypto.subtle)fail('当前环境不支持 Web Crypto，不能可靠核验缓存；已停止。');
+ if(file.size===0)fail('文件为空。');if(file.size>256*1024*1024)fail('文件超过本验证页的 256 MiB 限制。');
+ const first=new Uint8Array(await file.slice(0,65536).arrayBuffer());const end=first.indexOf(10);if(end<0&&file.size>first.length)fail('首行标记超过 64 KiB 或缺少换行。');
+ header=parse(new TextDecoder('utf-8',{fatal:true}).decode(end<0?first:first.subarray(0,end)),1);checkHeader(header);
+ const hashes=[];for(let offset=0;offset<file.size;offset+=CHUNK){hashes.push(await digest(await file.slice(offset,offset+CHUNK).arrayBuffer()));postMessage({type:'progress',value:Math.round(Math.min(offset+CHUNK,file.size)/file.size*40),text:'正在核验全部内容'});}
+ key=await digest(new TextEncoder().encode([VERSION,CHUNK,file.size,...hashes].join('\n')));postMessage({type:'fingerprint',key});
+}
+async function analyze(){
+ const decoder=new TextDecoder('utf-8',{fatal:true});let carry='',lineNo=0,records=0,input=0,output=0;const turns=new Set(),hashes=[];
+ function consume(line){lineNo++;if(line.length>MAX_LINE)fail('第 '+lineNo+' 行超过字符限制。');if(!line.trim())fail('第 '+lineNo+' 行为空。');const r=parse(line,lineNo);if(lineNo===1){checkHeader(r);if(r.task_id!==header.task_id)fail('文件身份变化，请重新选择。');return;}if(!r||typeof r!=='object')fail('第 '+lineNo+' 行不是记录对象。');
+ if(r.type==='turn_end'){if(typeof r.turn_id!=='string'||!/^DEMO-TURN-[A-Z0-9-]{1,64}$/.test(r.turn_id))fail('第 '+lineNo+' 行回合标识无效。');if(turns.has(r.turn_id))fail('重复回合标识；拒绝重复计数。');if(turns.size>=100000)fail('回合数量超过本页限制。');for(const k of ['input_tokens','output_tokens'])if(!Number.isSafeInteger(r[k])||r[k]<0)fail('第 '+lineNo+' 行 Token 数值无效。');input+=r.input_tokens;output+=r.output_tokens;if(!Number.isSafeInteger(input)||!Number.isSafeInteger(output))fail('Token 累计值超出安全整数范围。');turns.add(r.turn_id);
+ }else if(r.type==='padding'){if(typeof r.text!=='string')fail('填充记录缺少文本。');}else fail('第 '+lineNo+' 行类型不受支持。');records++;}
+ for(let offset=0;offset<file.size;offset+=CHUNK){const bytes=await file.slice(offset,offset+CHUNK).arrayBuffer();hashes.push(await digest(bytes));carry+=decoder.decode(bytes,{stream:true});let start=0,end;while((end=carry.indexOf('\n',start))>=0){consume(carry.slice(start,end));start=end+1;}carry=carry.slice(start);if(carry.length>MAX_LINE)fail('单行超过字符限制。');postMessage({type:'progress',value:40+Math.round(Math.min(offset+CHUNK,file.size)/file.size*60),text:'正在后台解析记录'});}
+ carry+=decoder.decode();if(carry.length)consume(carry);if(lineNo===0)fail('没有记录。');
+ const verified=await digest(new TextEncoder().encode([VERSION,CHUNK,file.size,...hashes].join('\n')));if(verified!==key)fail('两次读取内容不一致，请重新选择文件。');postMessage({type:'result',key,result:{task:header.task_id,bytes:file.size,records,turns:turns.size,input,output}});
+}
+self.onmessage=async e=>{try{if(e.data.type==='start'){file=e.data.file;await fingerprint();}else if(e.data.type==='analyze')await analyze();}catch(e){postMessage({type:'failure',text:e instanceof TypeError?'读取或 UTF-8 解码失败；请检查虚构文件格式并重新选择。':e.message});}};
+</script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),cache=new Map();let selected=null,worker=null,workerURL=null,started=0,request=0,ticks=0;
+setInterval(()=>$('heartbeat').textContent='界面响应计数：'+(++ticks),100);
+function status(text,error=false){$('status').textContent=text;$('status').className=error?'error':'';}
+function stop(){if(worker)worker.terminate();worker=null;if(workerURL)URL.revokeObjectURL(workerURL);workerURL=null;$('cancel').disabled=true;$('file').disabled=false;$('again').disabled=!selected;}
+function display(result,key,hit){$('result').hidden=false;$('cacheLabel').textContent=hit?'内容核验一致 · 复用已验证摘要':'内容解析完成 · 已保存本页摘要';$('identity').textContent=result.task;$('filename').textContent=selected.name+' · '+(result.bytes/1048576).toFixed(2)+' MiB';$('metrics').replaceChildren();for(const [label,value]of [['记录（不含首行）',result.records],['唯一完成回合',result.turns],['输入 Token',result.input],['输出 Token',result.output]]){const box=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value.toLocaleString('en-US');box.append(dt,dd);$('metrics').append(box);}$('fingerprint').textContent='内容组合指纹：'+key;$('timing').textContent='本次耗时 '+((performance.now()-started)/1000).toFixed(3)+' 秒；包含文件读取与校验，不是通用性能保证。';$('progress').value=100;status(hit?'已核验所选快照，缓存有效。':'分析完成，仅对应本次所选文件快照。');stop();}
+function begin(){if(!selected)return;stop();const current=++request;started=performance.now();$('result').hidden=true;$('progress').value=0;$('cancel').disabled=false;$('again').disabled=true;$('file').disabled=true;status('准备在后台读取虚构日志…');
+ try{if(!window.Worker||!window.TextDecoder||!window.crypto?.subtle||!Blob.prototype.arrayBuffer)throw new Error('浏览器缺少后台解析或内容校验能力。请换用支持这些能力的浏览器，本页不会降级成不可靠结果。');workerURL=URL.createObjectURL(new Blob([$('workerSource').textContent],{type:'text/javascript'}));worker=new Worker(workerURL);worker.onerror=e=>{if(current!==request)return;e.preventDefault();status('后台解析器无法运行。可能是浏览器本地文件策略限制；没有生成结果。',true);stop();};worker.onmessage=e=>{if(current!==request)return;const m=e.data;if(m.type==='progress'){$('progress').value=m.value;status(m.text+' · '+m.value+'%');}else if(m.type==='fingerprint'){if(cache.has(m.key)){const r=cache.get(m.key);cache.delete(m.key);cache.set(m.key,r);display(r,m.key,true);}else worker.postMessage({type:'analyze'});}else if(m.type==='result'){cache.set(m.key,m.result);while(cache.size>5)cache.delete(cache.keys().next().value);display(m.result,m.key,false);}else if(m.type==='failure'){status(m.text,true);stop();}};worker.postMessage({type:'start',file:selected});}catch(e){status(e.message,true);stop();}}
+$('file').onchange=()=>{selected=$('file').files[0]||null;if(selected)begin();};$('again').onclick=begin;
+$('cancel').onclick=()=>{request++;stop();$('result').hidden=true;status('已取消，未保存部分结果。可以重新选择文件或重新分析所选快照。');};
+$('clear').onclick=()=>{request++;stop();cache.clear();$('result').hidden=true;status('本页摘要缓存已清空。原始文件没有变化。');};
+$('download').onclick=()=>{const rows=[{type:'synthetic-session-lab',schema:1,synthetic:true,task_id:'DEMO-LAB'},{type:'turn_end',turn_id:'DEMO-TURN-1',input_tokens:100,output_tokens:20},{type:'padding',text:'虚构示例，不含真实对话。'},{type:'turn_end',turn_id:'DEMO-TURN-2',input_tokens:200,output_tokens:30}];const u=URL.createObjectURL(new Blob([rows.map(r=>JSON.stringify(r)).join('\n')+'\n'],{type:'application/x-ndjson'}));const a=document.createElement('a');a.href=u;a.download='synthetic-session-lab.jsonl';a.click();setTimeout(()=>URL.revokeObjectURL(u),30000);};
+</script>
+</body></html>
