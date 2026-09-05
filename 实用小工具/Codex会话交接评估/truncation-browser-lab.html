@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>快照对照 · 截断状态实验</title>
+<style>
+:root{font-family:'Segoe UI','Microsoft YaHei',sans-serif;color:#203647;background:#edf3f7;font-size:16px}*{box-sizing:border-box}body{margin:0}main{max-width:1050px;margin:auto;padding:38px 24px}header{border-left:5px solid #126d83;padding-left:22px;margin-bottom:30px}small,.muted{color:#536979}h1{font-size:32px;margin:10px 0}h2{font-size:20px;margin:0 0 14px}p{line-height:1.7}button{font:inherit;cursor:pointer;border:1px solid #a9bdc8;border-radius:7px;padding:10px 15px;background:white;color:#203647}button:hover{background:#edf7fa}button:focus-visible,summary:focus-visible{outline:3px solid #126d83;outline-offset:3px}button:disabled{opacity:.45;cursor:default}.primary{background:#126d83;color:white;border-color:#126d83}.primary:hover{background:#0b5669}.panel{background:white;border:1px solid #cbd9e2;border-radius:12px;padding:23px;margin:18px 0}.actions{display:flex;gap:10px;flex-wrap:wrap}.snapshots{display:grid;grid-template-columns:1fr 1fr;gap:18px}.snapshots .panel{margin:0;min-height:210px}.step{font-family:Consolas,monospace;color:#126d83;display:block;margin-bottom:13px}.result{border-top:4px solid #126d83}#notice{min-height:28px;color:#536979;margin:15px 0;overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}summary{cursor:pointer}#outcome{font-size:23px;margin:4px 0 12px}.badge{display:inline-block;background:#edf3f7;padding:5px 9px;border-radius:5px}.file{overflow-wrap:anywhere}footer{font-size:13px;color:#536979;line-height:1.7;margin-top:26px}@media(max-width:650px){main{padding:22px 16px}.snapshots{grid-template-columns:1fr}h1{font-size:27px}}
+</style>
+<main><header><small>CODEX · 独立实验 / 仅虚构数据</small><h1>两次读取，看清快照变化</h1><p>重新选择文件，核对末尾是否补全。不会监控文件，也不会生成正式会话评估。</p></header>
+<section class="panel"><h2>先准备虚构文件</h2><p class="muted">首次选择“末尾截断”，再次选择“已补全”。也可用相同文件测试持续截断，用另外两个样例测试异常。</p><div class="actions" id="downloads"><button data-sample="cut">下载末尾截断</button><button data-sample="complete">下载已补全</button><button data-sample="damage">下载中间损坏</button><button data-sample="rewrite">下载内容改写</button></div></section>
+<div class="snapshots"><section class="panel"><span class="step">01 / 首次快照</span><h2>选择第一次读取的文件</h2><button class="primary" id="first">选择虚构文件</button><input id="firstInput" type="file" accept=".jsonl" hidden><p id="firstInfo" class="file muted">尚未选择文件</p></section><section class="panel"><span class="step">02 / 再次读取</span><h2>主动选择新的快照</h2><button class="primary" id="second" disabled>再次选择文件</button><input id="secondInput" type="file" accept=".jsonl" hidden><p id="secondInfo" class="file muted">完成首次选择后即可对照</p></section></div>
+<p id="notice" role="status" aria-live="polite"></p>
+<section class="panel result" aria-live="polite"><span class="badge">快照完整性 · 非统计结果</span><p id="outcome">等待首次选择</p><p id="explanation">文件只在当前页面内存中处理。关闭或刷新页面后清除。</p><p id="cache"></p><details><summary>查看判定依据</summary><pre id="detail">尚无快照</pre></details></section>
+<button id="reset">清空快照</button><footer>只选择本页生成的虚构样例，每个文件最多 1 MiB。实验标记不证明文件已脱敏，请勿选择真实日志。缺失 Token 为未知，本页不计算 Token。写入进程是否活跃始终未知。</footer></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id), LIMIT=1024*1024;
+const marker={experiment:'truncation-lab-v1',synthetic:true,task:'fictional-task-a',segment:'segment-a'};
+const row=n=>JSON.stringify({type:'event_msg',payload:{type:'token_count',info:{total_token_usage:{total_tokens:n}}}});
+const full=row(100),cut=full.slice(0,-2);
+const samples={cut,complete:full,damage:cut+'\n'+full,rewrite:row(200)};
+function sampleText(kind){return JSON.stringify(marker)+'\n'+samples[kind];}
+for(const button of document.querySelectorAll('[data-sample]'))button.onclick=()=>{const url=URL.createObjectURL(new Blob([sampleText(button.dataset.sample)],{type:'application/x-ndjson'}));const a=document.createElement('a');a.href=url;a.download='fictional-'+button.dataset.sample+'.jsonl';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+const labels={empty:'文件没有记录',tail_unresolved:'末尾不完整，原因待确认',terminated_invalid:'已换行的记录无效',history_invalid:'历史记录损坏或格式不支持',format_unsupported:'记录格式不支持',records_valid:'记录完整，可进入后续分析'};
+function inspect(input){
+ const lines=[];let start=0;for(let i=0;i<input.length;i++)if(input[i]===10){lines.push({raw:input.subarray(start,i),terminated:true});start=i+1;}if(start<input.length)lines.push({raw:input.subarray(start),terminated:false});
+ const nonempty=lines.map((line,index)=>({...line,index})).filter(line=>!line.raw.every(b=>[9,13,32].includes(b)));const issues=[];let recognizedRecords=0;
+ for(const line of nonempty){let r;try{r=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(line.raw));}catch{issues.push({line:line.index+2,kind:nonempty.some(n=>n.index>line.index)?'history_invalid':line.terminated?'terminated_invalid':'tail_unresolved'});continue;}
+ if(!(r&&!Array.isArray(r)&&r.type==='event_msg'&&r.payload?.type==='token_count'&&Number.isSafeInteger(r.payload.info?.total_token_usage?.total_tokens)&&r.payload.info.total_token_usage.total_tokens>=0))issues.push({line:line.index+2,kind:'format_unsupported'});else recognizedRecords++;}
+ const status=!nonempty.length?'empty':issues.some(i=>i.kind==='history_invalid')?'history_invalid':issues.some(i=>i.kind==='format_unsupported')?'format_unsupported':issues.some(i=>i.kind==='terminated_invalid')?'terminated_invalid':issues.length?'tail_unresolved':'records_valid';return {status,issues,recognizedRecords,completeAssessment:false};
+}
+let baseline=null,current=null,generation=0;
+function idle(){ $('first').disabled=false;$('second').disabled=!baseline; }
+function show(snapshot,previous){
+ $('outcome').textContent=labels[snapshot.result.status];
+ let explanation=snapshot.result.status==='records_valid'?'仅确认实验记录有效。尚未验证会话、回合及分段关系，不代表正式评估成功。':'保留不完整状态；缺失 Token 未知，不填零。请核对判定依据，准备新的虚构快照后再次选择。';
+ let cache='首次快照，无旧缓存。',transition='first_snapshot';
+ if(previous){const same=snapshot.hash===previous.hash;const prefix=snapshot.data.length>=previous.data.length&&previous.data.every((b,i)=>snapshot.data[i]===b);transition=!prefix?'rewritten':same?'unchanged':previous.result.status==='tail_unresolved'&&snapshot.result.status==='records_valid'?'tail_completed':'new_snapshot';cache=same?'内容未变：重新核对后判定相同，不提升结果完整性。':'内容已变：旧缓存失效，已从新快照重新判定。';if(transition==='tail_completed')explanation='前次快照的末尾已补全。不能据此证明写入进程仍活跃，也不代表正式评估成功。';if(transition==='rewritten')explanation='原内容已被改写或缩短，旧快照失效。当前显示新快照判定，不沿用旧累计值。';}
+ $('explanation').textContent=explanation;$('cache').textContent=cache;$('detail').textContent=JSON.stringify({transition,status:snapshot.result.status,issues:snapshot.result.issues,recognizedRecords:snapshot.result.recognizedRecords,sha256:snapshot.hash,parser:'browser-proposal-1',writerLiveness:'unknown',completeAssessment:false,missingTokens:'unknown'},null,2);
+}
+async function select(file,first){if(!file)return;const run=++generation;$('first').disabled=true;$('second').disabled=true;$('notice').textContent='正在读取虚构文件…';
+ try{if(file.size>LIMIT)throw Error('文件超过 1 MiB，请选择较小的虚构样例。');const all=new Uint8Array(await file.arrayBuffer());if(run!==generation)return;const end=all.indexOf(10);if(end<0||end>4096)throw Error('缺少实验标记，请使用本页下载的样例。');let header;try{header=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(all.subarray(0,end)));}catch{throw Error('实验标记无效，请使用本页下载的样例。');}if(Object.keys(marker).some(k=>header[k]!==marker[k]))throw Error('实验标记或任务不匹配，请使用本页下载的样例。');
+ const data=all.subarray(end+1),result=inspect(data);const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data)),b=>b.toString(16).padStart(2,'0')).join('');if(run!==generation)return;const snapshot={data,result,hash};
+ if(first){baseline=snapshot;current=null;$('firstInfo').textContent=file.name+' · '+labels[result.status];$('secondInfo').textContent='请选择同一虚构任务的新快照';show(snapshot,null);}else{current=snapshot;$('secondInfo').textContent=file.name+' · '+labels[result.status];show(snapshot,baseline);}$('notice').textContent='读取完成。';
+ }catch(error){if(run===generation)$('notice').textContent='此次选择未采用：'+error.message+' 原快照保持不变。';}finally{if(run===generation)idle();}}
+for(const [button,input,first]of [['first','firstInput',true],['second','secondInput',false]]){$(button).onclick=()=>$(input).click();$(input).onchange=()=>{const file=$(input).files[0];$(input).value='';select(file,first);};}
+$('reset').onclick=()=>{generation++;baseline=null;current=null;$('firstInput').value='';$('secondInput').value='';$('firstInfo').textContent='尚未选择文件';$('secondInfo').textContent='完成首次选择后即可对照';$('outcome').textContent='等待首次选择';$('explanation').textContent='文件只在当前页面内存中处理。关闭或刷新页面后清除。';$('cache').textContent='';$('detail').textContent='尚无快照';$('notice').textContent='已清空快照。';idle();};
+</script></html>
