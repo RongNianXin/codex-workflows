@@ -24,6 +24,10 @@
 
 Windows Edge 无头验证已覆盖约 64 MiB 虚构日志、后台响应、内容变更导致缓存失效、损坏输入与取消。结果缓存仅在页面内存中保留最多五项；磁盘文件变化后需要重新选择，不能用旧文件对象冒充最新内容。macOS/Safari 尚未实测，当前简化格式不等同现有分析器。详见[可行性报告、测量结果与接入条件](BROWSER_ANALYSIS_FEASIBILITY.md)。
 
+## 真实格式的虚构兼容样例
+
+[兼容验证页](browser-compatibility-check.html)可运行内置跨分段示例，或选择带虚构标记的同任务 JSONL；[完整 20 组样例与对照结果](compatibility-fixtures.json)和[差异报告](BROWSER_COMPATIBILITY_RESULTS.md)提供证据。Windows Edge 浏览器与隔离路径下的原 PowerShell 算法有 18 组一致，2 组分别暴露原脚本字段顺序漏计和截断记录处理策略差异。原脚本未修改，不能宣称完整替代；真实数据、Mac/Safari、完整报告指标和兼容算法的大文件性能仍未验证。
+
 ## 文件清单
 
 1. `check-codex-session.ps1`：在终端输出任务 ID、任务名称、会话分段数、聚合字节数、分段时间范围、存储状态、回合与文件增长、自动压缩次数、最近输入占窗口比例和交接建议，并生成详细分析报告。

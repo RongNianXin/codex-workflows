@@ -2,7 +2,7 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: 3596f697e8d78df520fa30e19ed802cda490bd78f7e7cdb1c37f88f2086c98e6 -->
+<!-- README-SOURCE-SHA256: e82bc6eb50d68f74bc5870103d7298731025a113750c9347377723dca7946f8b -->
 
 This directory provides a read-only PowerShell tool for assessing a local Codex task before handing work to a new task. It reports session size, detected turns, compaction count, recent context usage, and a heuristic handoff recommendation. It also writes a Markdown report with token and local file composition details.
 
@@ -27,6 +27,10 @@ The same HTML interface is intended for Windows and macOS browsers. Only headles
 [Open the synthetic-log validation page](browser-analysis-lab.html), download its small sample, and select the file to parse it. This is separate from the fixed-data task panel and does not connect to real Codex sessions. Only this HTML file is needed, without a local server or dependency installation.
 
 Headless Windows Edge tests cover a roughly 64 MiB synthetic log, background responsiveness, content-based cache invalidation, malformed input, and cancellation. Up to five successful summaries stay in page memory only. Reselect a file after it changes on disk; an existing browser file object must not be presented as current disk contents. macOS/Safari has not been tested, and the simplified format is not equivalent to the existing analyzer. See the [feasibility report, measurements, and integration requirements](BROWSER_ANALYSIS_FEASIBILITY.md) (Chinese).
+
+## Synthetic compatibility corpus for the existing record format
+
+The [compatibility page](browser-compatibility-check.html) runs a built-in cross-segment example or accepts marked synthetic JSONL segments for the same task. The [20 complete cases and paired outputs](compatibility-fixtures.json) and [difference report](BROWSER_COMPATIBILITY_RESULTS.md) (Chinese) retain the evidence. Headless Windows Edge and the original PowerShell algorithms with isolated input paths agree on 18 cases. Two differences expose a reference-script undercount caused by JSON key order and a different policy for truncated records. The original script is unchanged; this is not a complete replacement. Real data, macOS/Safari, full report metrics, and large-file performance of the compatibility parser remain unverified.
 
 ## Script requirements
 

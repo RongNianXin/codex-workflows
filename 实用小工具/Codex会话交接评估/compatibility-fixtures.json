@@ -1,0 +1,1480 @@
+{
+  "schema": 1,
+  "synthetic": true,
+  "taskId": "00000000-0000-0000-0000-000000000001",
+  "cases": [
+    {
+      "name": "duplicate-context-terminal",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n{\"timestamp\":\"2025-01-01T00:00:04.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:05.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"a\"}}\n"
+        }
+      ],
+      "truth": {
+        "contexts": 2,
+        "duplicates": 1,
+        "completed": 1,
+        "totals": [
+          100
+        ]
+      },
+      "comparison": {
+        "name": "duplicate-context-terminal",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 1,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 1,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "anonymous-adopts-id",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"user_message\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n{\"timestamp\":\"2025-01-01T00:00:04.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"turn_complete\",\"turn_id\":\"a\"}}\n"
+        }
+      ],
+      "truth": {
+        "completed": 1,
+        "totals": [
+          100
+        ]
+      },
+      "comparison": {
+        "name": "anonymous-adopts-id",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "same-input-two-attempts",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"user_message\",\"turn_id\":\"a\",\"message\":\"fiction\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"turn_aborted\",\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"user_message\",\"turn_id\":\"b\",\"message\":\"fiction\"}}\n{\"timestamp\":\"2025-01-01T00:00:04.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"b\"}}\n"
+        }
+      ],
+      "truth": {
+        "completed": 1,
+        "aborted": 1,
+        "totals": [
+          0,
+          0
+        ]
+      },
+      "comparison": {
+        "name": "same-input-two-attempts",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 0,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 0,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 1,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "a",
+                "status": "aborted",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              },
+              {
+                "id": "b",
+                "status": "completed",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 0,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 0,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 1,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "a",
+                "status": "aborted",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              },
+              {
+                "id": "b",
+                "status": "completed",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "unfinished",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n"
+        }
+      ],
+      "truth": {
+        "unfinished": 1,
+        "totals": [
+          100
+        ]
+      },
+      "comparison": {
+        "name": "unfinished",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "unfinished",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "unfinished",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "late-first-baseline",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"b\"}}\n{\"timestamp\":\"2025-01-01T00:00:04.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n{\"timestamp\":\"2025-01-01T00:00:05.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":130,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":130}}}}\n"
+        }
+      ],
+      "truth": {
+        "baseline": 1,
+        "completed": 1,
+        "unfinished": 1,
+        "totals": [
+          0,
+          30
+        ]
+      },
+      "comparison": {
+        "name": "late-first-baseline",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 0,
+            "baseline": 1,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              },
+              {
+                "id": "b",
+                "status": "unfinished",
+                "input": 30,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 30
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 0,
+            "baseline": 1,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              },
+              {
+                "id": "b",
+                "status": "unfinished",
+                "input": 30,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 30
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "repeat-and-reset",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n{\"timestamp\":\"2025-01-01T00:00:04.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":40,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":40}}}}\n{\"timestamp\":\"2025-01-01T00:00:05.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":70,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":70}}}}\n"
+        }
+      ],
+      "truth": {
+        "resets": 1,
+        "advances": 2,
+        "totals": [
+          130
+        ]
+      },
+      "comparison": {
+        "name": "repeat-and-reset",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 1,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "unfinished",
+                "input": 130,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 130
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 1,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "unfinished",
+                "input": 130,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 130
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "all-token-components",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":20,\"output_tokens\":10,\"reasoning_output_tokens\":3,\"total_tokens\":110}}}}\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:04.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"b\"}}\n{\"timestamp\":\"2025-01-01T00:00:05.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":160,\"cached_input_tokens\":40,\"output_tokens\":30,\"reasoning_output_tokens\":8,\"total_tokens\":190}}}}\n"
+        }
+      ],
+      "truth": {
+        "totals": [
+          110,
+          80
+        ]
+      },
+      "comparison": {
+        "name": "all-token-components",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 100,
+                "cached": 20,
+                "output": 10,
+                "reasoning": 3,
+                "total": 110
+              },
+              {
+                "id": "b",
+                "status": "unfinished",
+                "input": 60,
+                "cached": 20,
+                "output": 20,
+                "reasoning": 5,
+                "total": 80
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 100,
+                "cached": 20,
+                "output": 10,
+                "reasoning": 3,
+                "total": 110
+              },
+              {
+                "id": "b",
+                "status": "unfinished",
+                "input": 60,
+                "cached": 20,
+                "output": 20,
+                "reasoning": 5,
+                "total": 80
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "missing-total-fallback",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":20,\"reasoning_output_tokens\":0,\"total_tokens\":0}}}}\n"
+        }
+      ],
+      "truth": {
+        "totals": [
+          120
+        ]
+      },
+      "comparison": {
+        "name": "missing-total-fallback",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "unfinished",
+                "input": 100,
+                "cached": 0,
+                "output": 20,
+                "reasoning": 0,
+                "total": 120
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "unfinished",
+                "input": 100,
+                "cached": 0,
+                "output": 20,
+                "reasoning": 0,
+                "total": 120
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "continued-turn-across-segments",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n"
+        },
+        {
+          "name": "01-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:10.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:11.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:12.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n{\"timestamp\":\"2025-01-01T00:00:13.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":130,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":130}}}}\n{\"timestamp\":\"2025-01-01T00:00:14.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"a\"}}\n"
+        }
+      ],
+      "truth": {
+        "segments": 2,
+        "baseline": 1,
+        "duplicates": 1,
+        "completed": 1,
+        "totals": [
+          130
+        ]
+      },
+      "comparison": {
+        "name": "continued-turn-across-segments",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 2,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 1,
+            "baseline": 1,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 130,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 130
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 2,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 1,
+            "baseline": 1,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 130,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 130
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "new-turn-later-segment",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"a\"}}\n"
+        },
+        {
+          "name": "01-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:10.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:11.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"b\"}}\n{\"timestamp\":\"2025-01-01T00:00:12.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":200,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":200}}}}\n{\"timestamp\":\"2025-01-01T00:00:13.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":250,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":250}}}}\n"
+        }
+      ],
+      "truth": {
+        "segments": 2,
+        "baseline": 1,
+        "totals": [
+          100,
+          50
+        ]
+      },
+      "comparison": {
+        "name": "new-turn-later-segment",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 2,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 0,
+            "baseline": 1,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              },
+              {
+                "id": "b",
+                "status": "unfinished",
+                "input": 50,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 50
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 2,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 0,
+            "baseline": 1,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              },
+              {
+                "id": "b",
+                "status": "unfinished",
+                "input": 50,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 50
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "reverse-input-order",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:10.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:11.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"b\"}}\n{\"timestamp\":\"2025-01-01T00:00:12.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":200,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":200}}}}\n{\"timestamp\":\"2025-01-01T00:00:13.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":250,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":250}}}}\n"
+        },
+        {
+          "name": "01-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"a\"}}\n"
+        }
+      ],
+      "truth": {
+        "segments": 2,
+        "totals": [
+          100,
+          50
+        ]
+      },
+      "comparison": {
+        "name": "reverse-input-order",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 2,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 0,
+            "baseline": 1,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              },
+              {
+                "id": "b",
+                "status": "unfinished",
+                "input": 50,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 50
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 2,
+            "excluded": 0,
+            "contexts": 2,
+            "duplicates": 0,
+            "baseline": 1,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              },
+              {
+                "id": "b",
+                "status": "unfinished",
+                "input": 50,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 50
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "wrong-internal-id",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n"
+        },
+        {
+          "name": "01-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:10.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000002\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:11.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"b\"}}\n{\"timestamp\":\"2025-01-01T00:00:12.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":999,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":999}}}}\n"
+        }
+      ],
+      "truth": {
+        "segments": 1,
+        "excluded": 1,
+        "totals": [
+          100
+        ]
+      },
+      "comparison": {
+        "name": "wrong-internal-id",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 1,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "unfinished",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 1,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "unfinished",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "metadata-conflict",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n"
+        },
+        {
+          "name": "01-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:10.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"other-fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:12.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":200,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":200}}}}\n"
+        }
+      ],
+      "truth": null,
+      "comparison": {
+        "name": "metadata-conflict",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": false,
+          "error": "metadata_conflict"
+        },
+        "reference": {
+          "error": "metadata_conflict",
+          "ok": false
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "range-overlap",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:15.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n"
+        },
+        {
+          "name": "01-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:10.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:16.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":200,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":200}}}}\n"
+        }
+      ],
+      "truth": null,
+      "comparison": {
+        "name": "range-overlap",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": false,
+          "error": "segment_range_overlap"
+        },
+        "reference": {
+          "ok": false,
+          "error": "segment_range_overlap"
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "record-overlap",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:05.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n"
+        },
+        {
+          "name": "01-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:10.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:04.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":200,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":200}}}}\n"
+        }
+      ],
+      "truth": null,
+      "comparison": {
+        "name": "record-overlap",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": false,
+          "error": "segment_record_overlap"
+        },
+        "reference": {
+          "ok": false,
+          "error": "segment_record_overlap"
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "equal-boundary-accepted",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:05.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n"
+        },
+        {
+          "name": "01-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:05.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:06.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":200,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":200}}}}\n{\"timestamp\":\"2025-01-01T00:00:07.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":220,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":220}}}}\n"
+        }
+      ],
+      "truth": {
+        "segments": 2,
+        "baseline": 1,
+        "totals": [
+          120
+        ]
+      },
+      "comparison": {
+        "name": "equal-boundary-accepted",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 2,
+            "excluded": 0,
+            "contexts": 0,
+            "duplicates": 0,
+            "baseline": 1,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "",
+                "status": "unfinished",
+                "input": 120,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 120
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 2,
+            "excluded": 0,
+            "contexts": 0,
+            "duplicates": 0,
+            "baseline": 1,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 0,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "",
+                "status": "unfinished",
+                "input": 120,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 120
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "anonymous-terminal-boundaries",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_started\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\"}}\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_started\"}}\n{\"timestamp\":\"2025-01-01T00:00:04.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_aborted\"}}\n"
+        }
+      ],
+      "truth": {
+        "completed": 1,
+        "aborted": 1,
+        "totals": [
+          0,
+          0
+        ]
+      },
+      "comparison": {
+        "name": "anonymous-terminal-boundaries",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 0,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 0,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 1,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "",
+                "status": "completed",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              },
+              {
+                "id": "",
+                "status": "aborted",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 0,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 0,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 1,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "",
+                "status": "completed",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              },
+              {
+                "id": "",
+                "status": "aborted",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "compaction-preserves-counter",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":100}}}}\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"compacted\",\"payload\":{}}\n{\"timestamp\":\"2025-01-01T00:00:04.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":150,\"cached_input_tokens\":0,\"output_tokens\":0,\"reasoning_output_tokens\":0,\"total_tokens\":150}}}}\n"
+        }
+      ],
+      "truth": {
+        "compactions": 1,
+        "totals": [
+          150
+        ]
+      },
+      "comparison": {
+        "name": "compaction-preserves-counter",
+        "outcome": "MATCH",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 1,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "unfinished",
+                "input": 150,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 150
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 2,
+            "compactions": 1,
+            "completed": 0,
+            "aborted": 0,
+            "unfinished": 1,
+            "turns": [
+              {
+                "id": "a",
+                "status": "unfinished",
+                "input": 150,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 150
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": null
+      }
+    },
+    {
+      "name": "json-key-order",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"total_tokens\":100}}},\"timestamp\":\"2025-01-01T00:00:02.000Z\",\"type\":\"event_msg\"}\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"a\"}}\n"
+        }
+      ],
+      "truth": {
+        "completed": 1,
+        "totals": [
+          100
+        ]
+      },
+      "comparison": {
+        "name": "json-key-order",
+        "outcome": "EXPLAINED_DIFFERENCE",
+        "browser": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 1,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 100,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 100
+              }
+            ]
+          }
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 0,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              }
+            ]
+          },
+          "parseWarnings": 0
+        },
+        "classification": "reference_lexical_key_order"
+      }
+    },
+    {
+      "name": "malformed-token-record",
+      "segments": [
+        {
+          "name": "00-00000000-0000-0000-0000-000000000001.jsonl",
+          "text": "{\"timestamp\":\"2025-01-01T00:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"originator\":\"fixture\",\"source\":\"fixture\",\"model_provider\":\"fixture\",\"cli_version\":\"fixture-1\",\"synthetic_test\":true}}\n{\"timestamp\":\"2025-01-01T00:00:01.000Z\",\"type\":\"turn_context\",\"payload\":{\"turn_id\":\"a\"}}\n{\"timestamp\":\"2025-01-01T00:00:02Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":\n{\"timestamp\":\"2025-01-01T00:00:03.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"a\"}}\n"
+        }
+      ],
+      "truth": null,
+      "comparison": {
+        "name": "malformed-token-record",
+        "outcome": "EXPLAINED_DIFFERENCE",
+        "browser": {
+          "ok": false,
+          "error": "malformed_json"
+        },
+        "reference": {
+          "ok": true,
+          "result": {
+            "segments": 1,
+            "excluded": 0,
+            "contexts": 1,
+            "duplicates": 0,
+            "baseline": 0,
+            "resets": 0,
+            "advances": 0,
+            "compactions": 0,
+            "completed": 1,
+            "aborted": 0,
+            "unfinished": 0,
+            "turns": [
+              {
+                "id": "a",
+                "status": "completed",
+                "input": 0,
+                "cached": 0,
+                "output": 0,
+                "reasoning": 0,
+                "total": 0
+              }
+            ]
+          },
+          "parseWarnings": 1
+        },
+        "classification": "strict_browser_rejects_malformed"
+      }
+    }
+  ]
+}

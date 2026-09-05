@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>会话解析兼容验证 · 虚构样例</title>
+<style>
+:root{font:14px/1.8 "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:#20324a;background:#f2f6fb}body{margin:0}main{max-width:950px;margin:35px auto;padding:0 20px}h1{font-size:28px}h2{font-size:18px}.card{background:white;border:1px solid #dbe4ee;padding:22px;border-radius:12px;margin:20px 0}button{font:inherit;color:#2859ce;background:white;border:1px solid #b8cbe8;border-radius:8px;padding:8px 14px;cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid #759aef}input{display:block;margin:14px 0;max-width:100%}.note{background:#e8efff;border-left:3px solid #2859ce;padding:12px 16px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.8 Consolas,monospace}small{color:#60748b}#status{min-height:30px;color:#2859ce}.error{color:#a42f43!important}
+</style></head><body><main>
+<small>SESSION DESK / COMPATIBILITY LAB</small><h1>同一批日志，两份解析结果。</h1>
+<p class="note">仅验证虚构的真实格式样例。此页运行浏览器解析器；与 PowerShell 的对照结果见模块验证报告。没有访问真实会话或调用 PowerShell。</p>
+<section class="card"><h2>运行或选择虚构分段</h2><button id="demo">运行内置跨分段样例</button><label for="files"><p>或选择属于同一虚构任务的多个 JSONL 文件</p></label><input id="files" type="file" accept=".jsonl" multiple><small>每个文件的 session_meta.payload 必须包含 synthetic_test: true，ID 使用固定虚构前缀。标记不是脱敏证明，请不要选择真实资料。仅接受 UTF-8、小型测试文件：每段最多 2 MiB，合计最多 16 MiB。</small><div id="status" role="status" aria-live="polite">等待运行样例。</div></section>
+<section class="card"><h2>结构化结果</h2><pre id="result">尚未运行。统计包含回合状态、逐回合 Token、基线提醒及分段结果，不包含对话正文。</pre></section>
+<p><small>本页不是正式替代分析器。文件选择不赋予持续读取权限；不缓存结果、不发送网络请求。Windows Edge 实测，macOS/Safari 未实测。大文件后台能力由独立分析验证页验证，本页只核对语义。</small></p>
+<script>
+'use strict';
+// Independent structured parser for the deliberately bounded synthetic compatibility corpus.
+function parseCompatibility(segments,taskId){
+ const invalid=message=>{throw new Error(message);};
+ const safe=v=>{if(v===undefined||v===null)return 0;if(!Number.isSafeInteger(v))invalid('unsupported_numeric');return v;};
+ let excluded=0;
+ const files=[];
+ for(const segment of segments){
+  const rows=segment.text.replace(/^\uFEFF/,'').split(/\r?\n/);if(rows.at(-1)==='')rows.pop();
+  const records=rows.filter(x=>x.trim()).map(x=>{try{return JSON.parse(x);}catch(e){invalid('malformed_json');}});
+  const meta=records.find(x=>x.type==='session_meta'),p=meta?.payload;
+  if(!p||p.synthetic_test!==true||!/^00000000-0000-0000-0000-0000000000[0-9]{2}$/.test(p.id||''))invalid('synthetic_only');
+  if(p.id.toLowerCase()!==taskId.toLowerCase()){excluded++;continue;}
+  const start=Date.parse(meta.timestamp);if(!Number.isFinite(start))invalid('invalid_timestamp');
+  files.push({name:segment.name,records,meta:p,start});
+ }
+ if(!files.length)invalid('no_segments');
+ files.sort((a,b)=>a.start-b.start||a.name.localeCompare(b.name,'en'));
+ for(const field of ['originator','source','model_provider']){const values=new Set(files.map(f=>f.meta[field]?.toLowerCase()).filter(Boolean));if(values.size>1)invalid('metadata_conflict');}
+ const turns=[],ids=new Map(),terminal=new Set();let current=-1,completed=0,aborted=0,contexts=0,duplicates=0,baseline=0,resets=0,advances=0,compactions=0,previous=null,end=null;
+ const get=()=>turns[current];
+ const create=id=>{turns.push({id:id||'',status:'unfinished',context:false,input:0,cached:0,output:0,reasoning:0,total:0});current=turns.length-1;};
+ const assign=id=>{if(id&&!get().id)get().id=id;};
+ const identify=id=>{if(id&&ids.has(id))current=ids.get(id);else if(id){if(current<0||get().status!=='unfinished'||get().id)create(id);ids.set(id,current);}else if(current<0||get().status!=='unfinished')create('');assign(id);};
+ files.forEach((file,index)=>{
+  if(end!==null&&file.start<end)invalid('segment_range_overlap');if(index>0)previous=null;let segmentEnd=file.start;
+  for(const r of file.records){const p=r.payload||{},type=r.type,kind=p.type,id=p.turn_id||r.turn_id||'';
+   if(r.timestamp){const timestamp=Date.parse(r.timestamp);if(!Number.isFinite(timestamp))invalid('invalid_timestamp');if(index>0&&type!=='session_meta'&&timestamp<end)invalid('segment_record_overlap');segmentEnd=Math.max(segmentEnd,timestamp);}
+   if(type==='compacted')compactions++;
+   if(type==='turn_context'||(type==='event_msg'&&['task_started','turn_started','user_message'].includes(kind))){identify(id);if(type==='turn_context'){contexts++;if(get().context)duplicates++;get().context=true;}}
+   if(type==='event_msg'&&kind==='token_count'&&p.info?.total_token_usage){const u=p.info.total_token_usage,s={input:safe(u.input_tokens),cached:safe(u.cached_input_tokens),output:safe(u.output_tokens),reasoning:safe(u.reasoning_output_tokens),total:safe(u.total_tokens)};if(s.total<=0&&(s.input>0||s.output>0))s.total=s.input+s.output;
+    if(s.total>0){if(current<0)create('');let d={input:0,cached:0,output:0,reasoning:0,total:0};if(previous===null){if(index===0&&current<=0&&completed===0&&aborted===0)d=s;else baseline++;}else if(s.total>previous.total){for(const k of Object.keys(d))d[k]=Math.max(0,s[k]-previous[k]);}else if(s.total<previous.total)resets++;
+     if(d.total>0){for(const k of Object.keys(d)){get()[k]+=d[k];if(!Number.isSafeInteger(get()[k]))invalid('unsupported_numeric');}advances++;}previous=s;}
+   }
+   if(type==='event_msg'&&['task_complete','turn_complete','turn_aborted','task_aborted'].includes(kind)){
+    if(id&&terminal.has(id))continue;if(id)terminal.add(id);
+    if(id&&ids.has(id))current=ids.get(id);
+    else if(id&&current>=0&&get().status==='unfinished'&&!get().id)ids.set(id,current);
+    else if(current<0||get().status!=='unfinished'||(id&&get().id&&get().id!==id)){create(id);if(id)ids.set(id,current);}
+    assign(id);if(['task_complete','turn_complete'].includes(kind)){get().status='completed';completed++;}else{get().status='aborted';aborted++;}
+   }
+  }end=segmentEnd;
+ });
+ return {segments:files.length,excluded,contexts,duplicates,baseline,resets,advances,compactions,completed:turns.filter(t=>t.status==='completed').length,aborted:turns.filter(t=>t.status==='aborted').length,unfinished:turns.filter(t=>t.status==='unfinished').length,turns:turns.map(({context,...t})=>t)};
+}
+window.parseCompatibility=parseCompatibility;
+const taskId='00000000-0000-0000-0000-000000000001';
+const record=(type,payload,second)=>({timestamp:'2025-01-01T00:00:'+String(second).padStart(2,'0')+'Z',type,payload});
+const meta=second=>record('session_meta',{id:taskId,synthetic_test:true,originator:'fixture',source:'fixture',model_provider:'fixture',cli_version:'fixture-1'},second);
+const token=(input,second)=>record('event_msg',{type:'token_count',info:{total_token_usage:{input_tokens:input,output_tokens:0,total_tokens:input}}},second);
+function show(segments){const s=document.getElementById('status');try{const r=parseCompatibility(segments,taskId);document.getElementById('result').textContent=JSON.stringify(r,null,2);s.className='';s.textContent='浏览器解析完成。仅对应所选虚构样例，不代表全部格式兼容。';}catch(e){s.className='error';s.textContent='已停止：'+e.message;document.getElementById('result').textContent='未生成可用结果。';}}
+document.getElementById('demo').onclick=()=>show([{name:'a.jsonl',text:[meta(0),record('turn_context',{turn_id:'demo-turn'},1),token(100,2)].map(JSON.stringify).join('\n')},{name:'b.jsonl',text:[meta(10),record('turn_context',{turn_id:'demo-turn'},11),token(100,12),token(130,13),record('event_msg',{type:'task_complete',turn_id:'demo-turn'},14)].map(JSON.stringify).join('\n')}]);
+document.getElementById('files').onchange=async e=>{const files=[...e.target.files];if(!files.length)return;if(files.some(f=>f.size>2*1048576)||files.reduce((n,f)=>n+f.size,0)>16*1048576){document.getElementById('status').textContent='文件超过兼容验证页限制。';document.getElementById('result').textContent='未生成结果。';return;}try{const segments=[];for(const f of files)segments.push({name:f.name,text:new TextDecoder('utf-8',{fatal:true}).decode(await f.arrayBuffer())});show(segments);}catch(e){document.getElementById('status').textContent='读取或 UTF-8 解码失败。';document.getElementById('result').textContent='未生成结果。';}};
+</script></main></body></html>
