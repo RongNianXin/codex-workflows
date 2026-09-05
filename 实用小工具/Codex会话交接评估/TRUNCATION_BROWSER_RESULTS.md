@@ -1,5 +1,7 @@
 # 浏览器截断状态实验
 
+后续已完成[完整性与兼容解析器的独立衔接验证](TRUNCATION_BRIDGE_RESULTS.md)。原实验页保持不变，本文保留该阶段证据。
+
 [打开单文件实验页](truncation-browser-lab.html)。无需安装依赖或启动服务，直接用浏览器打开 HTML；当前仅实测 Windows Edge，macOS/Safari 待验证。
 
 ## 操作与预期
