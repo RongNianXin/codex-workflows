@@ -2,13 +2,25 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: e757f418547c29a8b0f29642821a28649aae49fd2006f1143aed91c5728ba1cd -->
+<!-- README-SOURCE-SHA256: afdf9c9dc6cc3ecab3dcc2bf8048e97d5fad3bfd4863c8f4c16564c2af55d9bb -->
 
 This directory provides a read-only PowerShell tool for assessing a local Codex task before handing work to a new task. It reports session size, detected turns, compaction count, recent context usage, and a heuristic handoff recommendation. It also writes a Markdown report with token and local file composition details.
 
 The Chinese repository rules remain the normative source. This English file covers the public entry point for this tool and is not a line-by-line English mirror of the repository.
 
 The [real-world preview page](../../SHOWCASE.md) includes the owner-approved terminal screenshot. Its task ID is redacted, while local directory labels, the task name, and runtime statistics remain visible by explicit permission.
+
+## Local task panel prototype
+
+[Download or open the single-file prototype](task-panel-prototype.html). Save the HTML file locally and open it in a modern browser. No terminal, server, or dependency installation is required. GitHub normally shows the source first; download the file before opening it.
+
+Six fixed fictional tasks demonstrate search by name/ID/project, duplicate-name identification, favorites, individual queries, batch refresh and cancellation, summaries, cache timestamps, and a detailed report dialog. All queries and metrics are simulated. The page does not read real sessions or connect to the PowerShell analyzer.
+
+Click a star to save a favorite, then use the query or refresh button. Select tasks to refresh a batch. The “资料整理” example fails on its first query and succeeds on retry. Expand the demo settings to expire the current result or reset all examples. Failure and cancellation preserve earlier successful results. Batch refresh includes selected tasks hidden by the current filter; the button shows the total, and the clear-selection button lets you start again.
+
+Favorites and results are saved only in the current browser's local storage, without conversation text. Results expire after five minutes for demonstration purposes. Storage behavior for local files varies by browser; changing browsers or moving the file may prevent records from carrying over. If storage is unavailable, the page shows a warning and remains usable for the current visit.
+
+The same HTML interface is intended for Windows and macOS browsers. Only headless Edge on Windows has been tested; macOS/Safari has not been tested on a real device. This does not establish cross-platform compatibility for real data access. Integration still requires a file-selection and permission design, an analyzer output contract, and verification of cache invalidation, large logs, and sensitive report handling.
 
 ## Requirements
 
