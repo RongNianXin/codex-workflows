@@ -20,12 +20,13 @@ Scene 2C reconstructs the actual execution path as stable, reviewable steps and 
 
 ## Codex 会话交接评估 / Codex session handoff assessment
 
-这个只读 PowerShell 工具会汇总本地会话分段、回合增长、文件大小、上下文压缩和交接建议，帮助操作者判断是否应把长任务交接到新对话。终端只给出摘要，可能包含完整输入的详细报告仍保存在本地，不应直接公开。
+Windows 工作台支持保存任务 ID、自动读取名称与项目、排序、双语查询和历史恢复。基本报告与详细报告分区展示；不再使用时点击“退出工具”，仅关闭网页不会停止后台服务。
 
-This read-only PowerShell tool summarizes local session segments, turn growth, file size, compaction events, and a handoff recommendation. The terminal shows a compact summary; the detailed local report may contain complete user input and should not be published without a separate review.
+The Windows desk saves task IDs, detects names and projects, and provides ordering, bilingual queries and history restoration. Basic and detailed reports are separate. Select Exit tool when finished; closing the page alone does not stop the service.
 
 [打开工具说明 / Open the tool guide](实用小工具/Codex会话交接评估/README.md)
 
-[![Codex 会话交接评估工具的脱敏真实运行截图](实用小工具/Codex会话交接评估/运行效果截图.png)](实用小工具/Codex会话交接评估/运行效果截图.png)
+[![Windows 会话工作台 dev.6 脱敏真实运行截图](实用小工具/Codex会话交接评估/运行效果截图.png)](实用小工具/Codex会话交接评估/运行效果截图.png)
 
-> 隐私说明：任务 ID 已遮挡；图片仍显示仓库所有者明确同意公开的本机目录标签、任务名称和运行统计。该授权只适用于这张已确认图片及本预览页，不扩展到其他终端截图或详细报告。
+> 隐私说明：所有可见任务 ID、会话路径与报告路径均已实色遮挡。项目名、任务名、时间和统计值经操作者确认保留；图片仅用于本页功能展示，不构成当前状态或统计准确性的独立证明。
+> Privacy: visible task IDs, session paths and report paths are covered with opaque masks. Project/task names, times and statistics are retained with the operator’s approval. This screenshot illustrates the interface; it is not independent proof of current state or statistical accuracy.
