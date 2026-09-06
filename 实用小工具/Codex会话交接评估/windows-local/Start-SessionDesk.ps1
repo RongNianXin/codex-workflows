@@ -10,6 +10,33 @@ $lock = $null
 $listener = $null
 $jobs = @{}
 $lockOwned = $false
+$script:language = 'zh-CN'
+$script:requestLanguage = 'zh-CN'
+function Error-Text([string]$Message) {
+    if ($script:requestLanguage -ne 'en-US') { return $Message }
+    $translations = @{
+        '请求格式或大小无效。'='Invalid request format or size.'
+        '仅允许本机访问。'='Only local access is allowed.'
+        '请求来源不匹配。'='Request origin does not match.'
+        '连接凭证无效，请双击启动入口重新打开。'='Invalid connection token. Double-click the launcher to reopen.'
+        '请输入标准格式的任务 ID。'='Enter a valid task ID in UUID format.'
+        '名称和项目最多各 80 个字符，且不含控制字符。'='Name and project may each contain up to 80 characters, without control characters.'
+        '此 ID 已保存，请点击对应任务的编辑按钮。'='This ID is already saved. Use Edit on that task.'
+        '待编辑任务不存在，请重新加载页面。'='The task being edited no longer exists. Reload the page.'
+        '该任务正在查询，请稍后删除。'='This task is running. Wait before deleting it.'
+        '不支持的清单操作。'='Unsupported list action.'
+        '请先保存该任务。'='Save this task first.'
+        '本首版固定隔离验证模式：该 ID 没有虚构输入，不会读取真实会话。'='This build only uses isolated synthetic data. This ID has no fixture; real sessions will not be read.'
+        '已有两个查询正在运行，请稍后重试。'='Two queries are already running. Try again shortly.'
+        '尚无本次运行的查询。'='No query is available for this service run.'
+        '当前查询没有可用报告。'='No report is available for the current query.'
+        '接口不存在。'='Endpoint not found.'
+        '语言无效。'='Invalid language.'
+        '查询进行中，请结束后切换语言。'='Wait for running queries to finish before changing language.'
+    }
+    if ($translations.ContainsKey($Message)) { return $translations[$Message] }
+    return 'The local operation failed. No successful save is confirmed. Check local file access and retry.'
+}
 function Write-Atomic([string]$Path, [string]$Text) {
     $temp = $Path + '.pending'
     [IO.File]::WriteAllText($temp, $Text, $utf8)
@@ -18,7 +45,7 @@ function Write-Atomic([string]$Path, [string]$Text) {
 }
 function Valid-Id([string]$Id) { return $Id -cmatch '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$' }
 function Save-Tasks {
-    Write-Atomic $tasksPath (@{schema=1;tasks=@($script:taskList)} | ConvertTo-Json -Depth 5)
+    Write-Atomic $tasksPath (@{schema=2;language=$script:language;tasks=@($script:taskList)} | ConvertTo-Json -Depth 5)
 }
 function Send-Body($Context, [int]$Status, [string]$Text, [string]$Type = 'application/json; charset=utf-8') {
     $response = $Context.Response
@@ -32,7 +59,10 @@ function Send-Body($Context, [int]$Status, [string]$Text, [string]$Type = 'appli
     $response.ContentLength64 = $bytes.Length
     try { $response.OutputStream.Write($bytes, 0, $bytes.Length) } finally { $response.Close() }
 }
-function Send-Json($Context, $Value, [int]$Status = 200) { Send-Body $Context $Status ($Value | ConvertTo-Json -Depth 8 -Compress) }
+function Send-Json($Context, $Value, [int]$Status = 200) {
+    if ($Status -ge 400 -and $Value.error) { $Value.error = Error-Text $Value.error }
+    Send-Body $Context $Status ($Value | ConvertTo-Json -Depth 8 -Compress)
+}
 function Read-Body($Request) {
     if ($Request.ContentType -notmatch '^application/json' -or $Request.ContentLength64 -lt 0 -or $Request.ContentLength64 -gt 32768) { throw '请求格式或大小无效。' }
     $reader = New-Object IO.StreamReader($Request.InputStream, $utf8)
@@ -53,9 +83,22 @@ function Update-Job($Job) {
             $Job.error = if ($Job.timedOut) { '查询超过 120 秒，已终止。' } else { $errorText.Trim() }
             $Job.finished = [DateTime]::UtcNow.ToString('o')
             $Job.process.Dispose()
+            if ($Job.timedOut -and $Job.language -eq 'en-US') { $Job.error='Query exceeded 120 seconds and was stopped.' }
+            if ($Job.state -eq 'done') {
+                try {
+                    $metadata=[IO.File]::ReadAllText($Job.metadata) | ConvertFrom-Json
+                    $task=@($script:taskList | Where-Object { $_.id -eq $Job.id })
+                    if ($metadata.found -and $metadata.warnings -eq 0 -and $task.Count -eq 1 -and $metadata.name.Length -le 80 -and $task[0].name -cne $metadata.name) {
+                        $oldName=$task[0].name;$oldPrevious=$task[0].previousName
+                        $task[0].name=[string]$metadata.name;$task[0].previousName=$oldName
+                        try { Save-Tasks } catch { $task[0].name=$oldName;$task[0].previousName=$oldPrevious;throw }
+                        $Job.nameChange=@{previous=$oldName;current=[string]$metadata.name}
+                    }
+                } catch { $Job.metadataWarning=$true }
+            }
         }
     }
-    return @{id=$Job.id;run=$Job.run;state=$Job.state;output=$Job.output;error=$Job.error;finished=$Job.finished;reportAvailable=($Job.state -eq 'done')}
+    return @{id=$Job.id;run=$Job.run;language=$Job.language;state=$Job.state;output=$Job.output;error=$Job.error;finished=$Job.finished;nameChange=$Job.nameChange;metadataWarning=$Job.metadataWarning;reportAvailable=($Job.state -eq 'done')}
 }
 try {
     try { $lock = [IO.File]::Open((Join-Path $data 'server.lock'), 'OpenOrCreate', 'ReadWrite', 'None'); $lockOwned=$true }
@@ -72,12 +115,20 @@ try {
     $script:taskList = @()
     if ([IO.File]::Exists($tasksPath)) {
         $saved = [IO.File]::ReadAllText($tasksPath) | ConvertFrom-Json
-        if ($saved.schema -ne 1) { throw '任务清单版本无效。原文件已保留，请勿覆盖。' }
+        if ($saved.schema -notin @(1,2)) { throw '任务清单版本无效。原文件已保留，请勿覆盖。 / Unsupported task-list version. Original file preserved.' }
+        if ($saved.schema -eq 2) {
+            if ($saved.language -notin @('zh-CN','en-US')) { throw '语言配置无效。 / Invalid language setting.' }
+            $script:language=$saved.language
+        }
         $seen = @{}
         foreach ($task in @($saved.tasks)) {
-            if (-not (Valid-Id $task.id) -or $seen.ContainsKey($task.id) -or [string]::IsNullOrWhiteSpace($task.name) -or $task.name.Length -gt 80) { throw '任务清单内容无效。原文件已保留。' }
+            if (-not (Valid-Id $task.id) -or $seen.ContainsKey($task.id) -or $task.name.Length -gt 80 -or $task.project.Length -gt 80 -or ([string]$task.name + [string]$task.project) -match '[\x00-\x1f]') { throw '任务清单内容无效。原文件已保留。 / Invalid task list. Original file preserved.' }
             $seen[$task.id]=$true
-            $script:taskList += @{id=[string]$task.id;name=[string]$task.name}
+            $script:taskList += @{id=[string]$task.id;name=[string]$task.name;project=[string]$task.project;previousName=[string]$task.previousName}
+        }
+        if ($saved.schema -eq 1) {
+            [IO.File]::Copy($tasksPath, (Join-Path $data ('tasks.schema1.'+[guid]::NewGuid().ToString('N')+'.bak')))
+            Save-Tasks
         }
     } else { Save-Tasks }
 
@@ -128,6 +179,7 @@ try {
         $context=$listener.EndGetContext($waiting)
         $waiting=$listener.BeginGetContext($null,$null)
         $request=$context.Request
+        $script:requestLanguage = if ($request.Headers['Accept-Language'] -match '^en') { 'en-US' } else { 'zh-CN' }
         try {
             if ($request.UserHostName -ne "127.0.0.1:$port" -or -not [Net.IPAddress]::IsLoopback($request.RemoteEndPoint.Address)) { Send-Json $context @{error='仅允许本机访问。'} 403;continue }
             $origin=$request.Headers['Origin']
@@ -135,14 +187,28 @@ try {
             $route=$request.Url.AbsolutePath
             if ($route -eq '/' -and $request.HttpMethod -eq 'GET') { Send-Body $context 200 ([IO.File]::ReadAllText((Join-Path $PSScriptRoot 'desk.html'))) 'text/html; charset=utf-8';continue }
             if ($request.Headers['X-SessionDesk'] -cne $token) { Send-Json $context @{error='连接凭证无效，请双击启动入口重新打开。'} 403;continue }
-            if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/tasks') { Send-Json $context @{tasks=@($script:taskList);mode='isolated-synthetic';version='0.2.0-dev.1'};continue }
+            if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/tasks') { Send-Json $context @{tasks=@($script:taskList);language=$script:language;mode='isolated-synthetic';version='0.2.0-dev.2'};continue }
+            if ($request.HttpMethod -eq 'POST' -and $route -eq '/api/settings') {
+                $body=Read-Body $request
+                if ($body.language -notin @('zh-CN','en-US')) { throw '语言无效。' }
+                foreach ($job in @($jobs.Values)) { if ((Update-Job $job).state -eq 'running') { throw '查询进行中，请结束后切换语言。' } }
+                $oldLanguage=$script:language;$script:language=$body.language
+                try { Save-Tasks } catch { $script:language=$oldLanguage;throw }
+                Send-Json $context @{language=$script:language};continue
+            }
             if ($request.HttpMethod -eq 'POST' -and $route -eq '/api/tasks') {
                 $body=Read-Body $request;$id=([string]$body.id).Trim().ToLowerInvariant()
                 if (-not (Valid-Id $id)) { throw '请输入标准格式的任务 ID。' }
-                if ($body.action -eq 'save') {
+                if ($body.action -in @('add','edit','save')) {
                     $name=([string]$body.name).Trim()
-                    if (-not $name -or $name.Length -gt 80 -or $name -match '[\x00-\x1f]') { throw '名称应为 1 至 80 个字符，且不含控制字符。' }
-                    $newList=@($script:taskList | Where-Object { $_.id -ne $id }) + @(@{id=$id;name=$name})
+                    $project=([string]$body.project).Trim()
+                    if ($name.Length -gt 80 -or $project.Length -gt 80 -or ($name+$project) -match '[\x00-\x1f]') { throw '名称和项目最多各 80 个字符，且不含控制字符。' }
+                    $existing=@($script:taskList | Where-Object { $_.id -eq $id })
+                    if ($body.action -ne 'edit' -and $existing.Count) { throw '此 ID 已保存，请点击对应任务的编辑按钮。' }
+                    if ($body.action -eq 'edit' -and -not $existing.Count) { throw '待编辑任务不存在，请重新加载页面。' }
+                    $replacement=@{id=$id;name=$name;project=$project;previousName=if($existing.Count){$existing[0].previousName}else{''}}
+                    if ($body.action -eq 'edit') { $newList=@($script:taskList | ForEach-Object { if ($_.id -eq $id) {$replacement} else {$_} }) }
+                    else { $newList=@($script:taskList)+@($replacement) }
                 } elseif ($body.action -eq 'delete') {
                     if ($jobs.ContainsKey($id) -and (Update-Job $jobs[$id]).state -eq 'running') { throw '该任务正在查询，请稍后删除。' }
                     $newList=@($script:taskList | Where-Object { $_.id -ne $id })
@@ -154,19 +220,27 @@ try {
             }
             if ($request.HttpMethod -eq 'POST' -and $route -eq '/api/query') {
                 $body=Read-Body $request;$id=([string]$body.id).Trim().ToLowerInvariant()
+                $queryLanguage=if ($body.language) { [string]$body.language } else { $script:language }
+                if ($queryLanguage -notin @('zh-CN','en-US')) { throw '语言无效。' }
                 if (-not (Valid-Id $id) -or -not @($script:taskList | Where-Object { $_.id -eq $id }).Count) { throw '请先保存该任务。' }
                 if ($id -notmatch '^00000000-0000-0000-0000-00000000000[1-3]$') { throw '本首版固定隔离验证模式：该 ID 没有虚构输入，不会读取真实会话。' }
-                if ($jobs.ContainsKey($id) -and (Update-Job $jobs[$id]).state -eq 'running') { Send-Json $context (Update-Job $jobs[$id]);continue }
+                if ($jobs.ContainsKey($id) -and (Update-Job $jobs[$id]).state -eq 'running') {
+                    if ($jobs[$id].language -ne $queryLanguage) { throw '查询进行中，请结束后切换语言。' }
+                    Send-Json $context (Update-Job $jobs[$id]);continue
+                }
                 $active=0;foreach ($job in @($jobs.Values)) { if ((Update-Job $job).state -eq 'running') { $active++ } }
                 if ($active -ge 2) { Send-Json $context @{error='已有两个查询正在运行，请稍后重试。'} 409;continue }
                 $report=Join-Path $reports ($id+'.md')
+                $metadata=Join-Path $reports ($id+'.metadata.json')
                 $info=New-Object Diagnostics.ProcessStartInfo
                 $info.FileName=$powershell
                 $info.Arguments='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+(Join-Path $runtime 'Invoke-IsolatedAnalyzer.ps1')+'" -TaskId "'+$id+'" -ReportPath "'+$report+'"'
+                $info.Arguments+=' -Language "'+$queryLanguage+'" -MetadataPath "'+$metadata+'"'
                 $info.UseShellExecute=$false;$info.CreateNoWindow=$true;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
                 $info.StandardOutputEncoding=$utf8;$info.StandardErrorEncoding=$utf8
                 $process=New-Object Diagnostics.Process;$process.StartInfo=$info;[void]$process.Start()
                 $job=@{id=$id;run=[guid]::NewGuid().ToString();state='running';output='';error='';finished=$null;started=[DateTime]::UtcNow;process=$process;stdout=$process.StandardOutput.ReadToEndAsync();stderr=$process.StandardError.ReadToEndAsync();report=$report;timedOut=$false}
+                $job.language=$queryLanguage;$job.metadata=$metadata;$job.nameChange=$null;$job.metadataWarning=$false
                 $jobs[$id]=$job;Send-Json $context (Update-Job $job);continue
             }
             if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/job') {
