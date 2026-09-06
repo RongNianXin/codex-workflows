@@ -5,7 +5,7 @@
 }
 function Get-DeskMetadata([string]$CodexHome, [string[]]$Ids) {
     $result=@{};$invalid=@{}
-    foreach($id in $Ids){$result[$id]=@{name='';project='';nameFound=$false;projectFound=$false}}
+    foreach($id in $Ids){$result[$id]=@{name='';project='';projectKey='';nameFound=$false;projectFound=$false}}
     if(-not $Ids.Count){return $result}
     # Local index data is never executed or used as a command/path.
     try {
@@ -33,7 +33,7 @@ function Get-DeskMetadata([string]$CodexHome, [string[]]$Ids) {
             $project=$state.'local-projects'.([string]$assignment.projectId)
             if($project.id -ne $assignment.projectId){continue}
             $name=([string]$project.name -replace '[\x00-\x1f\x7f]',' ').Trim()
-            if($name -and $name.Length -le 4096){$result[$id].project=$name;$result[$id].projectFound=$true}
+            if($name -and $name.Length -le 4096){$result[$id].projectKey=[string]$assignment.projectId;$result[$id].project=$name;$result[$id].projectFound=$true}
         }
     } catch {foreach($id in $Ids){$result[$id].projectFound=$false}}
     return $result

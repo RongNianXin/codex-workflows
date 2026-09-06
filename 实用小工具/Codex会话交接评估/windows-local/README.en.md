@@ -2,9 +2,9 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: 8a52a4053ef03a59ced04c55877bdcc7fb6314a07856d73bdf6e6182d6d1fe9b -->
+<!-- README-SOURCE-SHA256: e7ce69244dfe73cd5b3ce37013f19cda5c95c29d90650e036af658eebd482199 -->
 
-Version: `0.2.0-dev.3`. **Real local session queries are enabled.** Enter a task ID, save it, and query to view the original analyzer's statistics and report. Source sessions are read-only. No data is uploaded and no dependencies are installed.
+Version: `0.2.0-dev.6`. **Real local session queries are enabled.** Enter a task ID, save it, and query to view the original analyzer's statistics and report. Source sessions are read-only. No data is uploaded and no dependencies are installed.
 
 ## Usage
 
@@ -12,8 +12,8 @@ Version: `0.2.0-dev.3`. **Real local session queries are enabled.** Enter a task
 2. Enter the required task ID and save. Names and projects are no longer entered manually. There is no fixed task-count limit; regression covers 20 tasks, not very large lists. Duplicate IDs are rejected without replacing saved records.
 3. Click Query / Refresh, then read the output or View detailed report. Only local log files matching that ID and passing session-identity checks are analyzed, across active and archived directories. Cloud tasks are not queried; missing local logs produce an explicit failure.
 4. Search by project, name or ID, view existing results, or remove list entries. Each row displays project on the left, name on the right and ID below.
-5. Choose Simplified Chinese or English at the top. Prompts, statistics and reports switch together; names, projects, paths and log content are not translated. Switching is unavailable during a running query, and regenerates the selected task's result afterward.
-6. Click Stop local service when finished. Closing the browser does not stop the background service. Stopping it does not delete saved tasks.
+5. Choose Simplified Chinese or English at the top. Prompts, statistics and reports switch together; names, projects, paths and log content are not translated. Switching is unavailable during a running query. Each task retains per-language results and reports in this page. Returning to an available language restores its original snapshot; a missing language queries only the selected task. Other tasks retain their results. Viewing a result in the other language shows a notice. Manual Query / Refresh clears both old language variants for that task, and a failure does not restore old success. Successful output and detailed reports are saved as local per-task, per-language snapshots and restored after page reload or service restart, with the original query time and a non-live notice.
+6. Click Exit tool when finished. Closing the browser does not stop the background service. Stopping it does not delete saved tasks.
 
 Share startup error text, not real logs. Do not change global execution policy or elevate privileges. Deep paths may cause file-not-found errors in legacy PowerShell; extract to a shorter path.
 
@@ -63,6 +63,28 @@ Package with:
 pwsh -File .github/scripts/Build-WindowsSessionDesk.ps1
 ```
 
-Before packaging, the script verifies entry paths, PIDs and connection tokens for old desk services under this checkout's tool and release directories, then requests graceful shutdown. If safe shutdown fails, packaging stops with instructions to click Stop local service in the old page. It never kills PowerShell processes indiscriminately. Exactly ten program/documentation files are packaged, excluding `.local`; existing packages are not overwritten. Old copies outside the checkout must be stopped manually in their own pages.
+Before packaging, the script verifies entry paths, PIDs and connection tokens for old desk services under this checkout's tool and release directories, then requests graceful shutdown. If safe shutdown fails, packaging stops with instructions to click Exit tool in the old page. It never kills PowerShell processes indiscriminately. Exactly ten program/documentation files are packaged, excluding `.local`; existing packages are not overwritten. Old copies outside the checkout must be stopped manually in their own pages.
 
-A real task's name and project sources were confirmed read-only. Host approval blocked automated verification of real log statistics, so real statistical acceptance is not claimed. The operator can actively enter their own ID in this build and compare output with the original script. Report errors or redacted summaries, not raw report content. macOS, cloud/remote tasks, very large logs or lists, operating-system restart and device-policy differences remain unverified.
+Automated regression uses isolated synthetic data. The operator reported successful manual use of dev.6; this does not establish independent statistical verification for all real logs. Users can query their own IDs and compare output with the original script. Share error text or redacted summaries, not raw reports. macOS, cloud/remote tasks, very large logs or lists, operating-system reboot and device-policy differences remain unverified.
+
+## List order
+
+Each task’s ↑ / ↓ moves it one position in the full list and saves the order to disk. The first item cannot move up, and the last cannot move down. The selected task has a pale blue background and border without shifting its content.
+
+Group by project, beside Saved tasks, groups projects in first-appearance order while preserving their internal order. For example, 2, 4, 3, 1, 5 becomes 2, 1, 4, 3, 5. Grouping uses verified project identifiers: distinct projects with the same name remain separate, and unresolved tasks remain separate. Search filtering does not change the scope; grouping applies to the full list. Hovering or focusing the button shows help in the current language; it disappears after hover and focus leave.
+
+This release adds synthetic regression for multi-task results and reports across language round trips, aligned name values, selection without shifting, arrow ordering across restart, stable and repeated grouping, invalid sort requests, and bilingual hover help.
+
+## Report presentation
+
+The add-task form contains only the task ID and Save task; the redundant reset button is removed. Basic and detailed reports have separate text areas and a divider. View detailed report changes to Close detailed report when expanded; click again to collapse it. Selecting a task, changing language, or starting a query collapses details to avoid showing a previous item. Collapsing does not delete page-cached results. Buttons and region headings follow the selected language.
+
+## Query history and exit
+
+Each task retains only its latest successful basic output and detailed report per language, in `.local/main/snapshots/`; this is not a multi-version archive. Manual Query / Refresh clears the current display; only a successful save replaces that language’s history. Failure or exit during a query preserves the previous successful history. Relaunch shows its original time and a history notice, never presenting it as a successful fresh query. Other language snapshots retain their own timestamps. Deleting a task clears its restorable snapshots; report files and atomic-replacement backups are not automatically deleted.
+
+History is bound to its data source, mode and analyzer fingerprint. A changed source or corrupt snapshot marks that task’s history unavailable without blocking others. Each task snapshot is limited to 16 MiB. Oversized data or write failure displays a saving warning; that result may not survive relaunch. History may contain conversation text; it stays local and is excluded from ZIP packages.
+
+Upgrading from dev.5 preserves saved tasks but cannot reconstruct basic output that the old version never saved. History starts with successful dev.6 queries. Preserve the entire `.local` directory during future upgrades. Exit/relaunch was verified with synthetic data; operating-system reboot and real-session analysis were not tested.
+
+The Exit tool button has bilingual hover/focus help. The page explicitly states that closing a browser tab does not stop the background service. Exit stops only this tool and its unfinished queries, not Codex conversations; saved tasks and history are retained. The page remains as an exit notice and can be closed manually.

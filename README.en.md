@@ -8,8 +8,6 @@ Connect natural-language goals, execution evidence, and resumable checkpoints, a
 
 [简体中文](README.md) | **English**
 
-<!-- README-SOURCE-SHA256: 143483ae63d948740c6aa212a02ac32c9ae62d85437abe1907a11a2e33ecab64 -->
-
 [![Repository quality](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml)
 [![Last commit](https://img.shields.io/github/last-commit/RongNianXin/codex-workflows?label=last%20commit)](https://github.com/RongNianXin/codex-workflows/commits/main)
 ![License: MIT](https://img.shields.io/badge/license-MIT-2F855A.svg)
@@ -60,7 +58,7 @@ Specific model names, prices, and reasoning levels are not permanent prerequisit
 | Troubleshoot Codex or CC Switch | [Troubleshooting notes](故障排查与解决经验/) |
 | Reuse a focused prompt | [Prompt collection](其他%20Codex%20技巧性提示词/) |
 | Try a local helper | [Local utilities](实用小工具/) |
-| Decide whether a Codex task is ready for handoff | [Session handoff assessment](实用小工具/Codex会话交接评估/README.en.md) |
+| Save tasks and query Codex session snapshots (Windows dev.6) | [Session handoff assessment](实用小工具/Codex会话交接评估/README.en.md) |
 | See real-world results | [Showcase](SHOWCASE.md) |
 
 The detailed manuals are currently written in Chinese. This page is an evaluation and navigation guide for English-speaking visitors.
@@ -133,3 +131,5 @@ The privacy claims are auditable: the real profile stays in an exact `.gitignore
 ## License
 
 Released under the [MIT License](LICENSE).
+
+<!-- README-SOURCE-SHA256: f94be15d1d5fb22ce3a2109d2dd4c4171534731e1f304ef2738960f7953c0c31 -->

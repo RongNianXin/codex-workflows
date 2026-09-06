@@ -2,96 +2,41 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: 8c9ff04ea83d04917e30a7cc40d7a04cef01bb035c4966e9f8b7eab9c231389a -->
+Save frequently used task IDs and query local Codex turns, file size, compaction and handoff guidance with one click. **Recommended version: Windows desk 0.2.0-dev.6.** No commands are required for everyday use. Source sessions are read-only; data is not uploaded.
 
-This directory provides a read-only PowerShell tool for assessing a local Codex task before handing work to a new task. It reports session size, detected turns, compaction count, recent context usage, and a heuristic handoff recommendation. It also writes a Markdown report with token and local file composition details.
+## Download and start
 
-The Chinese repository rules remain the normative source. This English file covers the public entry point for this tool and is not a line-by-line English mirror of the repository.
+1. [Download the standalone Windows ZIP](https://github.com/RongNianXin/codex-workflows/releases/download/windows-sessiondesk-v0.2.0-dev.6/Windows-SessionDesk-0.2.0-dev.6.zip), extract it completely, and double-click the root `Start-SessionDesk.cmd`. You do not need to clone the repository. Do not open the HTML by itself.
+2. If you cloned the repository, double-click [windows-local/Start-SessionDesk.cmd](windows-local/Start-SessionDesk.cmd). The default branch provides source for the same version.
+3. Save a task ID and select Query / Refresh. The conversation name and local project are detected automatically. Basic and detailed reports have separate areas, with Simplified Chinese and English available.
 
-The [real-world preview page](../../SHOWCASE.md) includes the owner-approved terminal screenshot. Its task ID is redacted, while local directory labels, the task name, and runtime statistics remain visible by explicit permission.
+Uses built-in Windows PowerShell 5.1 and a browser. Windows Edge is tested; macOS and other browsers are not. This remains a development preview, without a claim of comprehensive device or very-large-log compatibility.
 
-## Integrated synthetic-data validation page
+## Everyday use
 
-[Open the integrated desk](session-desk-validation.html): search and favorite tasks, explicitly select segments, check integrity, and view statistical summaries and details. Results come from selected synthetic files and remain in page memory only; reloading clears them. Projects and IDs distinguish duplicate task names, and files belonging to another task are rejected. No real sessions or automatic directory discovery are connected. See [usage and validation limits](SESSION_DESK_VALIDATION.md) (Chinese).
+- No fixed saved-task count limit; regression covers 20 tasks. Search, arrow ordering and stable project grouping are available, with order saved to disk.
+- Each task retains its latest successful basic output and detailed report per language. Reopening shows the original query time and a historical-snapshot notice; statistics update only on a new query.
+- **Closing the page does not stop the background service.** Select Exit tool when finished to stop this tool and its unfinished queries, without stopping Codex conversations. Bilingual hover help explains the button. Close the page after exit and use the launcher to restore saved tasks and results.
+- An interrupted or failed refresh does not turn old history into a new success. Previously saved history remains available after reopening. A visible result does not mean the AI is currently running.
 
-## Local task panel prototype
+See the [Windows desk guide](windows-local/README.en.md) for storage, invalidation rules and bilingual maintenance. [Real-world previews](../../SHOWCASE.md) collects redacted screenshots.
 
-[Download or open the single-file prototype](task-panel-prototype.html). Save the HTML file locally and open it in a modern browser. No terminal, server, or dependency installation is required. GitHub normally shows the source first; download the file before opening it.
+## Upgrading and older versions
 
-Six fixed fictional tasks demonstrate search by name/ID/project, duplicate-name identification, favorites, individual queries, batch refresh and cancellation, summaries, cache timestamps, and a detailed report dialog. All queries and metrics are simulated. The page does not read real sessions or connect to the PowerShell analyzer.
+Stop the old tool and back up its `windows-local/.local` directory before copying it to the corresponding location in the new folder. Do not overwrite another existing data set. It contains task lists, history and reports, so retain it before deleting a program folder. dev.5 and earlier cannot reconstruct basic output that was never saved; full history starts with successful dev.6 queries.
 
-Click a star to save a favorite, then use the query or refresh button. Select tasks to refresh a batch. The “资料整理” example fails on its first query and succeeds on retry. Expand the demo settings to expire the current result or reset all examples. Failure and cancellation preserve earlier successful results. Batch refresh includes selected tasks hidden by the current filter; the button shows the total, and the clear-selection button lets you start again.
+Old HTML prototypes and synthetic demos are retired from the current distribution. Their development stages remain in Git history. This page recommends the current Windows version only. The command-line analyzer remains available for scripting and independent checks; it is the same statistical implementation.
 
-Favorites and results are saved only in the current browser's local storage, without conversation text. Results expire after five minutes for demonstration purposes. Storage behavior for local files varies by browser; changing browsers or moving the file may prevent records from carrying over. If storage is unavailable, the page shows a warning and remains usable for the current visit.
+## Command line and validation
 
-The same HTML interface is intended for Windows and macOS browsers. Only headless Edge on Windows has been tested; macOS/Safari has not been tested on a real device. This does not establish cross-platform compatibility for real data access. Integration still requires a file-selection and permission design, an analyzer output contract, and verification of cache invalidation, large logs, and sensitive report handling.
+- The [command-line quick guide](查看当前任务本地对话文件大小.md) (Chinese) uses the same `check-codex-session.ps1`. Chinese is the default; add `-Language en-US` for English.
+- `compatibility-fixtures.json` contains synthetic regression cases for the repository’s JSON field-order checks, not user data.
+- Release preparation includes 37 isolated synthetic interaction checks, repository quality checks and ZIP verification. The operator reported successful dev.6 manual use. Automated regression does not prove exhaustive real-session, macOS or all-device support.
 
-## In-browser analysis validation
+## Statistics and privacy
 
-[Open the synthetic-log validation page](browser-analysis-lab.html), download its small sample, and select the file to parse it. This is separate from the fixed-data task panel and does not connect to real Codex sessions. Only this HTML file is needed, without a local server or dependency installation.
+Results are engineering guidance, not official thresholds or live status. Segment baselines, truncated input, actively written logs and missing counts can affect completeness. A result is a reading snapshot, not an atomic live ledger. Names and projects depend on Codex local record formats and may require adaptation when those formats change.
 
-Headless Windows Edge tests cover a roughly 64 MiB synthetic log, background responsiveness, content-based cache invalidation, malformed input, and cancellation. Up to five successful summaries stay in page memory only. Reselect a file after it changes on disk; an existing browser file object must not be presented as current disk contents. macOS/Safari has not been tested, and the simplified format is not equivalent to the existing analyzer. See the [feasibility report, measurements, and integration requirements](BROWSER_ANALYSIS_FEASIBILITY.md) (Chinese).
+Detailed reports and history can contain complete user input and local paths. They remain in `.local` and must not be published without review. ZIP files exclude private state. The service listens only on loopback and validates a random connection token. Exit does not stop other programs or Codex tasks. Preserve the analyzer’s integrity warnings; missing Token counts must not be treated as zero.
 
-## Synthetic compatibility corpus for the existing record format
-
-The [compatibility page](browser-compatibility-check.html) runs a built-in cross-segment example or accepts marked synthetic JSONL segments for the same task. The [20 complete cases and paired outputs](compatibility-fixtures.json) and [difference report](BROWSER_COMPATIBILITY_RESULTS.md) (Chinese) retain the evidence. Headless Windows Edge and the original PowerShell algorithms with isolated input paths agree on 18 cases. Two differences expose a reference-script undercount caused by JSON key order and a different policy for truncated records. These are historical pre-fix results. The key-order undercount is now fixed. PowerShell 7 and Windows PowerShell 5.1 each completed 23 synthetic comparisons: 22 matches and the retained truncated-record policy difference. See the [fix report and proposed truncation policy](POWERSHELL_RECORD_SHAPE_FIX.md) (Chinese). This is still not a complete replacement. Real data, macOS/Safari, full report metrics, and large-file performance of this fix remain unverified.
-
-## Script requirements
-
-- Windows PowerShell 5.1 or PowerShell 7
-- A Codex task stored on the same computer
-- The task ID to inspect
-
-The script does not modify the source session and does not access the network.
-
-## Run in English
-
-Open PowerShell in this directory and replace `<TASK_ID>`:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\check-codex-session.ps1" -TaskId "<TASK_ID>" -Language en-US
-```
-
-To use PowerShell 7 instead:
-
-```powershell
-pwsh -NoProfile -File ".\check-codex-session.ps1" -TaskId "<TASK_ID>" -Language en-US
-```
-
-The default language is Simplified Chinese. Existing commands without `-Language` continue to work. You can also select Chinese explicitly:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\check-codex-session.ps1" -TaskId "<TASK_ID>" -Language zh-CN
-```
-
-Each run uses one language for both terminal output and the generated Markdown report. Task names, user input, session paths, and other source data are preserved as recorded and are never translated.
-
-## Report location
-
-An English run writes its default report under the current user's local application data directory:
-
-```text
-CodexSessionHandoffAssessment\Reports\<TASK_ID>-detailed-analysis-report.md
-```
-
-Use `-ReportPath` to choose another Markdown path:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\check-codex-session.ps1" -TaskId "<TASK_ID>" -Language en-US -ReportPath ".\report.md"
-```
-
-The report is written as UTF-8 with BOM and replaces the previous report at the same path only after write-back verification succeeds.
-
-## Reading the result
-
-- Session storage describes whether local segments are active, archived, or mixed. It does not prove that the Codex app is currently running.
-- Milestones show file size after every fifth identified turn before the latest turn. The latest turn is shown separately.
-- The handoff score uses local file size and compaction count. Recent context usage is shown as an observation but is not part of the score.
-- Thresholds in this tool are local heuristics, not official OpenAI limits.
-- A high score should not interrupt an unsafe or incomplete step. Finish the stage or stop at a clear handoff point first.
-
-## Privacy and accuracy
-
-The terminal does not print conversation bodies, tool output, or image contents. The detailed report may include complete user input from the three highest-token turns, local paths, or other sensitive information. Review and redact it before sharing.
-
-Codex JSONL files are implementation data rather than a stable public API. The script reports warnings when records cannot be parsed, session files change during scanning, or multiple storage segments require special handling. Runtime depends on session size, disk speed, antivirus software, and synchronization software; a fixed completion time cannot be guaranteed.
+<!-- README-SOURCE-SHA256: ae258664789282d59b5899f673d4428128886e7b2a9a3bcd1e446193dd90c476 -->

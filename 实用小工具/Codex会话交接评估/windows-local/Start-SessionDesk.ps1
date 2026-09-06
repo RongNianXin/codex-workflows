@@ -17,6 +17,7 @@ function Sync-Metadata {
     $changed=$false
     foreach($task in $script:taskList){
         $value=$found[$task.id]
+        if($task.projectKey -cne $value.projectKey){$task.projectKey=$value.projectKey;$changed=$true}
         foreach($key in @('name','project')){
             $available=[bool]$value[($key+'Found')]
             if($task[($key+'Found')] -ne $available){$task[($key+'Found')]=$available;$changed=$true}
@@ -83,6 +84,38 @@ function Read-Body($Request) {
     $reader = New-Object IO.StreamReader($Request.InputStream, $utf8)
     try { return ($reader.ReadToEnd() | ConvertFrom-Json) } finally { $reader.Dispose() }
 }
+
+function Read-Snapshot([string]$Id) {
+    $file=Join-Path $snapshots ($Id+'.json')
+    if(-not [IO.File]::Exists($file)){return @()}
+    try {
+        if((Get-Item -LiteralPath $file).Length -gt 16777216){throw 'Snapshot too large'}
+        $saved=[IO.File]::ReadAllText($file)|ConvertFrom-Json
+        if($saved.schema -ne 1 -or $saved.id -cne $Id -or $saved.source -cne $snapshotSource){throw 'Snapshot source changed'}
+        $items=@($saved.items)
+        if($items.Count -gt 2){throw 'Invalid snapshot count'}
+        $seen=@{}
+        foreach($item in $items){
+            if($item.id -cne $Id -or $item.state -ne 'done' -or $item.language -notin @('zh-CN','en-US') -or $seen.ContainsKey($item.language) -or $item.output -isnot [string] -or $item.reportText -isnot [string] -or -not $item.run){throw 'Invalid snapshot'}
+            [void][DateTime]::Parse([string]$item.finished);$seen[$item.language]=$true
+        }
+        return $items
+    } catch {throw 'History is unavailable for this task; query again. / 该任务历史不可用，请重新查询。'}
+}
+function Write-Snapshot([string]$Id, $Items) {
+    $text=@{schema=1;id=$Id;source=$snapshotSource;items=@($Items)}|ConvertTo-Json -Depth 8 -Compress
+    if([Text.Encoding]::UTF8.GetByteCount($text) -gt 16777216){throw 'Snapshot too large'}
+    Write-Atomic (Join-Path $snapshots ($Id+'.json')) $text
+}
+function Persist-Job($Job) {
+    try {
+        $previous=@();try{$previous=@(Read-Snapshot $Job.id)}catch{}
+        $item=@{id=$Job.id;run=$Job.run;language=$Job.language;state='done';output=$Job.output;error='';finished=$Job.finished;reportText=[IO.File]::ReadAllText($Job.report);restored=$true}
+        Write-Snapshot $Job.id (@($previous|Where-Object {$_.language -ne $Job.language})+@($item))
+        $Job.historySaved=$true
+    } catch {$Job.historySaved=$false}
+}
+
 function Update-Job($Job) {
     if ($Job.state -eq 'running') {
         if (-not $Job.process.HasExited -and (([DateTime]::UtcNow - $Job.started).TotalSeconds -gt 120)) {
@@ -98,11 +131,12 @@ function Update-Job($Job) {
             $Job.error = if ($Job.timedOut) { '查询超过 120 秒，已终止。' } else { $errorText.Trim() }
             $Job.finished = [DateTime]::UtcNow.ToString('o')
             $Job.process.Dispose()
+            if($Job.state -eq 'done'){Persist-Job $Job}
             if ($Job.timedOut -and $Job.language -eq 'en-US') { $Job.error='Query exceeded 120 seconds and was stopped.' }
 
         }
     }
-    return @{id=$Job.id;run=$Job.run;language=$Job.language;state=$Job.state;output=$Job.output;error=$Job.error;finished=$Job.finished;nameChange=$Job.nameChange;metadataWarning=$Job.metadataWarning;reportAvailable=($Job.state -eq 'done')}
+    return @{id=$Job.id;run=$Job.run;language=$Job.language;state=$Job.state;output=$Job.output;error=$Job.error;finished=$Job.finished;nameChange=$Job.nameChange;metadataWarning=$Job.metadataWarning;historySaved=$Job.historySaved;reportAvailable=($Job.state -eq 'done')}
 }
 try {
     try { $lock = [IO.File]::Open((Join-Path $data 'server.lock'), 'OpenOrCreate', 'ReadWrite', 'None'); $lockOwned=$true }
@@ -140,6 +174,8 @@ try {
     $sessions = Join-Path $profile '.codex/sessions'
     $runtime = Join-Path $data 'runtime'
     $reports = Join-Path $data 'reports'
+    $snapshots=Join-Path $data 'snapshots'
+    [IO.Directory]::CreateDirectory($snapshots)|Out-Null
     foreach ($directory in @($sessions,$runtime,$reports)) { [IO.Directory]::CreateDirectory($directory) | Out-Null }
     if($Synthetic) {
     # Generate only synthetic session data. The third sample ID deliberately has no log.
@@ -166,6 +202,8 @@ try {
     $codexData=if($Synthetic){Join-Path $profile '.codex'}elseif($env:CODEX_HOME){[IO.Path]::GetFullPath($env:CODEX_HOME)}else{Join-Path $env:USERPROFILE '.codex'}
     $sourcePath = Join-Path $PSScriptRoot '../check-codex-session.ps1'
     $source = [IO.File]::ReadAllText($sourcePath)
+    $snapshotHash=[Security.Cryptography.SHA256]::Create()
+    try{$snapshotSource=$mode+'|'+$codexData+'|'+[BitConverter]::ToString($snapshotHash.ComputeHash([IO.File]::ReadAllBytes($sourcePath)))}finally{$snapshotHash.Dispose()}
     if ([regex]::Matches($source,[regex]::Escape('$env:USERPROFILE')).Count -ne 4) { throw '分析器的隔离锚点已变化，停止启动。' }
     if($Synthetic){
     $literal = "'" + $profile.Replace("'","''") + "'"
@@ -209,7 +247,13 @@ try {
             $route=$request.Url.AbsolutePath
             if ($route -eq '/' -and $request.HttpMethod -eq 'GET') { Send-Body $context 200 ([IO.File]::ReadAllText((Join-Path $PSScriptRoot 'desk.html'))) 'text/html; charset=utf-8';continue }
             if ($request.Headers['X-SessionDesk'] -cne $token) { Send-Json $context @{error='连接凭证无效，请双击启动入口重新打开。'} 403;continue }
-            if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/tasks') { Sync-Metadata;Send-Json $context @{tasks=@($script:taskList);language=$script:language;mode=$mode;version='0.2.0-dev.3'};continue }
+            if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/tasks') { Sync-Metadata;Send-Json $context @{tasks=@($script:taskList);language=$script:language;mode=$mode;version='0.2.0-dev.6'};continue }
+            if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/history') {
+                $id=$request.QueryString['id']
+                if(-not (Valid-Id $id) -or -not @($script:taskList|Where-Object {$_.id -eq $id}).Count){Send-Json $context @{error='请先保存该任务。'} 404;continue}
+                try{Send-Json $context @{items=@(Read-Snapshot $id);unavailable=$false}}catch{Send-Json $context @{items=@();unavailable=$true}}
+                continue
+            }
             if ($request.HttpMethod -eq 'POST' -and $route -eq '/api/settings') {
                 $body=Read-Body $request
                 if ($body.language -notin @('zh-CN','en-US')) { throw '语言无效。' }
@@ -220,7 +264,7 @@ try {
             }
             if ($request.HttpMethod -eq 'POST' -and $route -eq '/api/tasks') {
                 $body=Read-Body $request;$id=([string]$body.id).Trim().ToLowerInvariant()
-                if (-not (Valid-Id $id)) { throw '请输入标准格式的任务 ID。' }
+                if ($body.action -ne 'group' -and -not (Valid-Id $id)) { throw '请输入标准格式的任务 ID。' }
                 if ($body.action -in @('add','save')) {
                     $name=''
                     $project=''
@@ -234,7 +278,25 @@ try {
                 } elseif ($body.action -eq 'delete') {
                     if ($jobs.ContainsKey($id) -and (Update-Job $jobs[$id]).state -eq 'running') { throw '该任务正在查询，请稍后删除。' }
                     $newList=@($script:taskList | Where-Object { $_.id -ne $id })
+                    Write-Snapshot $id @()
                     if ($jobs.ContainsKey($id)) { $jobs.Remove($id) }
+                } elseif ($body.action -eq 'move') {
+                    $newList=@($script:taskList);$index=-1
+                    for($i=0;$i -lt $newList.Count;$i++){if($newList[$i].id -eq $id){$index=$i;break}}
+                    if($index -lt 0){throw '请先保存该任务。'}
+                    if($body.direction -notin @('up','down')){throw '不支持的清单操作。'}
+                    $target=$index+$(if($body.direction -eq 'up'){-1}else{1})
+                    if($target -ge 0 -and $target -lt $newList.Count){$swap=$newList[$target];$newList[$target]=$newList[$index];$newList[$index]=$swap}
+                } elseif ($body.action -eq 'group') {
+                    Sync-Metadata
+                    $groups=[Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
+                    $keys=[Collections.Generic.List[string]]::new()
+                    foreach($task in $script:taskList){
+                        $key=if($task.projectFound -and $task.projectKey){'project:'+$task.projectKey}else{'task:'+$task.id}
+                        if(-not $groups.ContainsKey($key)){$groups[$key]=[Collections.Generic.List[object]]::new();$keys.Add($key)}
+                        $groups[$key].Add($task)
+                    }
+                    $newList=@(foreach($key in $keys){foreach($task in $groups[$key]){$task}})
                 } else { throw '不支持的清单操作。' }
                 $old=$script:taskList;$script:taskList=$newList
                 try { Save-Tasks } catch { $script:taskList=$old;throw }
@@ -273,7 +335,7 @@ try {
                 $id=$request.QueryString['id'];if (-not (Valid-Id $id) -or -not $jobs.ContainsKey($id) -or (Update-Job $jobs[$id]).state -ne 'done') { Send-Json $context @{error='当前查询没有可用报告。'} 404;continue }
                 Send-Json $context @{text=[IO.File]::ReadAllText($jobs[$id].report)};continue
             }
-            if ($request.HttpMethod -eq 'POST' -and $route -eq '/api/shutdown') { Send-Json $context @{stopped=$true};$stopping=$true;continue }
+            if ($request.HttpMethod -eq 'POST' -and $route -eq '/api/shutdown') { foreach($job in @($jobs.Values)){Update-Job $job|Out-Null};Send-Json $context @{stopped=$true};$stopping=$true;continue }
             Send-Json $context @{error='接口不存在。'} 404
         } catch { try { Send-Json $context @{error=$_.Exception.Message} 400 } catch {} }
     }
