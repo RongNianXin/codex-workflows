@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([switch]$NoBrowser, [ValidatePattern('^[a-zA-Z0-9-]{1,40}$')][string]$Instance = 'main')
+param([switch]$NoBrowser, [switch]$Synthetic, [ValidatePattern('^[a-zA-Z0-9-]{1,40}$')][string]$Instance = 'main')
 $ErrorActionPreference = 'Stop'
 $utf8 = New-Object Text.UTF8Encoding($false)
 $bom = New-Object Text.UTF8Encoding($true)
@@ -10,6 +10,21 @@ $lock = $null
 $listener = $null
 $jobs = @{}
 $lockOwned = $false
+. (Join-Path $PSScriptRoot 'Read-DeskMetadata.ps1')
+$mode=if($Synthetic){'isolated-synthetic'}else{'local-readonly'}
+function Sync-Metadata {
+    $found=Get-DeskMetadata $codexData @($script:taskList | ForEach-Object {$_.id})
+    $changed=$false
+    foreach($task in $script:taskList){
+        $value=$found[$task.id]
+        foreach($key in @('name','project')){
+            $available=[bool]$value[($key+'Found')]
+            if($task[($key+'Found')] -ne $available){$task[($key+'Found')]=$available;$changed=$true}
+            if($available -and $task[$key] -cne $value[$key]){$task[$key]=$value[$key];$changed=$true}
+        }
+    }
+    if($changed){Save-Tasks}
+}
 $script:language = 'zh-CN'
 $script:requestLanguage = 'zh-CN'
 function Error-Text([string]$Message) {
@@ -84,18 +99,7 @@ function Update-Job($Job) {
             $Job.finished = [DateTime]::UtcNow.ToString('o')
             $Job.process.Dispose()
             if ($Job.timedOut -and $Job.language -eq 'en-US') { $Job.error='Query exceeded 120 seconds and was stopped.' }
-            if ($Job.state -eq 'done') {
-                try {
-                    $metadata=[IO.File]::ReadAllText($Job.metadata) | ConvertFrom-Json
-                    $task=@($script:taskList | Where-Object { $_.id -eq $Job.id })
-                    if ($metadata.found -and $metadata.warnings -eq 0 -and $task.Count -eq 1 -and $metadata.name.Length -le 80 -and $task[0].name -cne $metadata.name) {
-                        $oldName=$task[0].name;$oldPrevious=$task[0].previousName
-                        $task[0].name=[string]$metadata.name;$task[0].previousName=$oldName
-                        try { Save-Tasks } catch { $task[0].name=$oldName;$task[0].previousName=$oldPrevious;throw }
-                        $Job.nameChange=@{previous=$oldName;current=[string]$metadata.name}
-                    }
-                } catch { $Job.metadataWarning=$true }
-            }
+
         }
     }
     return @{id=$Job.id;run=$Job.run;language=$Job.language;state=$Job.state;output=$Job.output;error=$Job.error;finished=$Job.finished;nameChange=$Job.nameChange;metadataWarning=$Job.metadataWarning;reportAvailable=($Job.state -eq 'done')}
@@ -122,9 +126,9 @@ try {
         }
         $seen = @{}
         foreach ($task in @($saved.tasks)) {
-            if (-not (Valid-Id $task.id) -or $seen.ContainsKey($task.id) -or $task.name.Length -gt 80 -or $task.project.Length -gt 80 -or ([string]$task.name + [string]$task.project) -match '[\x00-\x1f]') { throw '任务清单内容无效。原文件已保留。 / Invalid task list. Original file preserved.' }
+            if (-not (Valid-Id $task.id) -or $seen.ContainsKey($task.id) -or $task.name.Length -gt 4096 -or $task.project.Length -gt 4096 -or ([string]$task.name + [string]$task.project) -match '[\x00-\x1f]') { throw '任务清单内容无效。原文件已保留。 / Invalid task list. Original file preserved.' }
             $seen[$task.id]=$true
-            $script:taskList += @{id=[string]$task.id;name=[string]$task.name;project=[string]$task.project;previousName=[string]$task.previousName}
+            $script:taskList += @{id=[string]$task.id;name=[string]$task.name;project=[string]$task.project;previousName=[string]$task.previousName;nameFound=$false;projectFound=$false}
         }
         if ($saved.schema -eq 1) {
             [IO.File]::Copy($tasksPath, (Join-Path $data ('tasks.schema1.'+[guid]::NewGuid().ToString('N')+'.bak')))
@@ -137,6 +141,7 @@ try {
     $runtime = Join-Path $data 'runtime'
     $reports = Join-Path $data 'reports'
     foreach ($directory in @($sessions,$runtime,$reports)) { [IO.Directory]::CreateDirectory($directory) | Out-Null }
+    if($Synthetic) {
     # Generate only synthetic session data. The third sample ID deliberately has no log.
     $indexLines = @()
     foreach ($number in @(1,2)) {
@@ -153,12 +158,29 @@ try {
         $indexLines += (@{id=$id;thread_name=('虚构会话 '+$number);updated_at='2025-01-01T00:01:00Z'} | ConvertTo-Json -Compress)
     }
     [IO.File]::WriteAllText((Join-Path $profile '.codex/session_index.jsonl'),($indexLines -join "`n")+"`n",$utf8)
+    $fakeProjects=@{'fixture-project'=@{id='fixture-project';name='虚构项目';rootPaths=@()}}
+    $assignments=@{}
+    foreach($n in @(1,2)){$assignments[('00000000-0000-0000-0000-'+$n.ToString('000000000000'))]=@{projectKind='local';projectId='fixture-project'}}
+    [IO.File]::WriteAllText((Join-Path $profile '.codex/.codex-global-state.json'),(@{'thread-project-assignments'=$assignments;'local-projects'=$fakeProjects}|ConvertTo-Json -Depth 6),$utf8)
+    }
+    $codexData=if($Synthetic){Join-Path $profile '.codex'}elseif($env:CODEX_HOME){[IO.Path]::GetFullPath($env:CODEX_HOME)}else{Join-Path $env:USERPROFILE '.codex'}
     $sourcePath = Join-Path $PSScriptRoot '../check-codex-session.ps1'
     $source = [IO.File]::ReadAllText($sourcePath)
     if ([regex]::Matches($source,[regex]::Escape('$env:USERPROFILE')).Count -ne 4) { throw '分析器的隔离锚点已变化，停止启动。' }
+    if($Synthetic){
     $literal = "'" + $profile.Replace("'","''") + "'"
     $isolated = $source.Replace('$env:USERPROFILE',$literal)
     if ($isolated.Replace($literal,'$env:USERPROFILE') -cne $source) { throw '隔离副本校验失败。' }
+    }else{
+        $homeLiteral="'"+$codexData.Replace("'","''")+"'"
+        $isolated=$source
+        foreach($suffix in @('.codex','.codex\sessions','.codex\archived_sessions')){
+            $anchor='Join-Path $env:USERPROFILE '+"'"+$suffix+"'"
+            if(-not $isolated.Contains($anchor)){throw 'Analyzer data-root anchor changed.'}
+            $replacement=if($suffix -eq '.codex'){$homeLiteral}else{'Join-Path '+$homeLiteral+" '"+$suffix.Substring(7)+"'"}
+            $isolated=$isolated.Replace($anchor,$replacement)
+        }
+    }
     [IO.File]::WriteAllText((Join-Path $runtime 'isolated-analyzer.ps1'),$isolated,$bom)
     [IO.File]::WriteAllText((Join-Path $runtime 'Invoke-IsolatedAnalyzer.ps1'),[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'Invoke-IsolatedAnalyzer.ps1')),$bom)
     $powershell = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
@@ -167,7 +189,7 @@ try {
     $probe=New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback,0);$probe.Start();$port=$probe.LocalEndpoint.Port;$probe.Stop()
     $base="http://127.0.0.1:$port"
     $listener=New-Object Net.HttpListener;$listener.Prefixes.Add($base+'/');$listener.Start()
-    Write-Atomic $connectionPath (@{url=($base+'/#'+$token);port=$port;mode='isolated-synthetic';pid=$PID} | ConvertTo-Json)
+    Write-Atomic $connectionPath (@{url=($base+'/#'+$token);port=$port;mode=$mode;pid=$PID} | ConvertTo-Json)
     if (-not $NoBrowser) { Start-Process ($base+'/#'+$token) | Out-Null }
     $stopping=$false
     $waiting=$listener.BeginGetContext($null,$null)
@@ -187,7 +209,7 @@ try {
             $route=$request.Url.AbsolutePath
             if ($route -eq '/' -and $request.HttpMethod -eq 'GET') { Send-Body $context 200 ([IO.File]::ReadAllText((Join-Path $PSScriptRoot 'desk.html'))) 'text/html; charset=utf-8';continue }
             if ($request.Headers['X-SessionDesk'] -cne $token) { Send-Json $context @{error='连接凭证无效，请双击启动入口重新打开。'} 403;continue }
-            if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/tasks') { Send-Json $context @{tasks=@($script:taskList);language=$script:language;mode='isolated-synthetic';version='0.2.0-dev.2'};continue }
+            if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/tasks') { Sync-Metadata;Send-Json $context @{tasks=@($script:taskList);language=$script:language;mode=$mode;version='0.2.0-dev.3'};continue }
             if ($request.HttpMethod -eq 'POST' -and $route -eq '/api/settings') {
                 $body=Read-Body $request
                 if ($body.language -notin @('zh-CN','en-US')) { throw '语言无效。' }
@@ -199,9 +221,9 @@ try {
             if ($request.HttpMethod -eq 'POST' -and $route -eq '/api/tasks') {
                 $body=Read-Body $request;$id=([string]$body.id).Trim().ToLowerInvariant()
                 if (-not (Valid-Id $id)) { throw '请输入标准格式的任务 ID。' }
-                if ($body.action -in @('add','edit','save')) {
-                    $name=([string]$body.name).Trim()
-                    $project=([string]$body.project).Trim()
+                if ($body.action -in @('add','save')) {
+                    $name=''
+                    $project=''
                     if ($name.Length -gt 80 -or $project.Length -gt 80 -or ($name+$project) -match '[\x00-\x1f]') { throw '名称和项目最多各 80 个字符，且不含控制字符。' }
                     $existing=@($script:taskList | Where-Object { $_.id -eq $id })
                     if ($body.action -ne 'edit' -and $existing.Count) { throw '此 ID 已保存，请点击对应任务的编辑按钮。' }
@@ -223,7 +245,7 @@ try {
                 $queryLanguage=if ($body.language) { [string]$body.language } else { $script:language }
                 if ($queryLanguage -notin @('zh-CN','en-US')) { throw '语言无效。' }
                 if (-not (Valid-Id $id) -or -not @($script:taskList | Where-Object { $_.id -eq $id }).Count) { throw '请先保存该任务。' }
-                if ($id -notmatch '^00000000-0000-0000-0000-00000000000[1-3]$') { throw '本首版固定隔离验证模式：该 ID 没有虚构输入，不会读取真实会话。' }
+                if ($Synthetic -and $id -notmatch '^00000000-0000-0000-0000-00000000000[1-3]$') { throw '本首版固定隔离验证模式：该 ID 没有虚构输入，不会读取真实会话。' }
                 if ($jobs.ContainsKey($id) -and (Update-Job $jobs[$id]).state -eq 'running') {
                     if ($jobs[$id].language -ne $queryLanguage) { throw '查询进行中，请结束后切换语言。' }
                     Send-Json $context (Update-Job $jobs[$id]);continue

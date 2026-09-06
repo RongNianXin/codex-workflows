@@ -2,62 +2,67 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: 8f3e56ebf56a05fe1fcb0fe646126df810974c88510d983b32c0994d4907f544 -->
+<!-- README-SOURCE-SHA256: 8a52a4053ef03a59ced04c55877bdcc7fb6314a07856d73bdf6e6182d6d1fe9b -->
 
-Version: `0.2.0-dev.2`. Save tasks, click to query, and read the original analyzer output and detailed report on the right. **This build only uses isolated synthetic data. It does not read real sessions.**
+Version: `0.2.0-dev.3`. **Real local session queries are enabled.** Enter a task ID, save it, and query to view the original analyzer's statistics and report. Source sessions are read-only. No data is uploaded and no dependencies are installed.
 
 ## Usage
 
-1. Extract the complete package and double-click the root `Start-SessionDesk.cmd`. In a repository checkout, use the launcher in this directory. The background service opens the default browser; Windows Edge was tested.
-2. Enter the required task ID. Project and conversation name are optional. To try it, expand “Use a synthetic test ID”, fill sample 1, then save.
-3. Click “Query / Refresh” on that task. The right pane shows the original script output; “View detailed report” opens the local report. Samples 1 and 2 have synthetic logs; sample 3 tests missing logs.
-4. Save more IDs. Each row shows the project on the left, the conversation name on the right, and the ID below. Search by any of these fields. There is no fixed task-count limit; 20 tasks were tested. Very large lists have not been performance-tested.
-5. Adding a duplicate ID shows an error and preserves the existing record. To change a saved task, click its “Edit” button. The ID is fixed during editing; a successful save returns the form to add mode.
-6. Choose “简体中文” or “English” at the top. UI, errors, query output and reports use that language. Switching clears old results and queries the selected task again. Language switching is unavailable while queries are running. Names, projects, log content and paths are source data and are not translated.
-7. Stop the local service and launch it again: tasks and the language setting remain saved. Closing the browser neither deletes the list nor automatically stops the service.
+1. Extract the complete package to a short path and double-click the root `Start-SessionDesk.cmd`; in a checkout, use the launcher in this directory. Do not open HTML directly. Windows PowerShell 5.1 starts the background service and opens the default browser; Windows Edge was tested.
+2. Enter the required task ID and save. Names and projects are no longer entered manually. There is no fixed task-count limit; regression covers 20 tasks, not very large lists. Duplicate IDs are rejected without replacing saved records.
+3. Click Query / Refresh, then read the output or View detailed report. Only local log files matching that ID and passing session-identity checks are analyzed, across active and archived directories. Cloud tasks are not queried; missing local logs produce an explicit failure.
+4. Search by project, name or ID, view existing results, or remove list entries. Each row displays project on the left, name on the right and ID below.
+5. Choose Simplified Chinese or English at the top. Prompts, statistics and reports switch together; names, projects, paths and log content are not translated. Switching is unavailable during a running query, and regenerates the selected task's result afterward.
+6. Click Stop local service when finished. Closing the browser does not stop the background service. Stopping it does not delete saved tasks.
 
-No command line or new dependencies are required. The application uses Windows PowerShell 5.1; Node and Playwright are development-test tools only. If device policy prevents startup, do not change global policy or elevate privileges. Share the startup error text, not real logs.
+Share startup error text, not real logs. Do not change global execution policy or elevate privileges. Deep paths may cause file-not-found errors in legacy PowerShell; extract to a shorter path.
 
-## Names and projects
+## Name and project synchronization
 
-A name is filled or updated only after a successful query when the original analyzer finds a valid indexed name without parsing warnings. A changed name triggers a three-second notification. If that task is being edited, its name field briefly receives an amber outline, without continuous flashing. The previous name is retained locally and visible in the result and edit panels, so verification does not depend on the transient notification. Only the most recent replaced name is retained, not a full version history.
+Conversation names come from the last valid matching entry in the local `session_index.jsonl`. Projects come from explicit task-to-local-project assignments and project names in `.codex-global-state.json`. The default source is `.codex` in the user profile; a configured `CODEX_HOME` takes precedence. Project names are never guessed from folders, log content or manual labels.
 
-Missing logs, absent names and index-read errors do not overwrite existing names. A failed name save is reported separately: successful analysis does not imply successful persistence. If a detected name exceeds 80 characters, the saved name is retained; the full detected name remains available in the report.
+While visible, the page checks metadata—descriptive information such as names and projects—about every three seconds. Renaming does not rerun log analysis. After Codex saves a rename to disk, the list, result heading, output name field and open report's name field update together. Project-name case changes also update. Old names inside historical log content remain historical text; there is no global replacement. The original report on disk remains the query-time snapshot; page name/project fields use the latest available metadata, while statistics retain their original query time.
 
-The original analyzer has no reliable project-name field. Project is therefore entered manually, never guessed from a name or path. Project and ID distinguish conversations with matching names.
+These are locally observed desktop formats, not a guaranteed stable public interface. Remote projects, unassigned tasks, missing files, corrupt or truncated records, and renames not yet saved by Codex may prevent fresh metadata. Existing labels are retained with an explicit unavailable/stale-information notice; new tasks show unavailable values. A last-known label is not confirmed current membership. The desk never writes back to Codex metadata files.
 
-## Local storage and isolation
+## Data and compatibility
 
-Each instance stores data in this directory's `.local/` folder; the default instance is `main`:
+Instance data lives in this directory's `.local/`, with `main` as the default instance:
 
-- `main/tasks.json`: tasks and language settings. Writes use a temporary file and atomic replacement to prevent partial content from replacing the complete list. An invalid file stops startup rather than being cleared.
-- Legacy schema 1 lists are backed up as `tasks.schema1.<random-id>.bak` before migration to schema 2. Names and IDs are retained; project fields start empty. Before upgrading, stop the old service, copy the old package's `windows-local/.local` into the same location in the new package, then launch the new version. Do not run two copies of the data at once. To roll back, stop the new version and restore `tasks.json` from the pre-migration backup before launching the old version. Subsequent changes are not written back to that backup.
-- `main/reports/`: local reports and name-reading metadata. Deleting a list entry does not delete its report.
-- `main/fixtures/` and `main/runtime/`: generated synthetic logs and the isolated copy of the original analyzer.
-- `main/connection.json`: the current service's random access token; removed on shutdown.
+- `main/tasks.json` stores IDs, last-known names/projects and language. Writes use atomic replacement; corrupt files are not cleared.
+- Schema 1 and 2 lists are accepted. Schema 1 is copied exactly to `tasks.schema1.<random-id>.bak` before migration. Old manual labels are historical values until replaced by detected metadata. Manual metadata editing is removed.
+- Before upgrading, stop the old service and copy its `.local` to the new package's `windows-local/.local`. Do not overwrite an existing new list. Independently retained backups may also be restored. To roll back, stop the service and restore the pre-migration backup; later additions are not automatically merged into that backup.
+- `main/reports/` contains original analyzer reports and metadata. Reports may include complete user inputs from high-usage turns and local paths. They stay local; removing a task entry does not remove its reports.
+- `main/runtime/` holds an analyzer runtime copy. Original source and algorithms are unchanged. `main/connection.json` holds the current service token and is removed on exit.
 
-Persistence does not depend on browser storage. Service restart was tested; the operating system was not restarted. Deleting the extracted directory also deletes its data. `.local` is local-only: do not commit or distribute it, because it may contain custom names, IDs, paths and connection tokens.
+`.local` is private and must not be distributed in ZIPs, committed or published. Persistence uses disk, not browser storage. Service restart was tested, not operating-system reboot. Deleting the program directory also deletes its data; back up first.
 
-Any standard UUID can be saved, but queries only accept the three synthetic all-zero-prefix IDs ending in 1, 2 or 3. Other IDs are rejected without falling back to real directories. The original script's four user-directory expressions are replaced with the fixed fixture directory and reverse-checked against the source. The service fixes report paths. The original analyzer file and statistical algorithms are unchanged, and there is no real-data mode switch.
+## Execution boundaries
 
-## Local service boundaries
+- Listens only on `127.0.0.1`, validating Host, Origin and a random token. Clients cannot supply scripts, commands or file paths.
+- Only saved, well-formed IDs can be queried. Logs are filtered by ID and their session identity is checked. Codex logs and metadata remain read-only.
+- One writer per data directory; at most two simultaneous queries, independent of list capacity. Repeated requests for a running task in the same language reuse its job. A 120-second timeout or service shutdown terminates only analyzer children started by this service.
+- Queries clear old displays and bind results to a task and run identifier. Failed queries cannot open old reports. Metadata updates and statistical updates are separate; this is not a live AI execution monitor.
+- Statistical policy is unchanged. The original script's integrity notices and known limits still apply. An active session can change while being read; output is a reading snapshot, not an atomically frozen live ledger.
 
-- Listens only on `127.0.0.1`; validates Host, Origin and a random access token; no cross-origin access.
-- Clients cannot supply commands or file paths. Only one writer can own a state directory. Saved-task capacity is independent of query concurrency.
-- At most two queries run simultaneously. Repeated requests for a running task in the same language reuse that query. A 120-second timeout terminates the child process started by this service; shutdown also terminates unfinished children.
-- New queries clear old displays. Results belong to a task, run identifier and language; reports are available only for the current successful query. No automatic refresh, per-query cancellation or system autostart is provided.
-- Output describes the latest query snapshot, not live AI activity. Reports may contain local fixture paths and should not be published as unreviewed screenshots.
+## Maintenance, packaging and verification
 
-## Bilingual maintenance and verification
+UI text is centralized in `desk.html` under `messages`, with paired Chinese and English values. Chinese edits require English review and an updated `I18N-SOURCE-SHA256`. Service errors and documentation also require paired updates. The fingerprint detects Chinese changes but cannot replace semantic review.
 
-UI text is centralized in `desk.html` under `messages`, with Chinese and English supplied together for every key. When functionality or Chinese wording changes, review the English in the same change, update the Chinese `I18N-SOURCE-SHA256` marker, and regress both languages. Tests check complete pairs and the Chinese source fingerprint; the fingerprint cannot prove translation accuracy, so semantic comparison remains necessary. Service errors must also be maintained in both languages. Queries and reports use the original analyzer's language catalog rather than a separate statistical translation layer.
-
-With existing Node, Playwright and Edge, run:
+With existing Node, Playwright and Edge:
 
 ```sh
 node .github/scripts/Test-WindowsSessionDesk.cjs
 ```
 
-Tests create only isolated synthetic instances and install nothing. Coverage includes 20 saved tasks, duplicate-add rejection, editing and deletion, legacy migration, restart, empty and conflicting names, bilingual output and reports, concurrency, stale-result clearing on failure, input and access restrictions, narrow screens and shutdown. Both languages are compared character-for-character with direct execution of the same isolated script. The original script must remain unchanged, with zero page errors and zero external HTTP requests.
+Regression always uses isolated synthetic data. It covers ID-only entry, 20 saved tasks, duplicate rejection, migration backups, name/project changes, updates to an already-open report, unchanged statistics, bilingual behavior, stale-output clearing, truncated metadata, access restrictions, narrow screens and shutdown. The real-mode branch is tested with an explicitly synthetic `CODEX_HOME`, never the developer's real sessions.
 
-macOS, other browsers, real data, very large logs or task lists, operating-system restart and installation signing remain unverified. This is still a Windows isolated validation build.
+Package with:
+
+```powershell
+pwsh -File .github/scripts/Build-WindowsSessionDesk.ps1
+```
+
+Before packaging, the script verifies entry paths, PIDs and connection tokens for old desk services under this checkout's tool and release directories, then requests graceful shutdown. If safe shutdown fails, packaging stops with instructions to click Stop local service in the old page. It never kills PowerShell processes indiscriminately. Exactly ten program/documentation files are packaged, excluding `.local`; existing packages are not overwritten. Old copies outside the checkout must be stopped manually in their own pages.
+
+A real task's name and project sources were confirmed read-only. Host approval blocked automated verification of real log statistics, so real statistical acceptance is not claimed. The operator can actively enter their own ID in this build and compare output with the original script. Report errors or redacted summaries, not raw report content. macOS, cloud/remote tasks, very large logs or lists, operating-system restart and device-policy differences remain unverified.
