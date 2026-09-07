@@ -2,9 +2,9 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: bf842fe20752e3596e5689940ddf2238ff81a3db986c4ecbfd27506f32ede44b -->
+<!-- README-SOURCE-SHA256: ffe4b444e4549800e7e2a7c3aa4a033a1160b2e96bd226bcc55645ebc02e6734 -->
 
-Version: `0.2.0-dev.8`. **Real local session queries are enabled.** Enter a task ID, save it, and query to view the original analyzer's statistics and report. Source sessions are read-only. No data is uploaded and no dependencies are installed.
+Version: `0.2.0-dev.9`. **Real local session queries are enabled.** Enter a task ID, save it, and query to view the original analyzer's statistics and report. Source sessions are read-only. No data is uploaded and no dependencies are installed.
 
 ## Usage
 
@@ -16,6 +16,8 @@ Version: `0.2.0-dev.8`. **Real local session queries are enabled.** Enter a task
 6. Click Exit tool at the top when finished. Close the page after the prominent “You can now close this page” message appears. Closing the page alone does not stop the service; exiting does not delete saved tasks or results.
 
 Share startup error text, not real logs. Do not change global execution policy or elevate privileges. Deep paths may cause file-not-found errors in legacy PowerShell; extract to a shorter path.
+
+View result is enabled only for a successful cached result with output. It is disabled when no result is available, a query is running, or a failed query has no usable cache.
 
 ## List ordering
 
