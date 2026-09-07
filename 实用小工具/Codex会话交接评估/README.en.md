@@ -2,11 +2,11 @@
 
 [简体中文](README.md)
 
-Save frequently used task IDs and query local Codex turns, file size, compaction and handoff guidance with one click. **Recommended version: Windows desk 0.2.0-dev.7.** No commands are required for everyday use. Source sessions are read-only; data is not uploaded.
+Save frequently used task IDs and query local Codex turns, file size, compaction and handoff guidance with one click. **Recommended version: Windows desk 0.2.0-dev.9.** No commands are required for everyday use. Source sessions are read-only; data is not uploaded.
 
 ## Download and start
 
-1. [Download the standalone Windows ZIP](https://github.com/RongNianXin/codex-workflows/releases/download/windows-sessiondesk-v0.2.0-dev.7/Windows-SessionDesk-0.2.0-dev.7.zip), extract it completely, and double-click the root `Start-SessionDesk.cmd`. You do not need to clone the repository. Do not open the HTML by itself.
+1. [Download the standalone Windows ZIP](https://github.com/RongNianXin/codex-workflows/releases/download/windows-sessiondesk-v0.2.0-dev.9/Windows-SessionDesk-0.2.0-dev.9.zip), extract it completely, and double-click the root `Start-SessionDesk.cmd`. You do not need to clone the repository. Do not open the HTML by itself.
 2. If you cloned the repository, double-click [windows-local/Start-SessionDesk.cmd](windows-local/Start-SessionDesk.cmd). The default branch provides source for the same version.
 3. Save a task ID and select Query / Refresh. The conversation name and local project are detected automatically. Basic and detailed reports have separate areas, with Simplified Chinese and English available.
 
@@ -31,7 +31,7 @@ Old HTML prototypes and synthetic demos are retired from the current distributio
 
 - The [command-line quick guide](查看当前任务本地对话文件大小.md) (Chinese) uses the same `check-codex-session.ps1`. Chinese is the default; add `-Language en-US` for English.
 - `compatibility-fixtures.json` contains synthetic regression cases for the repository’s JSON field-order checks, not user data.
-- Release preparation includes 37 isolated synthetic interaction checks, repository quality checks and ZIP verification. The operator reported successful dev.7 manual use. Automated regression does not prove exhaustive real-session, macOS or all-device support.
+- Release preparation includes 41 isolated synthetic interaction checks, repository quality checks and ZIP verification. The operator reported successful dev.9 manual use. Automated regression does not prove exhaustive real-session, macOS or all-device support.
 
 ## Statistics and privacy
 
@@ -39,4 +39,4 @@ Results are engineering guidance, not official thresholds or live status. Segmen
 
 Detailed reports and history can contain complete user input and local paths. They remain in `.local` and must not be published without review. ZIP files exclude private state. The service listens only on loopback and validates a random connection token. Exit does not stop other programs or Codex tasks. Preserve the analyzer’s integrity warnings; missing Token counts must not be treated as zero.
 
-<!-- README-SOURCE-SHA256: 9c097099106ad69ba4ea2ddd29f435dcce423591470bd6cd3542a1fc8c0d3712 -->
+<!-- README-SOURCE-SHA256: ab31dcda36f46156daa4c2012299da0699fc9c0a97c31df1f509c6feee63d46a -->
