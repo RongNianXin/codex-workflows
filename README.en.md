@@ -35,6 +35,19 @@ The public content currently falls into five groups: ChatGPT web enhancements, t
 
 Most of the repository is Markdown and PowerShell rather than a hosted service or opaque automation layer. Public files are designed not to contain local identities, real task IDs, credentials, or private prompts.
 
+## What's new: evidence-backed simplification and reproducible delivery
+
+Establish the current baseline before deciding what to simplify, how to verify it, and how to hand it over. This update strengthens four capabilities:
+
+| Improvement | What it means for users |
+| --- | --- |
+| [Code simplification: scenario 2G](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md#场景-2g保持功能不变精简现有代码) | Establish that code can safely be removed or consolidated, then demonstrate a practical benefit while meeting non-regression requirements. Fewer lines are not enough; a higher aggregate score cannot hide worse results on critical cases. Leaving code unchanged is valid when the benefit is insufficient. |
+| [PR descriptions and delivery](总指挥工作流/第二代总指挥的工作模式/docs/PR_SUBMISSION_AND_REVIEW_STANDARD.md) | Explain why the change is needed, what changed, and which inputs, steps, and expected results verify it. Standard test commands remain useful but do not replace evidence specific to the change. |
+| [Cross-machine reproduction and performance diagnosis](总指挥工作流/第二代总指挥的工作模式/docs/PIPELINE_DIAGNOSIS_AND_ALGORITHM_TUNING_STANDARD.md#跨机器效果与速度差异对照) | Check the actual code, configuration, models, inputs, and access to required resources. Separate output differences from timing differences, and verify the actual delivered result after merging rather than relying on “it works on my machine.” |
+| [Natural-language entry](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md#统一入口描述目标由-ai-核对场景) | Once the rule directory is registered, describe your goal without memorizing scenario numbers or fixed phrases. The AI selects the workflow using the goal, current state, and permissions. Publishing requests load delivery checks without forcing a PR when none is needed. |
+
+Scenario 2B covers local development and acceptance, 2G covers code simplification, and 2F covers implementation with independent review. The old 2B-1 reference still leads to 2G. These rules do not guarantee equal speed on arbitrary machines or correct execution by every AI; actual outcomes require verification, and team rules and authorization boundaries still take precedence. See the [change log (Chinese)](CHANGELOG.md). The linked detailed guides are currently in Chinese.
+
 ## What the commander workflow provides
 
 Collaboration follows a clear path: state a goal, implement and verify, save a checkpoint, then resume delivery. You provide the goal and necessary decisions; the AI retrieves facts, prepares parameters, and checks results. Short instructions still lead to explicit validation requirements.
@@ -132,4 +145,4 @@ The privacy claims are auditable: the real profile stays in an exact `.gitignore
 
 Released under the [MIT License](LICENSE).
 
-<!-- README-SOURCE-SHA256: f986934604fe702a026cd6f516b197c6dd0311d8bd7c0b8e42053c3e8f2a69c2 -->
+<!-- README-SOURCE-SHA256: 2eb70e32fa3bb06baaeebc3955bde396b0898ecf3735237a42302c477ecf14fb -->
