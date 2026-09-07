@@ -7,10 +7,12 @@
 ## 下载与启动
 
 1. [下载 Windows 独立工具 ZIP](https://github.com/RongNianXin/codex-workflows/releases/download/windows-sessiondesk-v0.2.0-dev.9/Windows-SessionDesk-0.2.0-dev.9.zip)，完整解压，双击根目录 `Start-SessionDesk.cmd`。无需克隆整个仓库；不要单独打开 HTML。
-2. 已克隆仓库的用户，双击 [windows-local/Start-SessionDesk.cmd](windows-local/Start-SessionDesk.cmd)。默认分支提供同一版本源码。
+2. 已克隆仓库的用户，双击 [Start-SessionDesk.cmd](Start-SessionDesk.cmd)。默认分支提供同一版本源码。
 3. 保存任务 ID，点击“查询/刷新”；名称与本地项目自动读取。右侧基本报告与详细报告分区显示，可切换简体中文或 English。
 
 使用 Windows 自带 PowerShell 5.1 和浏览器；当前验证 Windows Edge，macOS 与其他浏览器未验证。本版本仍为开发预览，不宣称已经完成所有设备兼容性或超大日志验证。
+
+`windows-local` 是正式程序内部目录，不是临时文件；日常只需运行本目录的启动 CMD。个人任务与历史保存在其 `.local` 中，不随仓库分发。
 
 ## 日常操作
 
