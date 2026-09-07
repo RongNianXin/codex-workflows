@@ -2,9 +2,9 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: e7ce69244dfe73cd5b3ce37013f19cda5c95c29d90650e036af658eebd482199 -->
+<!-- README-SOURCE-SHA256: 6463e481b2763855ed0251f96e13fa478a262131b1c3081a7273c6b00fb2aba9 -->
 
-Version: `0.2.0-dev.6`. **Real local session queries are enabled.** Enter a task ID, save it, and query to view the original analyzer's statistics and report. Source sessions are read-only. No data is uploaded and no dependencies are installed.
+Version: `0.2.0-dev.7`. **Real local session queries are enabled.** Enter a task ID, save it, and query to view the original analyzer's statistics and report. Source sessions are read-only. No data is uploaded and no dependencies are installed.
 
 ## Usage
 
@@ -13,7 +13,7 @@ Version: `0.2.0-dev.6`. **Real local session queries are enabled.** Enter a task
 3. Click Query / Refresh, then read the output or View detailed report. Only local log files matching that ID and passing session-identity checks are analyzed, across active and archived directories. Cloud tasks are not queried; missing local logs produce an explicit failure.
 4. Search by project, name or ID, view existing results, or remove list entries. Each row displays project on the left, name on the right and ID below.
 5. Choose Simplified Chinese or English at the top. Prompts, statistics and reports switch together; names, projects, paths and log content are not translated. Switching is unavailable during a running query. Each task retains per-language results and reports in this page. Returning to an available language restores its original snapshot; a missing language queries only the selected task. Other tasks retain their results. Viewing a result in the other language shows a notice. Manual Query / Refresh clears both old language variants for that task, and a failure does not restore old success. Successful output and detailed reports are saved as local per-task, per-language snapshots and restored after page reload or service restart, with the original query time and a non-live notice.
-6. Click Exit tool when finished. Closing the browser does not stop the background service. Stopping it does not delete saved tasks.
+6. Click Exit tool at the top when finished. Close the page after the prominent “You can now close this page” message appears. Closing the page alone does not stop the service; exiting does not delete saved tasks or results.
 
 Share startup error text, not real logs. Do not change global execution policy or elevate privileges. Deep paths may cause file-not-found errors in legacy PowerShell; extract to a shorter path.
 
