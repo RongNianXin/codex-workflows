@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+-dev\.[0-9]+$')][string]$Version='0.2.0-dev.7')
+param([ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+-dev\.[0-9]+$')][string]$Version='0.2.0-dev.8')
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $module=Join-Path $root '实用小工具/Codex会话交接评估/windows-local'

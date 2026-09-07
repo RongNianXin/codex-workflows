@@ -2,9 +2,9 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: 6463e481b2763855ed0251f96e13fa478a262131b1c3081a7273c6b00fb2aba9 -->
+<!-- README-SOURCE-SHA256: bf842fe20752e3596e5689940ddf2238ff81a3db986c4ecbfd27506f32ede44b -->
 
-Version: `0.2.0-dev.7`. **Real local session queries are enabled.** Enter a task ID, save it, and query to view the original analyzer's statistics and report. Source sessions are read-only. No data is uploaded and no dependencies are installed.
+Version: `0.2.0-dev.8`. **Real local session queries are enabled.** Enter a task ID, save it, and query to view the original analyzer's statistics and report. Source sessions are read-only. No data is uploaded and no dependencies are installed.
 
 ## Usage
 
@@ -16,6 +16,12 @@ Version: `0.2.0-dev.7`. **Real local session queries are enabled.** Enter a task
 6. Click Exit tool at the top when finished. Close the page after the prominent “You can now close this page” message appears. Closing the page alone does not stop the service; exiting does not delete saved tasks or results.
 
 Share startup error text, not real logs. Do not change global execution policy or elevate privileges. Deep paths may cause file-not-found errors in legacy PowerShell; extract to a shorter path.
+
+## List ordering
+
+Group by project keeps projects in first-appearance order. Within each project, commanders come first, ordinary tasks retain their order, and paired specialist tasks follow. A title containing 总指挥 or the word Commander receives display priority only; this grants no authority. Pairs require matching topics and numbers, exactly one `【topic】专项审查者1号` and one `【topic】专项执行者1号`; square brackets are also accepted. Pairs follow first-appearance order and retain their internal order. Missing, duplicate or unrecognized roles remain ordinary tasks. Unresolved projects are not combined across tasks.
+
+Arrow moves retain selection and bring the moved task into view, without automatically regrouping. Desktop columns align at the bottom; narrow screens retain a vertical layout.
 
 ## Name and project synchronization
 

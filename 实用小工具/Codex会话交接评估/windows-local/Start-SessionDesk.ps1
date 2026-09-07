@@ -12,6 +12,32 @@ $jobs = @{}
 $lockOwned = $false
 . (Join-Path $PSScriptRoot 'Read-DeskMetadata.ps1')
 $mode=if($Synthetic){'isolated-synthetic'}else{'local-readonly'}
+
+function Get-ProjectTaskOrder($items) {
+    # Only an unambiguous topic + number pair changes position. Titles are labels, not authority.
+    $pairs=[Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
+    $pairKeys=@{}
+    foreach($task in $items){
+        if([string]$task.name -match '^\s*[【\[]([^】\]]+)[】\]]\s*专项(审查者|执行者)\s*([0-9]+)号\s*$'){
+            $key=$Matches[1].Trim()+'|'+$Matches[3]
+            if(-not $pairs.ContainsKey($key)){$pairs[$key]=[Collections.Generic.List[object]]::new()}
+            $pairs[$key].Add(@{task=$task;role=$Matches[2]});$pairKeys[$task.id]=$key
+        }
+    }
+    $valid=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach($key in $pairs.Keys){if($pairs[$key].Count -eq 2 -and $pairs[$key][0].role -ne $pairs[$key][1].role){[void]$valid.Add($key)}}
+    $leaders=[Collections.Generic.List[object]]::new();$ordinary=[Collections.Generic.List[object]]::new()
+    $orderedPairs=[Collections.Generic.List[string]]::new()
+    foreach($task in $items){
+        $key=$pairKeys[$task.id]
+        if($key -and $valid.Contains($key)){if(-not $orderedPairs.Contains($key)){$orderedPairs.Add($key)}}
+        elseif(-not $key -and [string]$task.name -match '总指挥|\bcommander\b'){$leaders.Add($task)}
+        else{$ordinary.Add($task)}
+    }
+    foreach($task in $leaders){$task}
+    foreach($task in $ordinary){$task}
+    foreach($key in $orderedPairs){foreach($member in $pairs[$key]){$member.task}}
+}
 function Sync-Metadata {
     $found=Get-DeskMetadata $codexData @($script:taskList | ForEach-Object {$_.id})
     $changed=$false
@@ -247,7 +273,7 @@ try {
             $route=$request.Url.AbsolutePath
             if ($route -eq '/' -and $request.HttpMethod -eq 'GET') { Send-Body $context 200 ([IO.File]::ReadAllText((Join-Path $PSScriptRoot 'desk.html'))) 'text/html; charset=utf-8';continue }
             if ($request.Headers['X-SessionDesk'] -cne $token) { Send-Json $context @{error='连接凭证无效，请双击启动入口重新打开。'} 403;continue }
-            if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/tasks') { Sync-Metadata;Send-Json $context @{tasks=@($script:taskList);language=$script:language;mode=$mode;version='0.2.0-dev.7'};continue }
+            if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/tasks') { Sync-Metadata;Send-Json $context @{tasks=@($script:taskList);language=$script:language;mode=$mode;version='0.2.0-dev.8'};continue }
             if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/history') {
                 $id=$request.QueryString['id']
                 if(-not (Valid-Id $id) -or -not @($script:taskList|Where-Object {$_.id -eq $id}).Count){Send-Json $context @{error='请先保存该任务。'} 404;continue}
@@ -296,7 +322,7 @@ try {
                         if(-not $groups.ContainsKey($key)){$groups[$key]=[Collections.Generic.List[object]]::new();$keys.Add($key)}
                         $groups[$key].Add($task)
                     }
-                    $newList=@(foreach($key in $keys){foreach($task in $groups[$key]){$task}})
+                    $newList=@(foreach($key in $keys){Get-ProjectTaskOrder $groups[$key]})
                 } else { throw '不支持的清单操作。' }
                 $old=$script:taskList;$script:taskList=$newList
                 try { Save-Tasks } catch { $script:taskList=$old;throw }
