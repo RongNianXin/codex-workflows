@@ -2,13 +2,14 @@
 
 [简体中文](README.md) | **English**
 
-<!-- README-SOURCE-SHA256: 1c735d72e6f25673235151c78e26483945584d83add611329b3171b7c5734941 -->
+<!-- README-SOURCE-SHA256: c9e2c5bd6a7ed9ac8e06f70ff6808f01f07d097a56c1566e940252d30670a5e6 -->
 
 This directory contains reproduced, reviewed, and sanitized troubleshooting notes for Codex and related tools. Each note should state the symptoms, applicable environment, possible cause, diagnostic steps, expected result, rollback path, and any remaining uncertainty.
 
 ## Current contents
 
 - [CC Switch long-task disconnections and quick handling for 401, 502, 503, and 504 errors](<CC Switch 长任务断联与 401 502 503 504 快速处理.md>)
+- [Codex cross-task messaging failures after signing in through a CC Switch API route](<CC Switch API 登录后 Codex 跨任务通信异常/排查记录与建议.md>)
 - [Codex conversations becoming invisible after switching CC Switch accounts](<CC switch 切换账号后，无法共享对话/CC Switch 切换账号后无法共享对话——原理、恢复与长期配置.md>)
 - [Old Codex conversations failing to continue after switching CC Switch accounts](<CC switch切换账号后，旧的对话无法继续/Codex 切换账号后旧对话无法继续.md>)
 - [Bulk migration tool for historical Codex tasks](<CC switch切换账号后，旧的对话无法继续/codex-bulk-session-migration/README.en.md>)
@@ -23,6 +24,7 @@ The linked case reports are currently written in Chinese. This page provides an 
 | Symptom | Check first | Relevant note |
 | --- | --- | --- |
 | A task disappears from the list after switching providers, although its JSONL still exists | Visibility or bucketing differences in `model_provider`, the state database, or an index | [Conversation visibility after switching accounts](<CC switch 切换账号后，无法共享对话/CC Switch 切换账号后无法共享对话——原理、恢复与长期配置.md>) |
+| Cross-task sending reports success, but the target produces an empty turn, repeats old output, or returns no acknowledgement | Run a uniquely identified, read-only two-stage probe against the current API sign-in route; accepted delivery does not prove execution | [Cross-task messaging after API sign-in](<CC Switch API 登录后 Codex 跨任务通信异常/排查记录与建议.md>) |
 | The task remains visible, but continuing it returns `invalid_encrypted_content`, `could not be verified`, or an organization mismatch | Encrypted reasoning or compaction state bound to the old account, model, or upstream provider cannot be replayed | [Old conversation cannot continue](<CC switch切换账号后，旧的对话无法继续/Codex 切换账号后旧对话无法继续.md>) |
 | Opening, resuming, or typing in a long task becomes noticeably slow | Distinguish local session size and accumulated compactions from proxy/network issues, process resources, and a version-specific regression | [Codex session handoff assessment](<../实用小工具/Codex会话交接评估/README.en.md>) |
 | Archiving on Windows returns `thread-store` / `os error 2`, although the session file exists | The `rollout_path` in `state_5.sqlite` may use the `\\?\` extended-length path prefix | [Archive failure](<对话无法归档/Codex 对话无法归档：thread-store 文件路径缺失.md>) |
