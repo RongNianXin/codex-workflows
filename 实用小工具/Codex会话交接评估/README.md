@@ -2,11 +2,11 @@
 
 [English](README.en.md)
 
-保存常用任务 ID，一键查看本机 Codex 会话的回合、文件大小、上下文压缩及交接参考信息。**当前推荐版本：Windows 工作台 0.2.0-dev.6。** 无需输入命令；源会话只读，数据不上传。
+保存常用任务 ID，一键查看本机 Codex 会话的回合、文件大小、上下文压缩及交接参考信息。**当前推荐版本：Windows 工作台 0.2.0-dev.7。** 无需输入命令；源会话只读，数据不上传。
 
 ## 下载与启动
 
-1. [下载 Windows 独立工具 ZIP](https://github.com/RongNianXin/codex-workflows/releases/download/windows-sessiondesk-v0.2.0-dev.6/Windows-SessionDesk-0.2.0-dev.6.zip)，完整解压，双击根目录 `Start-SessionDesk.cmd`。无需克隆整个仓库；不要单独打开 HTML。
+1. [下载 Windows 独立工具 ZIP](https://github.com/RongNianXin/codex-workflows/releases/download/windows-sessiondesk-v0.2.0-dev.7/Windows-SessionDesk-0.2.0-dev.7.zip)，完整解压，双击根目录 `Start-SessionDesk.cmd`。无需克隆整个仓库；不要单独打开 HTML。
 2. 已克隆仓库的用户，双击 [windows-local/Start-SessionDesk.cmd](windows-local/Start-SessionDesk.cmd)。默认分支提供同一版本源码。
 3. 保存任务 ID，点击“查询/刷新”；名称与本地项目自动读取。右侧基本报告与详细报告分区显示，可切换简体中文或 English。
 
@@ -16,7 +16,7 @@
 
 - 常用任务没有固定条数上限，已回归 20 条；支持搜索、上下移动和按项目稳定分组，顺序保存在磁盘。
 - 每个任务、每种语言保留最近一次成功查询的基本输出和详细报告。重开显示原查询时间及“历史快照”提示，只有主动查询才更新统计。
-- **仅关闭网页不会关闭后台服务。** 不再使用时点击“退出工具”，停止本工具服务及未完成查询，不影响 Codex 对话任务。按钮提供中英文悬停说明；退出后可以关闭页面，下次双击启动入口恢复清单与已保存结果。
+- **仅关闭网页不会关闭后台服务。** 不再使用时点击页面顶部的“退出工具”，停止本工具服务及未完成查询，不影响 Codex 对话任务。按钮提供中英文悬停说明；退出后可以关闭页面，下次双击启动入口恢复清单与已保存结果。
 - 中断或失败的刷新不会把旧历史改成新成功；此前保存的历史仍可在重开时查看。查看结果不代表 AI 当前仍在运行。
 
 详细操作、存储位置、历史失效条件和双语维护要求见 [Windows 工作台说明](windows-local/README.md)。[真实界面预览](../../SHOWCASE.md)集中展示脱敏截图。
@@ -31,7 +31,7 @@
 
 - [命令行快速说明](查看当前任务本地对话文件大小.md)使用同一 `check-codex-session.ps1`。默认中文，英文增加 `-Language en-US`。
 - `compatibility-fixtures.json` 是纯虚构回归样例，供仓库字段顺序测试使用，不是用户数据。
-- 发布前完成 37 项隔离虚构交互回归、仓库质量检查与 ZIP 内容核对；操作者已反馈 dev.6 人工试用无问题。自动回归不等于真实会话全覆盖，也不等于 macOS 或所有 Windows 设备验收。
+- 发布前完成 37 项隔离虚构交互回归、仓库质量检查与 ZIP 内容核对；操作者已反馈 dev.7 人工试用无问题。自动回归不等于真实会话全覆盖，也不等于 macOS 或所有 Windows 设备验收。
 
 ## 统计与隐私边界
 

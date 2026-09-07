@@ -58,7 +58,7 @@ Specific model names, prices, and reasoning levels are not permanent prerequisit
 | Troubleshoot Codex or CC Switch | [Troubleshooting notes](故障排查与解决经验/) |
 | Reuse a focused prompt | [Prompt collection](其他%20Codex%20技巧性提示词/) |
 | Try a local helper | [Local utilities](实用小工具/) |
-| Save tasks and query Codex session snapshots (Windows dev.6) | [Session handoff assessment](实用小工具/Codex会话交接评估/README.en.md) |
+| Save tasks and query Codex session snapshots (Windows dev.7) | [Session handoff assessment](实用小工具/Codex会话交接评估/README.en.md) |
 | See real-world results | [Showcase](SHOWCASE.md) |
 
 The detailed manuals are currently written in Chinese. This page is an evaluation and navigation guide for English-speaking visitors.
@@ -132,4 +132,4 @@ The privacy claims are auditable: the real profile stays in an exact `.gitignore
 
 Released under the [MIT License](LICENSE).
 
-<!-- README-SOURCE-SHA256: f94be15d1d5fb22ce3a2109d2dd4c4171534731e1f304ef2738960f7953c0c31 -->
+<!-- README-SOURCE-SHA256: 1fd1a1c38fd7ece6538e1d11ff6982cff153cb721691278b73a641f3abad4547 -->
