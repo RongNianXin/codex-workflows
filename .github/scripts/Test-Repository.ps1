@@ -611,9 +611,13 @@ function Get-CSharpCompiler {
 }
 
 function Test-ArchiveRepairLauncher {
-    $source = Join-Path $repoRoot '故障排查与解决经验/对话无法归档/CodexArchiveRepairLauncher.cs'
-    $resource = Join-Path $repoRoot '故障排查与解决经验/对话无法归档/Repair-CodexThreadArchive.ps1'
-    if (-not (Test-Path -LiteralPath $source) -or -not (Test-Path -LiteralPath $resource)) {
+    $caseRoot = Join-Path $repoRoot '故障排查与解决经验/01-会话与归档/TRB-001-Windows归档路径异常'
+    $source = Join-Path $caseRoot 'CodexArchiveRepairLauncher.cs'
+    $resource = Join-Path $caseRoot 'Repair-CodexThreadArchive.ps1'
+    $checkedExe = Join-Path $caseRoot 'Codex归档修复工具.exe'
+    if (-not (Test-Path -LiteralPath $source) -or
+        -not (Test-Path -LiteralPath $resource) -or
+        -not (Test-Path -LiteralPath $checkedExe)) {
         throw '归档修复工具源码不完整。'
     }
 
@@ -664,6 +668,19 @@ function Test-ArchiveRepairLauncher {
             $sha.Dispose()
         }
         if ($sourceHash -ne $embeddedHash) { throw '编译结果内嵌脚本与源码不一致。' }
+
+        $checkedAssembly = [Reflection.Assembly]::Load([IO.File]::ReadAllBytes($checkedExe))
+        $checkedStream = $checkedAssembly.GetManifestResourceStream('CodexArchiveRepairScript')
+        if ($null -eq $checkedStream) { throw '仓库随附 EXE 缺少内嵌修复脚本。' }
+        $checkedSha = [Security.Cryptography.SHA256]::Create()
+        try {
+            $checkedHash = ([BitConverter]::ToString($checkedSha.ComputeHash($checkedStream))).Replace('-', '')
+        }
+        finally {
+            $checkedStream.Dispose()
+            $checkedSha.Dispose()
+        }
+        if ($sourceHash -ne $checkedHash) { throw '仓库随附 EXE 内嵌脚本与当前源码不一致。' }
     }
     finally {
         $resolvedTemp = [IO.Path]::GetFullPath($tempDirectory)
@@ -673,6 +690,64 @@ function Test-ArchiveRepairLauncher {
         }
     }
     Write-Host 'Windows archive repair tool: PASS'
+}
+
+function Test-TroubleshootingKnowledgeBase {
+    $root = Join-Path $repoRoot '故障排查与解决经验'
+    $cases = @(
+        @{ Id = 'TRB-001'; Path = '01-会话与归档/TRB-001-Windows归档路径异常/Codex 对话无法归档：thread-store 文件路径缺失.md'; Status = '已解决' },
+        @{ Id = 'TRB-002'; Path = '01-会话与归档/TRB-002-thread-not-found/thread-not-found-恢复方案.md'; Status = '部分解决' },
+        @{ Id = 'TRB-003'; Path = '02-账号与供应商切换/TRB-003-历史列表分裂/CC Switch 切换账号后无法共享对话——原理、恢复与长期配置.md'; Status = '部分解决' },
+        @{ Id = 'TRB-004'; Path = '02-账号与供应商切换/TRB-004-旧对话无法继续/Codex 切换账号后旧对话无法继续.md'; Status = '部分解决' },
+        @{ Id = 'TRB-005'; Path = '02-账号与供应商切换/TRB-005-迁移后分页谱系损坏/分页谱系损坏与迁移工具暂停.md'; Status = '未解决' },
+        @{ Id = 'TRB-006'; Path = '03-跨任务通信/TRB-006-API登录后通信异常/排查记录与建议.md'; Status = '未解决' },
+        @{ Id = 'TRB-007'; Path = '04-网络与上游错误/TRB-007-长任务断联与HTTP错误/CC Switch 长任务断联与 401 502 503 504 快速处理.md'; Status = '部分解决' }
+    )
+
+    $index = Get-Content -LiteralPath (Join-Path $root 'README.md') -Raw -Encoding utf8
+    foreach ($case in $cases) {
+        $path = Join-Path $root $case.Path
+        if (-not (Test-Path -LiteralPath $path)) { throw "故障记录缺失：$($case.Id)" }
+        $text = Get-Content -LiteralPath $path -Raw -Encoding utf8
+        foreach ($required in @('| 故障编号 |', "``$($case.Id)``", '| 解决状态 |', '| 工具状态 |', '| 最后核验 |', '| 证据边界 |', $case.Status)) {
+            if (-not $text.Contains($required)) { throw "故障记录 $($case.Id) 缺少：$required" }
+        }
+        if (-not $index.Contains("``$($case.Id)``")) { throw "故障索引缺少：$($case.Id)" }
+    }
+
+    $template = Get-Content -LiteralPath (Join-Path $root '故障记录模板.md') -Raw -Encoding utf8
+    foreach ($required in @('当前没有已验证的解决方案', '已确认事实', '合理推断', '待确认项', '证据登记', '配套工具', '失效与重验条件')) {
+        if (-not $template.Contains($required)) { throw "故障模板缺少：$required" }
+    }
+
+    $tracked = @(Get-TrackedFiles -Pattern '故障排查与解决经验/*')
+    if ($tracked -match 'stage-a-report\.json$') { throw '本地扫描报告不得被 Git 跟踪。' }
+    $forbiddenPatterns = @(
+        @{ Pattern = '(?i)[A-Z]:\\Users\\(?!<)'; Label = '真实 Windows 用户路径' },
+        @{ Pattern = '127\.0\.0\.1:\d{2,5}'; Label = '固定本地端口' },
+        @{ Pattern = 'CC switch切换账号后，旧的对话无法继续/用法\.txt'; Label = '已删除的旧入口' }
+    )
+    foreach ($forbidden in $forbiddenPatterns) {
+        foreach ($relative in $tracked) {
+            $path = Join-Path $repoRoot $relative
+            if ([IO.Path]::GetExtension($path) -notin @('.md', '.txt', '.mjs', '.ps1', '.cs', '.cmd', '.json')) { continue }
+            if ((Get-Content -LiteralPath $path -Raw -Encoding utf8) -match $forbidden.Pattern) {
+                throw "故障资料仍包含$($forbidden.Label)：$relative"
+            }
+        }
+    }
+
+    $migration = Join-Path $root '02-账号与供应商切换/TRB-005-迁移后分页谱系损坏/迁移工具研究材料-真实操作已暂停/install_bulk_codex_migration.mjs'
+    foreach ($gate in @(
+        @{ Argument = '--apply'; Signature = '安装已暂停'; Label = '安装' },
+        @{ Argument = '--rollback-latest'; Signature = '回滚已暂停'; Label = '回滚' }
+    )) {
+        $gateOutput = & node $migration $gate.Argument 2>&1 | Out-String
+        if ($LASTEXITCODE -eq 0 -or $gateOutput -notmatch [regex]::Escape($gate.Signature)) {
+            throw "真实$($gate.Label)入口没有失败关闭。"
+        }
+    }
+    Write-Host "Troubleshooting knowledge base: PASS ($($cases.Count) cases)"
 }
 
 Test-RepositoryPathPortability
@@ -691,4 +766,5 @@ Test-PipelineStepDeckEnhancementTool
 Test-LocalProfilePrivacyBoundary
 Test-ExplicitAttachmentBoundary
 Test-ArchiveRepairLauncher
+Test-TroubleshootingKnowledgeBase
 Write-Host 'Repository quality checks: PASS'

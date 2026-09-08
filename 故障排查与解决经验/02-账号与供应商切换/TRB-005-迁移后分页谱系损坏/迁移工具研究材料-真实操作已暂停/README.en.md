@@ -1,14 +1,14 @@
-# Codex historical-task bulk migration package
+# Codex historical-task migration research material
 
 [简体中文](README.md) | **English**
 
-<!-- README-SOURCE-SHA256: 243511c2df10478bae667dbd5c0cbc50c5c1260161cc75b6e6f4b7820b4541c2 -->
+<!-- README-SOURCE-SHA256: 9c8bed2b9ba2321522815cc110c9d5f8000a8bfe7e42165578a495f6bfa43ffc -->
 
 ## Current status
 
-- **Installation against real sessions is suspended.** `--apply` fails before scanning, backing up, or modifying any real task.
+- **Installation and rollback against real data are suspended.** `--apply` and `--rollback-latest` fail before reading a manifest, scanning, backing up, or modifying any real task.
 - The previous version validated each file independently. It did not prove that a child's `history_base.end_byte_offset` still identifies the same byte prefix after its parent is rewritten.
-- The public package currently retains the transformation source, synthetic tests, and rollback support for existing backups so the design can be reviewed and repaired.
+- The public package currently retains transformation source, synthetic tests, and the historical rollback implementation for review and repair. Retaining source does not make the real entry point safe to use.
 - Locally generated scan reports may contain absolute paths and real task IDs. They are excluded by `.gitignore` and are not runtime dependencies of the installer.
 - The self-test and lineage tests use only synthetic values or temporary directories. They do not enumerate real session contents.
 
@@ -24,7 +24,7 @@ Local tests confirmed that fail-closed protection is active, expected encrypted 
 
 ## Installation status
 
-Do not use `安装批量迁移.cmd` against real tasks. The entry point now reports the risk and exits.
+Do not use `真实迁移入口（已暂停）.cmd` against real tasks. The entry point now reports the risk and exits.
 
 The old exact-task command is also suspended and cannot bypass the gate:
 
@@ -44,18 +44,20 @@ node install_bulk_codex_migration.mjs --self-test
 
 The first verifies visible-content preservation and fail-closed handling of unknown ciphertext. The second creates wholly synthetic fixtures in a temporary directory for no-lineage, parent-child, multi-level, multiple-child, out-of-set, out-of-range, repeated-check, and restored-original cases. The third checks synthetic process names, the task selector, and temporary-file metadata without reading real sessions.
 
-## Rollback
+## Rollback status
 
-After Codex and CC Switch have been completely closed, double-click `回滚最近一次批量迁移.cmd`. Before restoration, the rollback tool backs up the post-migration state so evidence is not destroyed by an overwrite.
+Do not use `真实回滚入口（已暂停）.cmd` against a real backup. Independent review found that the historical implementation trusts absolute paths from the newest `manifest.json` without first proving its schema, allowed roots, or path-traversal boundaries. The current entry fails before reading a manifest or real file.
+
+Rollback can be restored only after synthetic tests cover malicious and damaged manifests, out-of-root absolute paths, `..` traversal, repeated runs, and partial restoration failures, and after every source and backup path is proven to remain under an allowed root.
 
 ## Backup location
 
 `<USER_HOME>\Documents\Codex\CodexSessionBackups\bulk-<TIMESTAMP>`
 
-Each installation directory contains `manifest.json`, copies of the original task files, and any Codex/CC Switch configuration and database files that existed at the time. Use the rollback script for restoration rather than replacing only `config.toml`. Restoring configuration alone does not restore task history and may create an inconsistent configuration/history state.
+A historical installation directory may contain `manifest.json`, copies of original task files, and Codex/CC Switch configuration or database backups. Do not run the rollback script or restore only `config.toml`. Preserve the evidence and manifest hash until rollback boundaries have been validated.
 
 ## Known limitations
 
 The previous migration handled only ciphertext in currently unarchived tasks and ignored cross-file pagination lineage. Even after lineage validation is repaired, a provider may write new hidden ciphertext and a later switch to an incompatible provider may reproduce the failure. Long-term compatibility still requires upstream support for cross-provider state conversion. Setting only `model_provider = "custom"` does not change ciphertext ownership.
 
-This tool is not derived from or packaged from `codex-session-cleaner` or `codex-rescue`, and it does not copy their source code. See the [related-project, license, and implementation-difference notes](<../../相关项目、许可证与差异说明.md>) for details.
+This tool is not derived from or packaged from `codex-session-cleaner` or `codex-rescue`, and it does not copy their source code. See the [related-project, license, and implementation-difference notes](<../相关项目、许可证与差异说明.md>) for details.

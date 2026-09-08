@@ -61,8 +61,8 @@ coverage/
 # Generated session analysis reports contain full user input
 **/*-详细分析报告.md
 
-# Unfinished local draft: publish after substantive content is added
-/故障排查与解决经验/CC switch 不同对话窗口扣费途径不同/codex同一账号，不同对话窗口扣费渠道不同.md
+# Unfinished troubleshooting drafts and private evidence: never publish directly
+/故障排查与解决经验/90-本地草稿/
 
 # Local Tampermonkey exports: source material, not public deliverables
 /ChatGPT-Web/tampermonkey-backup-*.zip

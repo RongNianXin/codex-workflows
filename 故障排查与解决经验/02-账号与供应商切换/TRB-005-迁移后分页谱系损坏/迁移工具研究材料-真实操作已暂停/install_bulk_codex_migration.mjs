@@ -582,10 +582,14 @@ if (mode === "--apply") {
     "安装已暂停：当前版本无法证明分页会话的 history_base 字节偏移在改写后仍然有效。未扫描、备份或修改真实任务。",
   );
 }
-else if (mode === "--rollback-latest") await rollbackLatest();
+else if (mode === "--rollback-latest") {
+  fail(
+    "回滚已暂停：当前版本尚未验证历史 manifest 的 schema、允许根目录和路径穿越边界。未读取清单、备份或真实任务。",
+  );
+}
 else if (mode === "--self-test") await selfTest();
 else {
   console.log(
-    "未修改任何文件。--apply 当前暂停；可用参数：--rollback-latest、--self-test",
+    "未修改任何文件。--apply 与 --rollback-latest 当前暂停；仅 --self-test 可用。",
   );
 }

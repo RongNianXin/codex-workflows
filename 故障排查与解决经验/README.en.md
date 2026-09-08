@@ -1,54 +1,67 @@
-# Troubleshooting notes
+# Troubleshooting knowledge base
 
 [简体中文](README.md) | **English**
 
-<!-- README-SOURCE-SHA256: 18ecb078110afbc6b9b6fc6a3ee0709f3bd6f0fd1769b6e7394735fbee67aa56 -->
+<!-- README-SOURCE-SHA256: 75d4770ae04e70d8a04c145f446f709f079b7b02da1196764084c9f654207a1d -->
 
-This directory contains reproduced, reviewed, and sanitized troubleshooting notes for Codex and related tools. Each note should state the symptoms, applicable environment, possible cause, diagnostic steps, expected result, rollback path, and any remaining uncertainty.
+This directory contains sanitized Codex and companion-tool incident records with explicit evidence boundaries. Start with the symptom table. You do not need to understand the directory layout or read every investigation.
 
-## Current contents
+## Find a case by symptom
 
-- [CC Switch long-task disconnections and quick handling for 401, 502, 503, and 504 errors](<CC Switch 长任务断联与 401 502 503 504 快速处理.md>)
-- [Codex cross-task messaging failures after signing in through a CC Switch API route](<CC Switch API 登录后 Codex 跨任务通信异常/排查记录与建议.md>)
-- [Codex conversations becoming invisible after switching CC Switch accounts](<CC switch 切换账号后，无法共享对话/CC Switch 切换账号后无法共享对话——原理、恢复与长期配置.md>)
-- [Old Codex conversations failing to continue after switching CC Switch accounts](<CC switch切换账号后，旧的对话无法继续/Codex 切换账号后旧对话无法继续.md>)
-- [Bulk migration tool for historical Codex tasks](<CC switch切换账号后，旧的对话无法继续/codex-bulk-session-migration/README.en.md>)
-- [Codex archive failure on Windows caused by extended-length paths](<对话无法归档/Codex 对话无法归档：thread-store 文件路径缺失.md>)
-- [Recovery procedure for Codex `thread not found`](<thread not found/thread-not-found-恢复方案.md>)
-- [Related projects, licenses, and implementation differences](<相关项目、许可证与差异说明.md>)
+| ID | Symptom | Current status | Entry |
+| --- | --- | --- | --- |
+| `TRB-001` | Archiving on Windows reports `thread-store` / `os error 2`, although the session file exists | **Resolved: local repair verified** | [Archive-path failure](<01-会话与归档/TRB-001-Windows归档路径异常/Codex 对话无法归档：thread-store 文件路径缺失.md>) |
+| `TRB-002` | The original task shows `thread not found`, while its record may still exist | **Partially resolved: one recovery case verified** | [`thread not found` recovery](<01-会话与归档/TRB-002-thread-not-found/thread-not-found-恢复方案.md>) |
+| `TRB-003` | Tasks disappear from the list after an account or route switch, although files remain | **Partially resolved: historical workaround verified** | [Split history lists](<02-账号与供应商切换/TRB-003-历史列表分裂/CC Switch 切换账号后无法共享对话——原理、恢复与长期配置.md>) |
+| `TRB-004` | A task remains visible but cannot continue after an account or provider switch and reports ciphertext validation errors | **Partially resolved: no general fix** | [Old task cannot continue](<02-账号与供应商切换/TRB-004-旧对话无法继续/Codex 切换账号后旧对话无法继续.md>) |
+| `TRB-005` | Migration is followed by `invalid paginated history lineage` or an out-of-range cutoff | **Unresolved: real operations suspended** | [Paginated-lineage damage](<02-账号与供应商切换/TRB-005-迁移后分页谱系损坏/分页谱系损坏与迁移工具暂停.md>) |
+| `TRB-006` | Cross-task sending reports success, but the target produces an empty turn, repeats old output, or returns no ACK | **Unresolved: diagnostic and stop rules only** | [Cross-task communication failure](<03-跨任务通信/TRB-006-API登录后通信异常/排查记录与建议.md>) |
+| `TRB-007` | A long task encounters 401, 502, 503, 504, or a dropped stream, and retry safety is unclear | **Partially resolved: triage and recovery flow available** | [Long tasks and HTTP errors](<04-网络与上游错误/TRB-007-长任务断联与HTTP错误/CC Switch 长任务断联与 401 502 503 504 快速处理.md>) |
 
-The linked case reports are currently written in Chinese. This page provides an English diagnostic map without pretending that every detailed article has already been translated.
+“Resolved” applies only to the platform, version, and evidence scope stated in the case. “Partially resolved” means that a verified recovery or workaround exists while the root cause, durable fix, or other environments remain open. “Unresolved” means that no verified solution is currently available; the record provides investigation progress, evidence, and stop conditions.
 
-## Identify the failure class first
+## Do these three things first
 
-| Symptom | Check first | Relevant note |
-| --- | --- | --- |
-| A task disappears from the list after switching providers, although its JSONL still exists | Visibility or bucketing differences in `model_provider`, the state database, or an index | [Conversation visibility after switching accounts](<CC switch 切换账号后，无法共享对话/CC Switch 切换账号后无法共享对话——原理、恢复与长期配置.md>) |
-| Cross-task sending reports success, but the target produces an empty turn, repeats old output, or returns no acknowledgement | Check delivery, readback visibility, the target reply, and the reverse acknowledgement separately; a platform completion marker or empty string does not prove processing | [Cross-task messaging after API sign-in](<CC Switch API 登录后 Codex 跨任务通信异常/排查记录与建议.md>) |
-| The task remains visible, but continuing it returns `invalid_encrypted_content`, `could not be verified`, or an organization mismatch | Encrypted reasoning or compaction state bound to the old account, model, or upstream provider cannot be replayed | [Old conversation cannot continue](<CC switch切换账号后，旧的对话无法继续/Codex 切换账号后旧对话无法继续.md>) |
-| The error says `invalid paginated history lineage` or a cutoff is beyond its parent rollout | A parent session was shortened while a child segment retained the old byte offset | [Old conversation cannot continue](<CC switch切换账号后，旧的对话无法继续/Codex 切换账号后旧对话无法继续.md>); stop migration and preserve the evidence |
-| Opening, resuming, or typing in a long task becomes noticeably slow | Distinguish local session size and accumulated compactions from proxy/network issues, process resources, and a version-specific regression | [Codex session handoff assessment](<../实用小工具/Codex会话交接评估/README.en.md>) |
-| Archiving on Windows returns `thread-store` / `os error 2`, although the session file exists | The `rollout_path` in `state_5.sqlite` may use the `\\?\` extended-length path prefix | [Archive failure](<对话无法归档/Codex 对话无法归档：thread-store 文件路径缺失.md>) |
-| The task record still exists, but its original task shows `thread not found` | Check archive state first. If necessary, send a constrained recovery message by task ID, knowing that it creates a new request and writes state | [`thread not found` recovery](<thread not found/thread-not-found-恢复方案.md>) |
-| You need to review the historical migration design or roll back an existing backup | Real installation is suspended; only synthetic tests and rollback for an existing backup remain available | [Bulk historical-task migration](<CC switch切换账号后，旧的对话无法继续/codex-bulk-session-migration/README.en.md>) |
+1. Preserve the complete error text, occurrence time, product version, and failure stage. Sanitize before sharing.
+2. Separate visibility, continuation, request, and local-data failures. Do not apply a fix based only on a similar-looking symptom.
+3. Before changing sessions, databases, accounts, remote state, or resending actions, preserve the evidence and check for existing side effects.
 
-Seeing a task in history and continuing it across providers are different problems. Normalizing `model_provider` can repair visibility, but it cannot transform ciphertext produced for another account, organization, or upstream provider.
+## Directory rules
 
-## Safety boundaries
+- Top-level directories classify the failure layer. Every public case has a stable `TRB-xxx` ID and its own folder.
+- Keep the main record, investigation, evidence register, and companion tool with the case. Resolution status and tool status are independent.
+- Keep license and implementation-difference notes beside the relevant tool.
+- Evidence-free material stays in the Git-ignored `90-本地草稿/` area until it meets the record template's minimum evidence requirements.
+- Paths may change, but case IDs are never reused. When cases merge, preserve old-ID mappings and migration notes.
 
-- These notes are not official fixes from OpenAI or CC Switch. Whether the current releases still use the same session structures remains unverified.
-- Ciphertext migration is a last resort. The public tool's real installation entry is suspended because of paginated-lineage risk; do not bypass the fail-closed gate.
-- Do not remove `encrypted_content` by deleting matching text lines. Unknown structures must fail closed rather than be guessed away.
-- Session size, compaction count, and context ratios are diagnostic signals. None of them alone proves the cause of latency, cost, or model degradation.
-- Share only versions, error codes, counts, sizes, timestamps, and sanitized hashes. Do not upload raw JSONL, databases, prompts, tool output, absolute paths, or credentials.
-- When citing third-party projects, state their licenses, implementation differences, and whether source code was copied. Do not describe independent work as an official collaboration or original work from this repository.
+This directory was first reorganized under these rules on 2026-09-08. Paths based on temporary problem names are no longer entry points. Their earlier contents remain traceable through Git history; public references should use the stable `TRB-xxx` IDs.
 
-## Related public issues
+Use the [Chinese record template](故障记录模板.md) or the [English template](TROUBLESHOOTING_RECORD_TEMPLATE.md) for new cases.
 
-- [CC Switch #4464: encrypted content cannot be decrypted after unified history migration](https://github.com/farion1231/cc-switch/issues/4464)
-- [CC Switch #3866: migration changes JSONL mtime and disrupts resume ordering](https://github.com/farion1231/cc-switch/issues/3866)
-- [OpenAI Codex #17541: encrypted content cannot be decrypted after a model/provider change](https://github.com/openai/codex/issues/17541)
-- [OpenAI Codex #25290: persisted encrypted reasoning or compaction data prevents replay](https://github.com/openai/codex/issues/25290)
-- [OpenAI Codex #25390: severe latency after opening large local tasks on Windows](https://github.com/openai/codex/issues/25390)
+## Maintenance lifecycle
 
-Troubleshooting documents must not contain real accounts, task IDs, absolute user paths, credentials, chat transcripts, or generated local scan reports. Historical versions and third-party behavior describe the environment at the time and must be revalidated before use.
+1. **Capture:** record a one-sentence symptom, error signature, version, time, and minimum sanitized evidence.
+2. **Classify:** create or reuse a case ID and separate confirmed facts, reasonable inference, and open questions.
+3. **Validate:** reproduce with copies, synthetic data, or read-only checks first; preserve failed attempts and stop conditions.
+4. **Publish:** show resolution status, tool state, last-verified date, and evidence boundary at the top.
+5. **Maintain:** revalidate after product, data-format, configuration, or evidence changes. Mark obsolete cases as retired while preserving useful history.
+
+## Tool status
+
+- [`TRB-001` archive repair tool](<01-会话与归档/TRB-001-Windows归档路径异常/Codex 对话无法归档：thread-store 文件路径缺失.md#四最简单的使用方式双击-exe>): a Windows local tool that repairs one path field and does not archive tasks. The checked-in executable is unsigned; read its boundary before use.
+- [`TRB-005` migration research material](<02-账号与供应商切换/TRB-005-迁移后分页谱系损坏/迁移工具研究材料-真实操作已暂停/README.en.md>): installation and rollback against real data are suspended. Only synthetic tests and source review are allowed.
+
+## Publication and safety boundaries
+
+- These records are not official fixes from OpenAI or third-party projects. Revalidate when versions, private data structures, or provider behavior change.
+- Do not publish raw JSONL, databases, full prompts, real task IDs, accounts, credentials, internal route names, absolute paths, or generated scan reports.
+- Public error samples use `<PROVIDER_NAME>`, `<MODEL_NAME>`, `<THREAD_ID>`, `<PORT>`, and `<USER_HOME>`.
+- When citing third-party projects, state the source, license, implementation differences, and last-verified date. Do not imply an official partnership.
+
+## Public references
+
+- [CC Switch: Unified Codex session history](https://github.com/farion1231/cc-switch/blob/main/docs/guides/codex-unified-session-history-guide-en.md)
+- [CC Switch releases](https://github.com/farion1231/cc-switch/releases)
+- [OpenAI Codex documentation](https://developers.openai.com/codex)
+
+Dates and versions in historical cases describe the environment at that time. Use the status and “last verified” fields at the top of each case to judge applicability.
