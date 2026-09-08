@@ -1068,6 +1068,8 @@ Test-CommanderDurableWorkflowContract
 Test-CommanderScene2FRoutingCases
 Test-CommanderNextActionConvergenceCases
 Test-CommanderContinuityRoutingCases
+& node (Join-Path $PSScriptRoot 'Test-HandoffIdentity.mjs')
+if ($LASTEXITCODE -ne 0) { throw '成果连续性虚构检查失败。' }
 Test-TextFlowchartTemplateContract
 Test-PipelineStepDeckTemplate
 Test-PipelineStepDeckEnhancementTool
