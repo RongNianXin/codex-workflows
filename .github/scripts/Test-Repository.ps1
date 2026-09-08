@@ -228,11 +228,11 @@ function Test-CommanderDurableWorkflowContract {
     $contracts = @(
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
-            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '紧凑文本执行图', '默认不生成矢量图', '单一整图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
+            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '场景 2F：跨窗口执行与独立审查协作', '两个不同 AI 窗口', '只要求当前窗口自己检查工作，也不自动创建 2F 配对', '紧凑文本执行图', '默认不生成矢量图', '单一整图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
-            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '路由回执', '自然语言路由别名', '不能作为该动作的授权', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务', '强制状态回执与空输出兜底', '业务权限不足也返回 `BLOCKED`')
+            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '路由回执', '开始自然语言路由前', '当前任务未加载该修订', '自然语言路由别名', '两个不同 AI 窗口分别执行和独立审查', '普通的同窗口自检', '不能作为该动作的授权', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务', '强制状态回执与空输出兜底', '业务权限不足也返回 `BLOCKED`')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/03-专项任务卡模板.md'
@@ -279,6 +279,10 @@ function Test-CommanderDurableWorkflowContract {
             Required = @('两次操作者授权', '下一条独立消息', 'active_entry_limit', 'routing_alias_limit', '自然语言路由别名', 'profile_revision', '不得替代本轮授权', '独立应用能力未验证', 'unasked / enabled / paused / disabled / unavailable', '不再展示介绍', '不创建定时任务、后台轮询或独立自动化', '删除公开的 `11-操作者协作画像规范.md` 不是关闭方式')
         },
         @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/docs/EXECUTION_AND_INDEPENDENT_REVIEW.md'
+            Required = @('跨窗口执行与独立审查协作规范', '逻辑角色，不覆盖窗口原身份', '审查者必须位于执行者之外的另一个 AI 窗口', '最少只需两个窗口', '唯一中央调度者和单写者', '只创建一个独立审查任务', '普通同窗口自检不触发 2F', '仅讨论或模拟场景不创建任务')
+        },
+        @{
             Path = 'README.md'
             Required = @('可选的本地操作者协作画像', '它默认关闭', '关闭并删除本地操作者协作画像', '第二次精确确认')
         },
@@ -302,6 +306,39 @@ function Test-CommanderDurableWorkflowContract {
         }
     }
     Write-Host 'Commander durable workflow contract: PASS'
+}
+
+function Test-CommanderScene2FRoutingCases {
+    $cases = @(
+        @{ Name = 'current window executes, create one reviewer'; Request = 'execute'; DistinctWindow = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $true; Expected = '2F:create-one-reviewer' },
+        @{ Name = 'two commanders reuse existing pair'; Request = 'execute'; DistinctWindow = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $true; CreateAuthorized = $false; Expected = '2F:reuse-pair' },
+        @{ Name = 'commander coordinates two existing tasks'; Request = 'execute'; DistinctWindow = $true; IndependentReview = $true; CurrentCanExecute = $false; PairReady = $true; CreateAuthorized = $false; Expected = '2F:reuse-pair' },
+        @{ Name = 'same-window self-check'; Request = 'execute'; DistinctWindow = $false; IndependentReview = $false; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $false; Expected = 'not-2F' },
+        @{ Name = 'explain scene only'; Request = 'explain'; DistinctWindow = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $false; Expected = 'not-2F' },
+        @{ Name = 'pair requested but creation not authorized'; Request = 'execute'; DistinctWindow = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $false; Expected = '2F:prepare-only' }
+    )
+
+    foreach ($case in $cases) {
+        $actual = 'not-2F'
+        if ($case.Request -eq 'execute' -and $case.DistinctWindow -and $case.IndependentReview) {
+            if ($case.PairReady) {
+                $actual = '2F:reuse-pair'
+            }
+            elseif (-not $case.CreateAuthorized) {
+                $actual = '2F:prepare-only'
+            }
+            elseif ($case.CurrentCanExecute) {
+                $actual = '2F:create-one-reviewer'
+            }
+            else {
+                $actual = '2F:create-minimum-missing-roles'
+            }
+        }
+        if ($actual -ne $case.Expected) {
+            throw "场景 2F 虚构路由失败：$($case.Name)；expected=$($case.Expected) actual=$actual"
+        }
+    }
+    Write-Host "Commander scene 2F routing: PASS ($($cases.Count) synthetic cases)"
 }
 
 function Test-TextFlowchartTemplateContract {
@@ -606,6 +643,7 @@ Test-PowerShellFiles
 & (Join-Path $PSScriptRoot 'Test-SessionDeskOrder.ps1')
 Test-CommanderRuleVersion
 Test-CommanderDurableWorkflowContract
+Test-CommanderScene2FRoutingCases
 Test-TextFlowchartTemplateContract
 Test-PipelineStepDeckTemplate
 Test-PipelineStepDeckEnhancementTool
