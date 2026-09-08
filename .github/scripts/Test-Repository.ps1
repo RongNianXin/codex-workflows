@@ -1078,3 +1078,6 @@ Test-ExplicitAttachmentBoundary
 Test-ArchiveRepairLauncher
 Test-TroubleshootingKnowledgeBase
 Write-Host 'Repository quality checks: PASS'
+# Expected rejection tests leave a nonzero native exit code. All checks above
+# must complete before reporting success to the invoking PowerShell/CI shell.
+$global:LASTEXITCODE = 0
