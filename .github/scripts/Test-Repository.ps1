@@ -228,15 +228,15 @@ function Test-CommanderDurableWorkflowContract {
     $contracts = @(
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
-            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '场景 2F：跨窗口执行与独立审查协作', '两个不同 AI 窗口', '只要求当前窗口自己检查工作，也不自动创建 2F 配对', '换新聊天或归档前：先准备续接材料', '至少一种可续接材料', '准备归档，请先整理续接材料', '当前 AI 可能收不到这个操作', '紧凑文本执行图', '默认不生成矢量图', '单一整图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
+            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '场景 2F：跨窗口执行与独立审查协作', '两个不同 AI 窗口', '只要求当前窗口自己检查工作，也不自动创建 2F 配对', '专项执行者或独立审查者完成一阶段并把结果交给总指挥后', '已确认接收', '已发送待确认', '尚未送达', '直接发给专项窗口、仍属于当前阶段且不冲突的明确指令照常有效', '只给一个“现在立即做什么”', '换新聊天或归档前：先准备续接材料', '至少一种可续接材料', '准备归档，请先整理续接材料', '当前 AI 可能收不到这个操作', '紧凑文本执行图', '默认不生成矢量图', '单一整图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
-            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '路由回执', '开始自然语言路由前', '当前任务未加载该修订', '自然语言路由别名', '两个不同 AI 窗口分别执行和独立审查', '普通的同窗口自检', '换窗与归档前连续性触发', '不按固定关键词触发', '至少生成一段可直接发给新窗口的精简续接提示词', '使用者直接点击客户端侧栏归档不会形成模型可观察消息', '不能作为该动作的授权', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务', '强制状态回执与空输出兜底', '业务权限不足也返回 `BLOCKED`')
+            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '路由回执', '开始自然语言路由前', '当前任务未加载该修订', '自然语言路由别名', '两个不同 AI 窗口分别执行和独立审查', '普通的同窗口自检', '唯一当前行动与跨窗口冲突收敛', '候选建议永远不可直接执行', '当前阶段行动方（执行者或独立审查者）', '兼任收口方', '操作者直接发给专项窗口的有效指令', '已确认接收 / 已发送待确认 / 尚未送达', '消息到达较晚不代表更新', '某一维度相同不能推出完整测试对象相同', '换窗与归档前连续性触发', '不按固定关键词触发', '至少生成一段可直接发给新窗口的精简续接提示词', '使用者直接点击客户端侧栏归档不会形成模型可观察消息', '不能作为该动作的授权', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务', '强制状态回执与空输出兜底', '业务权限不足也返回 `BLOCKED`')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/03-专项任务卡模板.md'
-            Required = @('中断恢复身份：保持本专项任务身份', '执行入口：沿用母任务场景', '恢复提示词不改变本任务身份', '不得执行总指挥接管', '待授权的单一可见浏览器', '待授权的 Computer Use', '给出出口前先回读 `02` 的活跃请求清单', '换窗与归档前连续性门禁', '至少一种可续接材料')
+            Required = @('中断恢复身份：保持本专项任务身份', '执行入口：沿用母任务场景', '恢复提示词不改变本任务身份', '不得执行总指挥接管', '待授权的单一可见浏览器', '待授权的 Computer Use', '给出出口前先回读 `02` 的活跃请求清单', '候选建议标明“候选、不可执行”', '候选不得包装成可直接复制执行的提示词', '候选已由收口方确认接收', '候选已发送待确认', '候选尚未送达', '操作者直接发给本专项窗口的明确指令', '现在只给一个最先动作', '换窗与归档前连续性门禁', '至少一种可续接材料')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/04-状态、目标变更与交接规范.md'
@@ -280,7 +280,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/docs/EXECUTION_AND_INDEPENDENT_REVIEW.md'
-            Required = @('跨窗口执行与独立审查协作规范', '逻辑角色，不覆盖窗口原身份', '审查者必须位于执行者之外的另一个 AI 窗口', '最少只需两个窗口', '唯一中央调度者和单写者', '只创建一个独立审查任务', '普通同窗口自检不触发 2F', '仅讨论或模拟场景不创建任务')
+            Required = @('跨窗口执行与独立审查协作规范', '逻辑角色，不覆盖窗口原身份', '审查者必须位于执行者之外的另一个 AI 窗口', '最少只需两个窗口', '唯一中央调度者和单写者', '只创建一个独立审查任务', '普通同窗口自检不触发 2F', '仅讨论或模拟场景不创建任务', '唯一当前行动与冲突收敛', '`advice_kind`', '`action_status`', '`affected_resource/conflict_domain`', '当前阶段行动方（执行者或独立审查者）', '兼任阶段行动方与收口方', '候选已由收口方确认接收', '候选已发送待确认', '候选尚未送达', '不削弱操作者直接指令本身', '“谁最后发消息听谁的”无效', '已发送待确认')
         },
         @{
             Path = 'README.md'
@@ -339,6 +339,288 @@ function Test-CommanderScene2FRoutingCases {
         }
     }
     Write-Host "Commander scene 2F routing: PASS ($($cases.Count) synthetic cases)"
+}
+
+function Test-CommanderNextActionConvergenceCases {
+    function Get-SyntheticOperatorAdviceKind {
+        param(
+            [ValidateSet('executor', 'reviewer', 'closer', 'executor-closer', 'reviewer-closer')]
+            [string]$ProducerRole,
+            [ValidateSet('active', 'finished')]
+            [string]$PhaseState = 'active',
+            [bool]$NeedsNewUserDecision = $false,
+            [bool]$IsCloserDecision = $false,
+            [ValidateSet('operator', 'paired-window')]
+            [string]$Audience = 'operator'
+        )
+
+        if ($Audience -eq 'paired-window') {
+            return 'INTERNAL_ONLY'
+        }
+        if ($IsCloserDecision -and $ProducerRole -in @('closer', 'executor-closer', 'reviewer-closer')) {
+            return 'CURRENT_ACTION'
+        }
+        if ($ProducerRole -in @('executor', 'reviewer', 'executor-closer', 'reviewer-closer') -and
+            ($PhaseState -eq 'finished' -or $NeedsNewUserDecision)) {
+            return 'CANDIDATE'
+        }
+        return 'CURRENT_ACTION'
+    }
+
+    function Get-SyntheticCandidateDeliveryMessage {
+        param(
+            [ValidateSet('confirmed', 'sent-pending-confirmation', 'not-sent')]
+            [string]$DeliveryState
+        )
+        switch ($DeliveryState) {
+            'confirmed' { return '候选已由收口方确认接收；你现在不用操作，等待统一安排。' }
+            'sent-pending-confirmation' { return '候选已发送待确认；现在不要执行，等待收口方统一安排。' }
+            'not-sent' { return '候选尚未送达；现在不要执行冲突部分。由收口方或最小人工转交继续。' }
+        }
+    }
+
+    function Resolve-SyntheticDirectUserInstruction {
+        param(
+            [bool]$WithinCurrentStage,
+            [bool]$AuthorizationValid,
+            [bool]$ConflictsWithCentralState
+        )
+        if ($WithinCurrentStage -and $AuthorizationValid -and -not $ConflictsWithCentralState) {
+            return 'EXECUTE_NOW'
+        }
+        return 'WAIT_FOR_CLOSER_UPDATE'
+    }
+
+    function Resolve-SyntheticCurrentActions {
+        param([object[]]$Cards)
+
+        $eligible = @($Cards | Where-Object {
+            $_.AdviceKind -eq 'CURRENT_ACTION' -and
+            $_.Status -in @('EXECUTE_NOW', 'WAIT', 'BLOCKED') -and
+            $_.CurrentGeneration -and
+            $_.CurrentStateVersion -and
+            ($_.Status -ne 'EXECUTE_NOW' -or (
+                $_.HardGateAllowed -and $_.AuthorizationValid -and
+                $_.EvidenceValid -and $_.PreconditionsMet
+            ))
+        })
+
+        $terminalHistory = @($Cards | Where-Object Status -in @('CANCELLED', 'SUPERSEDED'))
+        $selected = [Collections.Generic.List[object]]::new()
+        $ambiguousDomains = [Collections.Generic.List[string]]::new()
+        foreach ($group in ($eligible | Group-Object ConflictDomain)) {
+            $topAuthority = ($group.Group | Measure-Object AuthorityRank -Maximum).Maximum
+            $authorityCandidates = @($group.Group | Where-Object AuthorityRank -eq $topAuthority)
+            $topVersion = ($authorityCandidates | Measure-Object StateVersion -Maximum).Maximum
+            $versionCandidates = @($authorityCandidates | Where-Object StateVersion -eq $topVersion)
+            $distinctActions = @($versionCandidates | ForEach-Object { "$($_.Action)|$($_.Status)" } | Sort-Object -Unique)
+            if ($distinctActions.Count -ne 1) {
+                $ambiguousDomains.Add($group.Name)
+                continue
+            }
+            $winner = $versionCandidates | Select-Object -First 1
+            $selected.Add($winner)
+        }
+
+        $ordered = @($selected | Sort-Object Priority, ConflictDomain)
+        [pscustomobject]@{
+            Active = $ordered
+            Immediate = @($ordered | Where-Object Status -eq 'EXECUTE_NOW' | Select-Object -First 1)
+            AmbiguousDomains = @($ambiguousDomains)
+            TerminalHistory = $terminalHistory
+        }
+    }
+
+    function New-SyntheticAction {
+        param(
+            [string]$Name,
+            [string]$ConflictDomain,
+            [string]$Action,
+            [string]$NextActor = 'assigned-role',
+            [string]$Supersedes = 'none',
+            [int]$AuthorityRank = 1,
+            [int]$StateVersion = 1,
+            [int]$ReceivedOrder = 1,
+            [int]$Priority = 1,
+            [string]$AdviceKind = 'CURRENT_ACTION',
+            [string]$Status = 'EXECUTE_NOW',
+            [bool]$CurrentGeneration = $true,
+            [bool]$CurrentStateVersion = $true,
+            [bool]$HardGateAllowed = $true,
+            [bool]$AuthorizationValid = $true,
+            [bool]$EvidenceValid = $true,
+            [bool]$PreconditionsMet = $true,
+            [string]$DeliveryState = 'confirmed'
+        )
+        [pscustomobject]@{
+            Name = $Name
+            ConflictDomain = $ConflictDomain
+            Action = $Action
+            NextActor = $NextActor
+            Supersedes = $Supersedes
+            AuthorityRank = $AuthorityRank
+            StateVersion = $StateVersion
+            ReceivedOrder = $ReceivedOrder
+            Priority = $Priority
+            AdviceKind = $AdviceKind
+            Status = $Status
+            CurrentGeneration = $CurrentGeneration
+            CurrentStateVersion = $CurrentStateVersion
+            HardGateAllowed = $HardGateAllowed
+            AuthorizationValid = $AuthorizationValid
+            EvidenceValid = $EvidenceValid
+            PreconditionsMet = $PreconditionsMet
+            DeliveryState = $DeliveryState
+        }
+    }
+
+    $delayed = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'delayed old central action' -ConflictDomain 'artifact-a' -Action 'old-action' -AuthorityRank 2 -StateVersion 2 -ReceivedOrder 9 -CurrentStateVersion $false),
+        (New-SyntheticAction -Name 'current central action' -ConflictDomain 'artifact-a' -Action 'current-action' -AuthorityRank 2 -StateVersion 3 -ReceivedOrder 2)
+    )
+    if ($delayed.Active.Count -ne 1 -or $delayed.Active[0].Action -ne 'current-action') {
+        throw '下一步收敛失败：延迟到达的旧高权限消息覆盖了当前状态版本'
+    }
+
+    $duplicate = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'duplicate one' -ConflictDomain 'artifact-b' -Action 'same-action' -StateVersion 4 -ReceivedOrder 1),
+        (New-SyntheticAction -Name 'duplicate two' -ConflictDomain 'artifact-b' -Action 'same-action' -StateVersion 4 -ReceivedOrder 2)
+    )
+    if ($duplicate.Active.Count -ne 1 -or $duplicate.Active[0].Action -ne 'same-action') {
+        throw '下一步收敛失败：重复消息产生了多个当前行动'
+    }
+
+    $sameVersionConflict = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'same version action one' -ConflictDomain 'artifact-conflict' -Action 'action-one' -AuthorityRank 2 -StateVersion 5 -ReceivedOrder 1),
+        (New-SyntheticAction -Name 'same version action two' -ConflictDomain 'artifact-conflict' -Action 'action-two' -AuthorityRank 2 -StateVersion 5 -ReceivedOrder 2)
+    )
+    if ($sameVersionConflict.Active.Count -ne 0 -or $sameVersionConflict.AmbiguousDomains -notcontains 'artifact-conflict') {
+        throw '下一步收敛失败：同层级同版本的不同动作按到达顺序被错误选中'
+    }
+
+    $twoCommanders = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'old commander' -ConflictDomain 'central-state' -Action 'continue-old' -AuthorityRank 2 -StateVersion 8 -CurrentGeneration $false),
+        (New-SyntheticAction -Name 'current commander' -ConflictDomain 'central-state' -Action 'pause-current' -AuthorityRank 2 -StateVersion 2 -Status 'BLOCKED')
+    )
+    if ($twoCommanders.Active.Count -ne 1 -or $twoCommanders.Active[0].Action -ne 'pause-current') {
+        throw '下一步收敛失败：旧总指挥世代仍能签发当前行动'
+    }
+
+    $centralStop = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'executor continue' -ConflictDomain 'dataset-review' -Action 'start-manual-review' -AuthorityRank 1 -StateVersion 6),
+        (New-SyntheticAction -Name 'central evidence gate' -ConflictDomain 'dataset-review' -Action 'design-evidence-capture' -NextActor 'evidence-capability-owner' -Supersedes 'start-manual-review' -AuthorityRank 2 -StateVersion 7 -Priority 1),
+        (New-SyntheticAction -Name 'unrelated read-only' -ConflictDomain 'service-readonly' -Action 'inspect-service-readonly' -AuthorityRank 1 -StateVersion 1 -Priority 2)
+    )
+    if ($centralStop.Active.Count -ne 2 -or $centralStop.Immediate[0].Action -ne 'design-evidence-capture' -or
+        $centralStop.Immediate[0].NextActor -ne 'evidence-capability-owner' -or
+        $centralStop.Immediate[0].Supersedes -ne 'start-manual-review' -or
+        $centralStop.Active.Action -contains 'start-manual-review' -or $centralStop.Active.Action -notcontains 'inspect-service-readonly') {
+        throw '下一步收敛失败：证据门禁未替代人工复核建议，或无关只读核验被全局冻结'
+    }
+
+    $ackOnly = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'central ack only' -ConflictDomain 'artifact-c' -Action 'ack' -AuthorityRank 2 -AdviceKind 'CANDIDATE' -Status 'WAIT')
+    )
+    if ($ackOnly.Active.Count -ne 0) {
+        throw '下一步收敛失败：中央 ACK 被误当成当前行动'
+    }
+
+    $noCommunicationAuthorization = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'central replacement' -ConflictDomain 'artifact-d' -Action 'wait-for-manual-forward' -AuthorityRank 2 -Status 'WAIT' -DeliveryState 'sent-pending-confirmation')
+    )
+    if ($noCommunicationAuthorization.Active[0].DeliveryState -ne 'sent-pending-confirmation') {
+        throw '下一步收敛失败：投递未确认被误记为已确认撤回'
+    }
+
+    $hardGate = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'user requested but forbidden' -ConflictDomain 'remote-write' -Action 'push' -AuthorityRank 3 -HardGateAllowed $false)
+    )
+    if ($hardGate.Active.Count -ne 0) {
+        throw '下一步收敛失败：行动卡或操作者请求越过了系统/项目硬门禁'
+    }
+
+    $artifactIdentityMismatch = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'same checkpoint but dirty worktree' -ConflictDomain 'artifact-identity' -Action 'accept-result' -AuthorityRank 2 -EvidenceValid $false)
+    )
+    if ($artifactIdentityMismatch.Active.Count -ne 0) {
+        throw '下一步收敛失败：单一版本相同掩盖了工作区或运行身份差异'
+    }
+
+    $postClosure = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'closed action' -ConflictDomain 'artifact-e' -Action 'closed' -AuthorityRank 2 -Status 'SUPERSEDED'),
+        (New-SyntheticAction -Name 'late executor suggestion' -ConflictDomain 'artifact-e' -Action 'reopen' -AuthorityRank 1 -AdviceKind 'CANDIDATE' -StateVersion 9)
+    )
+    if ($postClosure.Active.Count -ne 0 -or $postClosure.TerminalHistory.Count -ne 1 -or
+        $postClosure.TerminalHistory[0].Status -ne 'SUPERSEDED') {
+        throw '下一步收敛失败：收口后候选反馈重新激活了已结束动作'
+    }
+
+    $executorFinished = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'executor terminal recommendation' -ConflictDomain 'next-phase' -Action 'ask-user-to-review' -AdviceKind (Get-SyntheticOperatorAdviceKind -ProducerRole 'executor' -PhaseState 'finished') -AuthorityRank 1 -StateVersion 3),
+        (New-SyntheticAction -Name 'closer current action' -ConflictDomain 'next-phase' -Action 'collect-missing-evidence' -NextActor 'closer-assigned-role' -Supersedes 'ask-user-to-review' -AuthorityRank 2 -StateVersion 4)
+    )
+    if ($executorFinished.Active.Count -ne 1 -or $executorFinished.Immediate[0].Action -ne 'collect-missing-evidence' -or
+        $executorFinished.Active.Action -contains 'ask-user-to-review') {
+        throw '下一步收敛失败：执行者完成阶段后仍向操作者签发并行行动'
+    }
+
+    $reviewerFinished = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'reviewer terminal recommendation' -ConflictDomain 'review-next-phase' -Action 'ask-user-to-approve' -AdviceKind (Get-SyntheticOperatorAdviceKind -ProducerRole 'reviewer' -PhaseState 'finished') -AuthorityRank 1 -StateVersion 2),
+        (New-SyntheticAction -Name 'closer review decision' -ConflictDomain 'review-next-phase' -Action 'wait-for-evidence' -Supersedes 'ask-user-to-approve' -AuthorityRank 2 -StateVersion 3 -Status 'WAIT')
+    )
+    if ($reviewerFinished.Active.Count -ne 1 -or $reviewerFinished.Active[0].Action -ne 'wait-for-evidence' -or
+        $reviewerFinished.Active[0].Supersedes -ne 'ask-user-to-approve' -or
+        $reviewerFinished.Active.Action -contains 'ask-user-to-approve') {
+        throw '下一步收敛失败：独立审查者结束后仍能与收口方并行要求操作者行动'
+    }
+
+    $noCloserDecision = Resolve-SyntheticCurrentActions @(
+        (New-SyntheticAction -Name 'executor candidate only' -ConflictDomain 'await-closer' -Action 'executor-proposal' -AdviceKind (Get-SyntheticOperatorAdviceKind -ProducerRole 'executor' -PhaseState 'finished')),
+        (New-SyntheticAction -Name 'reviewer candidate only' -ConflictDomain 'await-closer' -Action 'reviewer-proposal' -AdviceKind (Get-SyntheticOperatorAdviceKind -ProducerRole 'reviewer' -PhaseState 'finished'))
+    )
+    if ($noCloserDecision.Active.Count -ne 0) {
+        throw '下一步收敛失败：收口方尚未裁定时把专项候选暴露为当前行动'
+    }
+
+    $dualRoleTerminalKind = Get-SyntheticOperatorAdviceKind -ProducerRole 'executor-closer' -PhaseState 'finished'
+    $dualRoleCloserKind = Get-SyntheticOperatorAdviceKind -ProducerRole 'executor-closer' -PhaseState 'finished' -IsCloserDecision $true
+    if ($dualRoleTerminalKind -ne 'CANDIDATE' -or $dualRoleCloserKind -ne 'CURRENT_ACTION') {
+        throw '下一步收敛失败：兼任窗口未先收口就以阶段行动方身份签发当前行动'
+    }
+
+    $newDecisionKind = Get-SyntheticOperatorAdviceKind -ProducerRole 'reviewer' -PhaseState 'active' -NeedsNewUserDecision $true
+    if ($newDecisionKind -ne 'CANDIDATE') {
+        throw '下一步收敛失败：专项窗口把新增授权、选择或验收请求直接签发为当前行动'
+    }
+
+    $internalEvidenceRequest = Get-SyntheticOperatorAdviceKind -ProducerRole 'reviewer' -PhaseState 'active' -Audience 'paired-window'
+    if ($internalEvidenceRequest -ne 'INTERNAL_ONLY') {
+        throw '下一步收敛失败：审查者向执行者索取证据被误登记为操作者当前行动'
+    }
+
+    $deliveryMessages = @{
+        confirmed = Get-SyntheticCandidateDeliveryMessage -DeliveryState 'confirmed'
+        pending = Get-SyntheticCandidateDeliveryMessage -DeliveryState 'sent-pending-confirmation'
+        notSent = Get-SyntheticCandidateDeliveryMessage -DeliveryState 'not-sent'
+    }
+    if ($deliveryMessages.confirmed -notlike '候选已由收口方确认接收*' -or
+        $deliveryMessages.pending -notlike '候选已发送待确认*' -or
+        $deliveryMessages.notSent -notlike '候选尚未送达*' -or
+        $deliveryMessages.pending -like '*确认接收*' -or $deliveryMessages.notSent -like '*确认接收*') {
+        throw '下一步收敛失败：候选投递三态产生了假接收声明'
+    }
+
+    $directInStage = Resolve-SyntheticDirectUserInstruction -WithinCurrentStage $true -AuthorizationValid $true -ConflictsWithCentralState $false
+    if ($directInStage -ne 'EXECUTE_NOW') {
+        throw '下一步收敛失败：操作者直接发给专项窗口的当前阶段指令被错误降级'
+    }
+
+    $directScopeChange = Resolve-SyntheticDirectUserInstruction -WithinCurrentStage $false -AuthorizationValid $true -ConflictsWithCentralState $true
+    if ($directScopeChange -ne 'WAIT_FOR_CLOSER_UPDATE') {
+        throw '下一步收敛失败：改变范围或冲突的操作者指令生成了第二条当前行动'
+    }
+
+    Write-Host 'Commander next-action convergence: PASS (19 synthetic cases)'
 }
 
 function Test-CommanderContinuityRoutingCases {
@@ -713,11 +995,22 @@ function Test-TroubleshootingKnowledgeBase {
             if (-not $text.Contains($required)) { throw "故障记录 $($case.Id) 缺少：$required" }
         }
         if (-not $index.Contains("``$($case.Id)``")) { throw "故障索引缺少：$($case.Id)" }
+        $indexRowPattern = "(?m)^\|\s*``$([regex]::Escape($case.Id))``\s*\|.*\*\*$([regex]::Escape($case.Status))"
+        if ($index -notmatch $indexRowPattern) {
+            throw "故障索引与案例状态不一致：$($case.Id) -> $($case.Status)"
+        }
     }
 
     $template = Get-Content -LiteralPath (Join-Path $root '故障记录模板.md') -Raw -Encoding utf8
     foreach ($required in @('当前没有已验证的解决方案', '已确认事实', '合理推断', '待确认项', '证据登记', '配套工具', '失效与重验条件')) {
         if (-not $template.Contains($required)) { throw "故障模板缺少：$required" }
+    }
+
+    $historicalSplitCase = Get-Content -LiteralPath (Join-Path $root $cases[2].Path) -Raw -Encoding utf8
+    foreach ($required in @('当前停止条件', '当前暂停真实执行', '当前版本不得照抄执行', '只在完整副本中研究')) {
+        if (-not $historicalSplitCase.Contains($required)) {
+            throw "TRB-003 缺少历史操作失败关闭说明：$required"
+        }
     }
 
     $tracked = @(Get-TrackedFiles -Pattern '故障排查与解决经验/*')
@@ -738,6 +1031,20 @@ function Test-TroubleshootingKnowledgeBase {
     }
 
     $migration = Join-Path $root '02-账号与供应商切换/TRB-005-迁移后分页谱系损坏/迁移工具研究材料-真实操作已暂停/install_bulk_codex_migration.mjs'
+    $migrationRoot = Split-Path -Parent $migration
+    foreach ($syntheticTest in @(
+        @{ Path = (Join-Path $migrationRoot 'safety_tests.mjs'); Label = '内容保真与失败关闭' },
+        @{ Path = (Join-Path $migrationRoot 'lineage_tests.mjs'); Label = '分页谱系' }
+    )) {
+        $syntheticOutput = & node $syntheticTest.Path 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0 -or $syntheticOutput -notmatch 'PASS:') {
+            throw "迁移工具$($syntheticTest.Label)虚构测试失败：$syntheticOutput"
+        }
+    }
+    $selfTestOutput = & node $migration '--self-test' 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0 -or $selfTestOutput -notmatch 'self-test used synthetic values and a temporary file only') {
+        throw "迁移安装器纯虚构自检失败：$selfTestOutput"
+    }
     foreach ($gate in @(
         @{ Argument = '--apply'; Signature = '安装已暂停'; Label = '安装' },
         @{ Argument = '--rollback-latest'; Signature = '回滚已暂停'; Label = '回滚' }
@@ -759,6 +1066,7 @@ Test-PowerShellFiles
 Test-CommanderRuleVersion
 Test-CommanderDurableWorkflowContract
 Test-CommanderScene2FRoutingCases
+Test-CommanderNextActionConvergenceCases
 Test-CommanderContinuityRoutingCases
 Test-TextFlowchartTemplateContract
 Test-PipelineStepDeckTemplate
