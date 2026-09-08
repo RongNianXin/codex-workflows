@@ -1,2 +1,9 @@
-每次切换账号之前，先完全退出 CC Switch 和 CodeX
-然后双击运行【安装批量迁移.cmd】
+真实迁移入口当前已暂停。
+
+原因：旧工具未验证子分段的 history_base.end_byte_offset，改写父会话可能破坏分页谱系。
+【安装批量迁移.cmd】现在会在扫描、备份或修改真实任务之前拒绝执行，请勿绕过。
+
+仍可使用：
+- node install_bulk_codex_migration.mjs --self-test
+- node lineage_tests.mjs
+- 已有可靠备份对应的【回滚最近一次批量迁移.cmd】

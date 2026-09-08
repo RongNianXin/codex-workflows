@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | **English**
 
-<!-- README-SOURCE-SHA256: 16aaa0d11c3cb666886a49c79e9c553e8136e4cef51f7e0a37395ad361680931 -->
+<!-- README-SOURCE-SHA256: 18ecb078110afbc6b9b6fc6a3ee0709f3bd6f0fd1769b6e7394735fbee67aa56 -->
 
 This directory contains reproduced, reviewed, and sanitized troubleshooting notes for Codex and related tools. Each note should state the symptoms, applicable environment, possible cause, diagnostic steps, expected result, rollback path, and any remaining uncertainty.
 
@@ -26,17 +26,18 @@ The linked case reports are currently written in Chinese. This page provides an 
 | A task disappears from the list after switching providers, although its JSONL still exists | Visibility or bucketing differences in `model_provider`, the state database, or an index | [Conversation visibility after switching accounts](<CC switch 切换账号后，无法共享对话/CC Switch 切换账号后无法共享对话——原理、恢复与长期配置.md>) |
 | Cross-task sending reports success, but the target produces an empty turn, repeats old output, or returns no acknowledgement | Check delivery, readback visibility, the target reply, and the reverse acknowledgement separately; a platform completion marker or empty string does not prove processing | [Cross-task messaging after API sign-in](<CC Switch API 登录后 Codex 跨任务通信异常/排查记录与建议.md>) |
 | The task remains visible, but continuing it returns `invalid_encrypted_content`, `could not be verified`, or an organization mismatch | Encrypted reasoning or compaction state bound to the old account, model, or upstream provider cannot be replayed | [Old conversation cannot continue](<CC switch切换账号后，旧的对话无法继续/Codex 切换账号后旧对话无法继续.md>) |
+| The error says `invalid paginated history lineage` or a cutoff is beyond its parent rollout | A parent session was shortened while a child segment retained the old byte offset | [Old conversation cannot continue](<CC switch切换账号后，旧的对话无法继续/Codex 切换账号后旧对话无法继续.md>); stop migration and preserve the evidence |
 | Opening, resuming, or typing in a long task becomes noticeably slow | Distinguish local session size and accumulated compactions from proxy/network issues, process resources, and a version-specific regression | [Codex session handoff assessment](<../实用小工具/Codex会话交接评估/README.en.md>) |
 | Archiving on Windows returns `thread-store` / `os error 2`, although the session file exists | The `rollout_path` in `state_5.sqlite` may use the `\\?\` extended-length path prefix | [Archive failure](<对话无法归档/Codex 对话无法归档：thread-store 文件路径缺失.md>) |
-| The task record still exists, but its original task shows `thread not found` | Check archive state, then send a side-effect-free verification message by task ID to reload it | [`thread not found` recovery](<thread not found/thread-not-found-恢复方案.md>) |
-| You want to reduce cross-provider continuation failures before switching CC Switch | Use a pre-switch process gate, backup, candidate conversion, validation, atomic replacement, and rollback transaction | [Bulk historical-task migration](<CC switch切换账号后，旧的对话无法继续/codex-bulk-session-migration/README.en.md>) |
+| The task record still exists, but its original task shows `thread not found` | Check archive state first. If necessary, send a constrained recovery message by task ID, knowing that it creates a new request and writes state | [`thread not found` recovery](<thread not found/thread-not-found-恢复方案.md>) |
+| You need to review the historical migration design or roll back an existing backup | Real installation is suspended; only synthetic tests and rollback for an existing backup remain available | [Bulk historical-task migration](<CC switch切换账号后，旧的对话无法继续/codex-bulk-session-migration/README.en.md>) |
 
 Seeing a task in history and continuing it across providers are different problems. Normalizing `model_provider` can repair visibility, but it cannot transform ciphertext produced for another account, organization, or upstream provider.
 
 ## Safety boundaries
 
 - These notes are not official fixes from OpenAI or CC Switch. Whether the current releases still use the same session structures remains unverified.
-- Ciphertext migration is a last resort. Restore the original account and provider first. If migration is unavoidable, validate a copy before creating an offline backup, installing the change, and retaining a rollback manifest.
+- Ciphertext migration is a last resort. The public tool's real installation entry is suspended because of paginated-lineage risk; do not bypass the fail-closed gate.
 - Do not remove `encrypted_content` by deleting matching text lines. Unknown structures must fail closed rather than be guessed away.
 - Session size, compaction count, and context ratios are diagnostic signals. None of them alone proves the cause of latency, cost, or model degradation.
 - Share only versions, error codes, counts, sizes, timestamps, and sanitized hashes. Do not upload raw JSONL, databases, prompts, tool output, absolute paths, or credentials.

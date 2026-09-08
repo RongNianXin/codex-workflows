@@ -6,16 +6,12 @@ cd /d "%~dp0"
 where node >nul 2>nul
 if errorlevel 1 goto no_node
 
-echo Checking that Codex and CC-Switch are fully closed...
-echo No session file will be changed if the safety check fails.
+echo Real-session migration is currently suspended because paginated lineage is not fully verified.
+echo The installer will stop before scanning, backing up, or modifying any session file.
 node "%~dp0install_bulk_codex_migration.mjs" --apply
 set "RESULT=%ERRORLEVEL%"
-if not "%RESULT%"=="0" goto failed
-echo.
-echo Migration completed. The backup path is shown above.
-echo Keep manifest.json with the backup.
-pause
-exit /b 0
+if "%RESULT%"=="0" set "RESULT=1"
+goto failed
 
 :no_node
 echo Node.js was not found. No file was changed.
@@ -24,7 +20,7 @@ exit /b 1
 
 :failed
 echo.
-echo Migration failed or was blocked by the safety check.
+echo Migration was blocked by the safety gate.
 echo Keep the complete error text shown in this window.
 pause
 exit /b %RESULT%

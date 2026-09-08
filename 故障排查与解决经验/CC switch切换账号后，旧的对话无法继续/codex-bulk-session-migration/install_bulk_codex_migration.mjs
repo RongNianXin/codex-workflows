@@ -551,8 +551,6 @@ async function selfTest() {
   ) {
     fail("未归档任务扫描范围自测失败");
   }
-  const paths = await discoverSessions();
-  await assertSessionPathsInScope(paths);
   const timeTestRoot = await mkdtemp(join(tmpdir(), "codex-migration-times-"));
   try {
     const timeTestFile = join(timeTestRoot, "rollout-test.jsonl");
@@ -574,16 +572,20 @@ async function selfTest() {
   }
   console.log("PASS: bulk installer process guard");
   console.log("PASS: exact task UUID selector");
-  console.log(`PASS: ${paths.length} unarchived sessions are in scope; archived sessions are excluded`);
+  console.log("PASS: self-test used synthetic values and a temporary file only");
   console.log("PASS: migrated sessions preserve original timestamps and file mode");
 }
 
 const mode = process.argv[2];
-if (mode === "--apply") await applyMigration(parseTaskSelector(process.argv.slice(3)));
+if (mode === "--apply") {
+  fail(
+    "安装已暂停：当前版本无法证明分页会话的 history_base 字节偏移在改写后仍然有效。未扫描、备份或修改真实任务。",
+  );
+}
 else if (mode === "--rollback-latest") await rollbackLatest();
 else if (mode === "--self-test") await selfTest();
 else {
   console.log(
-    "未修改任何文件。参数：--apply [--task <UUID>]、--rollback-latest、--self-test",
+    "未修改任何文件。--apply 当前暂停；可用参数：--rollback-latest、--self-test",
   );
 }
