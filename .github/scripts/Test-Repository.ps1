@@ -228,23 +228,23 @@ function Test-CommanderDurableWorkflowContract {
     $contracts = @(
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
-            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '场景 2F：跨窗口执行与独立审查协作', '两个不同 AI 窗口', '只要求当前窗口自己检查工作，也不自动创建 2F 配对', '紧凑文本执行图', '默认不生成矢量图', '单一整图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
+            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '场景 2F：跨窗口执行与独立审查协作', '两个不同 AI 窗口', '只要求当前窗口自己检查工作，也不自动创建 2F 配对', '换新聊天或归档前：先准备续接材料', '至少一种可续接材料', '准备归档，请先整理续接材料', '当前 AI 可能收不到这个操作', '紧凑文本执行图', '默认不生成矢量图', '单一整图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
-            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '路由回执', '开始自然语言路由前', '当前任务未加载该修订', '自然语言路由别名', '两个不同 AI 窗口分别执行和独立审查', '普通的同窗口自检', '不能作为该动作的授权', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务', '强制状态回执与空输出兜底', '业务权限不足也返回 `BLOCKED`')
+            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '路由回执', '开始自然语言路由前', '当前任务未加载该修订', '自然语言路由别名', '两个不同 AI 窗口分别执行和独立审查', '普通的同窗口自检', '换窗与归档前连续性触发', '不按固定关键词触发', '至少生成一段可直接发给新窗口的精简续接提示词', '使用者直接点击客户端侧栏归档不会形成模型可观察消息', '不能作为该动作的授权', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务', '强制状态回执与空输出兜底', '业务权限不足也返回 `BLOCKED`')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/03-专项任务卡模板.md'
-            Required = @('中断恢复身份：保持本专项任务身份', '执行入口：沿用母任务场景', '恢复提示词不改变本任务身份', '不得执行总指挥接管', '待授权的单一可见浏览器', '待授权的 Computer Use', '给出出口前先回读 `02` 的活跃请求清单')
+            Required = @('中断恢复身份：保持本专项任务身份', '执行入口：沿用母任务场景', '恢复提示词不改变本任务身份', '不得执行总指挥接管', '待授权的单一可见浏览器', '待授权的 Computer Use', '给出出口前先回读 `02` 的活跃请求清单', '换窗与归档前连续性门禁', '至少一种可续接材料')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/04-状态、目标变更与交接规范.md'
-            Required = @('耐久 Commit 台账与关键节点', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：ROUTINE / KEY_NODE', '通用任务中断恢复与无正式总指挥交接', '不是所有中断任务的必经步骤', '恢复任务”不等于“接管项目', '执行恢复收益门禁', '未更新/待复核', '首个主回复末尾介绍一次', 'RECEIVED / BLOCKED / COMPLETED / FAILED', '读取接口不可见与目标没有收到分别记录')
+            Required = @('耐久 Commit 台账与关键节点', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：ROUTINE / KEY_NODE', '通用任务中断恢复与无正式总指挥交接', '不是所有中断任务的必经步骤', '恢复任务”不等于“接管项目', '执行恢复收益门禁', '换窗与归档前连续性门禁', '精简续接提示词的最小字段', '已完成且不得重复', '结果未知', '无待续任务', '使用者未通过消息表达而直接点击客户端归档', '未更新/待复核', '首个主回复末尾介绍一次', 'RECEIVED / BLOCKED / COMPLETED / FAILED', '读取接口不可见与目标没有收到分别记录')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/10-自动状态索引规范.md'
-            Required = @('COMMIT-LEDGER', '人工核验运行身份清单', '规范启动命令及自检输出', '并存实现决议矩阵', '节点覆盖状态', 'TASK-RESUME', '恢复提示词不能把普通或专项任务升级为总指挥', '恢复收益门禁', 'unasked / enabled / paused / disabled / unavailable', 'not-shown / shown / answered / ignored', 'profile_revision', '不发送画像正文', '不创建定时任务或后台轮询', '重新绑定到当前仓库根目录', '活跃请求清单中每项的来源', '单项卡完成后不得据此删除未覆盖项')
+            Required = @('COMMIT-LEDGER', '人工核验运行身份清单', '规范启动命令及自检输出', '并存实现决议矩阵', '节点覆盖状态', 'TASK-RESUME', 'CONTINUITY-PACK', '触发类型（总指挥交接 / 主线分支 / 归档）', '送达状态', '恢复提示词不能把普通或专项任务升级为总指挥', '恢复收益门禁', 'unasked / enabled / paused / disabled / unavailable', 'not-shown / shown / answered / ignored', 'profile_revision', '不发送画像正文', '不创建定时任务或后台轮询', '重新绑定到当前仓库根目录', '活跃请求清单中每项的来源', '单项卡完成后不得据此删除未覆盖项')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/07-总指挥交接记录模板.md'
@@ -339,6 +339,46 @@ function Test-CommanderScene2FRoutingCases {
         }
     }
     Write-Host "Commander scene 2F routing: PASS ($($cases.Count) synthetic cases)"
+}
+
+function Test-CommanderContinuityRoutingCases {
+    $cases = @(
+        @{ Name = 'formal commander handoff'; Role = 'commander'; Intent = 'handoff'; Active = $true; UiOnly = $false; Expected = 'snapshot-and-6A' },
+        @{ Name = 'archive active commander'; Role = 'commander'; Intent = 'archive'; Active = $true; UiOnly = $false; Expected = 'snapshot-before-archive' },
+        @{ Name = 'move ordinary mainline to new task'; Role = 'ordinary'; Intent = 'branch'; Active = $true; UiOnly = $false; Expected = 'continuation-prompt' },
+        @{ Name = 'archive active specialist'; Role = 'specialist'; Intent = 'archive'; Active = $true; UiOnly = $false; Expected = 'continuation-prompt-before-archive' },
+        @{ Name = 'archive completed ordinary task'; Role = 'ordinary'; Intent = 'archive'; Active = $false; UiOnly = $false; Expected = 'no-active-work-note' },
+        @{ Name = 'direct sidebar archive click'; Role = 'ordinary'; Intent = 'archive'; Active = $true; UiOnly = $true; Expected = 'unobservable' }
+    )
+
+    foreach ($case in $cases) {
+        if ($case.UiOnly) {
+            $actual = 'unobservable'
+        }
+        elseif ($case.Intent -eq 'handoff' -and $case.Role -eq 'commander') {
+            $actual = 'snapshot-and-6A'
+        }
+        elseif ($case.Intent -eq 'archive' -and $case.Role -eq 'commander' -and $case.Active) {
+            $actual = 'snapshot-before-archive'
+        }
+        elseif ($case.Intent -eq 'archive' -and -not $case.Active) {
+            $actual = 'no-active-work-note'
+        }
+        elseif ($case.Intent -eq 'archive' -and $case.Active) {
+            $actual = 'continuation-prompt-before-archive'
+        }
+        elseif ($case.Intent -eq 'branch' -and $case.Active) {
+            $actual = 'continuation-prompt'
+        }
+        else {
+            $actual = 'no-continuity-action'
+        }
+
+        if ($actual -ne $case.Expected) {
+            throw "换窗与归档虚构路由失败：$($case.Name)；expected=$($case.Expected) actual=$actual"
+        }
+    }
+    Write-Host "Commander continuity routing: PASS ($($cases.Count) synthetic cases)"
 }
 
 function Test-TextFlowchartTemplateContract {
@@ -644,6 +684,7 @@ Test-PowerShellFiles
 Test-CommanderRuleVersion
 Test-CommanderDurableWorkflowContract
 Test-CommanderScene2FRoutingCases
+Test-CommanderContinuityRoutingCases
 Test-TextFlowchartTemplateContract
 Test-PipelineStepDeckTemplate
 Test-PipelineStepDeckEnhancementTool
