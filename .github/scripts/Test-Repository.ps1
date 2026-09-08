@@ -76,7 +76,13 @@ function Test-MarkdownFiles {
                 continue
             }
 
-            $resolved = [IO.Path]::GetFullPath((Join-Path (Split-Path $fullPath -Parent) $pathPart))
+            try {
+                $resolved = [IO.Path]::GetFullPath((Join-Path (Split-Path $fullPath -Parent) $pathPart))
+            }
+            catch {
+                $errors.Add("Markdown 链接路径无效：$relativePath -> $target")
+                continue
+            }
             if (-not $resolved.StartsWith($repoRoot, [StringComparison]::OrdinalIgnoreCase) -or
                 -not (Test-Path -LiteralPath $resolved)) {
                 $errors.Add("Markdown 相对链接失效：$relativePath -> $target")
@@ -222,15 +228,15 @@ function Test-CommanderDurableWorkflowContract {
     $contracts = @(
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
-            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '紧凑文本执行图', '默认不生成矢量图', '单一整图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
+            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '紧凑文本执行图', '默认不生成矢量图', '单一整图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
-            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务')
+            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '路由回执', '自然语言路由别名', '不能作为该动作的授权', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/03-专项任务卡模板.md'
-            Required = @('中断恢复身份：保持本专项任务身份', '恢复提示词不改变本任务身份', '不得执行总指挥接管', '待授权的单一可见浏览器', '待授权的 Computer Use', '给出出口前先回读 `02` 的活跃请求清单')
+            Required = @('中断恢复身份：保持本专项任务身份', '执行入口：沿用母任务场景', '恢复提示词不改变本任务身份', '不得执行总指挥接管', '待授权的单一可见浏览器', '待授权的 Computer Use', '给出出口前先回读 `02` 的活跃请求清单')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/04-状态、目标变更与交接规范.md'
@@ -238,7 +244,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/10-自动状态索引规范.md'
-            Required = @('COMMIT-LEDGER', '人工核验运行身份清单', '规范启动命令及自检输出', '并存实现决议矩阵', '节点覆盖状态', 'TASK-RESUME', '恢复提示词不能把普通或专项任务升级为总指挥', '恢复收益门禁', 'unasked / enabled / paused / disabled / unavailable', 'not-shown / shown / answered / ignored', '不创建定时任务或后台轮询', '重新绑定到当前仓库根目录', '活跃请求清单中每项的来源', '单项卡完成后不得据此删除未覆盖项')
+            Required = @('COMMIT-LEDGER', '人工核验运行身份清单', '规范启动命令及自检输出', '并存实现决议矩阵', '节点覆盖状态', 'TASK-RESUME', '恢复提示词不能把普通或专项任务升级为总指挥', '恢复收益门禁', 'unasked / enabled / paused / disabled / unavailable', 'not-shown / shown / answered / ignored', 'profile_revision', '不发送画像正文', '不创建定时任务或后台轮询', '重新绑定到当前仓库根目录', '活跃请求清单中每项的来源', '单项卡完成后不得据此删除未覆盖项')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/07-总指挥交接记录模板.md'
@@ -270,7 +276,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/11-操作者协作画像规范.md'
-            Required = @('两次操作者授权', '下一条独立消息', 'active_entry_limit', '独立应用能力未验证', 'unasked / enabled / paused / disabled / unavailable', '不再展示介绍', '不创建定时任务、后台轮询或独立自动化', '删除公开的 `11-操作者协作画像规范.md` 不是关闭方式')
+            Required = @('两次操作者授权', '下一条独立消息', 'active_entry_limit', 'routing_alias_limit', '自然语言路由别名', 'profile_revision', '不得替代本轮授权', '独立应用能力未验证', 'unasked / enabled / paused / disabled / unavailable', '不再展示介绍', '不创建定时任务、后台轮询或独立自动化', '删除公开的 `11-操作者协作画像规范.md` 不是关闭方式')
         },
         @{
             Path = 'README.md'
