@@ -35,7 +35,16 @@ The public content currently falls into five groups: ChatGPT web enhancements, t
 
 Most of the repository is Markdown and PowerShell rather than a hosted service or opaque automation layer. Public files are designed not to contain local identities, real task IDs, credentials, or private prompts.
 
-## What's new: evidence-backed simplification and reproducible delivery
+## What's new: preserve handoff results and coordinate next actions
+
+- **Five evidence layers for handoffs:** check the Git baseline, uncommitted changes, dependencies and builds, actual runtime identity, and inputs and acceptance separately. The same HEAD does not prove that uncommitted results match. Compare text using explicit Git content rules across systems, rather than a raw hash of the entire directory.
+- **Continue uncommitted work:** reuse results in the same worktree after verifying a match. A new worktree or computer must first restore required files and assets, then verify them. `git pull` does not transfer uncommitted changes, and matching source code does not prove output or timing acceptance.
+- **Clearer cross-window collaboration:** scenario 2F supports executors and independent reviewers with different original roles. The coordinating role consolidates the next user action. Handoffs, moving ongoing work to a new conversation, and archiving retain continuation material; delivery, receipt, and completed processing are separate states.
+- **Find troubleshooting notes by symptom:** the [troubleshooting knowledge base](故障排查与解决经验/README.en.md) uses stable identifiers, explicit statuses, and reusable templates. Real installation and rollback in the migration tool are suspended because of paginated-history lineage risk; research source and synthetic tests remain available.
+
+The new identity checks include 7 synthetic Git/file experiments and 6 documentary boundary checks. They do not replace actual patch-restoration, cross-platform, or model-output validation. See the [changelog](CHANGELOG.md).
+
+## Earlier improvements: evidence-backed simplification and reproducible delivery
 
 Establish the current baseline before deciding what to simplify, how to verify it, and how to hand it over. This update strengthens four capabilities:
 
@@ -145,4 +154,4 @@ The privacy claims are auditable: the real profile stays in an exact `.gitignore
 
 Released under the [MIT License](LICENSE).
 
-<!-- README-SOURCE-SHA256: 2eb70e32fa3bb06baaeebc3955bde396b0898ecf3735237a42302c477ecf14fb -->
+<!-- README-SOURCE-SHA256: 389664c526c145dfe6f6de91ca72472d3b44c9fd88a172cb62aebe2998a9c81c -->

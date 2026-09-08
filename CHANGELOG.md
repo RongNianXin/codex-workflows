@@ -2,6 +2,20 @@
 
 本文件记录 ChatGPT Workflows 的重要变更。
 
+## 2026-09-08：成果连续性、协作收口与故障知识库
+
+- 将交接成果身份拆为 Git、工作区增量、依赖构建、实际运行、输入验收五层；明确同机同 worktree、新 worktree、跨机及 PR 合并后的不同核验路径。保留未提交成果，不承诺远端自动传递；文本规范化与二进制精确校验分开，未知和未验证不记为通过。
+- 场景 2F 泛化为跨窗口执行与独立审查；执行与审查角色不改变原有调度身份，面向操作者的下一步由收口方统一。补齐换窗、归档续接与消息状态证据，减少重复执行及互相冲突的操作建议。
+- 故障材料整理为 7 个稳定编号案例及中英文导航/模板，区分上游请求失败与本地分页谱系损坏。迁移工具真实安装和回滚均已暂停，保留虚构回归和研究材料；本次不恢复真实迁移能力。
+- 验证：仓库质量检查通过，成果身份新增 13 项（7 项虚构 Git/文件实验、6 项文档边界检查）。独立审查核对最终规则及指纹。未进行真实补丁恢复、跨操作系统或真机模型/性能验收。
+
+### English summary
+
+- Handoff identity now separates five layers: Git, working-tree changes, dependencies/builds, actual runtime, and inputs/acceptance. Same-worktree, new-worktree, cross-machine, and post-merge checks have explicit boundaries. Uncommitted results require verified continuity or restoration; remote repositories do not transfer them automatically.
+- Scenario 2F supports cross-window execution and independent review without changing existing authority. A coordinating role consolidates user-facing next actions; continuation material and explicit messaging states help prevent duplicate work and conflicting instructions.
+- Troubleshooting is organized into seven stable cases with bilingual navigation and templates. Upstream request failures and local paginated-history damage are distinct. Real migration installation and rollback remain suspended; only research materials and synthetic regression tests are retained.
+- Repository checks pass, including 13 new identity checks: 7 synthetic Git/file experiments and 6 documentary boundaries. Final rules and fingerprints received independent review. Actual patch restoration, cross-platform operation, and real model/performance acceptance remain untested.
+
 ## 2026-09-07：代码精简与可复现交付
 
 本轮重点是让精简和交付有可核对的依据，同时减少操作者查找模板和重复填写参数的步骤。
