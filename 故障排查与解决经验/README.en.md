@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | **English**
 
-<!-- README-SOURCE-SHA256: 75d4770ae04e70d8a04c145f446f709f079b7b02da1196764084c9f654207a1d -->
+<!-- README-SOURCE-SHA256: a503562a103c3105b3281db07dbe7e3838aca5c05e86c7242ac63c04de6399b7 -->
 
 This directory contains sanitized Codex and companion-tool incident records with explicit evidence boundaries. Start with the symptom table. You do not need to understand the directory layout or read every investigation.
 
@@ -16,7 +16,7 @@ This directory contains sanitized Codex and companion-tool incident records with
 | `TRB-004` | A task remains visible but cannot continue after an account or provider switch and reports ciphertext validation errors | **Partially resolved: no general fix** | [Old task cannot continue](<02-账号与供应商切换/TRB-004-旧对话无法继续/Codex 切换账号后旧对话无法继续.md>) |
 | `TRB-005` | Migration is followed by `invalid paginated history lineage` or an out-of-range cutoff | **Unresolved: real operations suspended** | [Paginated-lineage damage](<02-账号与供应商切换/TRB-005-迁移后分页谱系损坏/分页谱系损坏与迁移工具暂停.md>) |
 | `TRB-006` | Cross-task sending reports success, but the target produces an empty turn, repeats old output, or returns no ACK | **Unresolved: diagnostic and stop rules only** | [Cross-task communication failure](<03-跨任务通信/TRB-006-API登录后通信异常/排查记录与建议.md>) |
-| `TRB-007` | A long task encounters 401, 502, 503, 504, or a dropped stream, and retry safety is unclear | **Partially resolved: triage and recovery flow available** | [Long tasks and HTTP errors](<04-网络与上游错误/TRB-007-长任务断联与HTTP错误/CC Switch 长任务断联与 401 502 503 504 快速处理.md>) |
+| `TRB-007` | A long task encounters 401, 502, 503, 504, a dropped stream, or a 404 saying that no account in the group supports the model | **Partially resolved: triage and recovery flow available** | [Long tasks and HTTP errors](<04-网络与上游错误/TRB-007-长任务断联与HTTP错误/CC Switch 长任务断联与 401 502 503 504 快速处理.md>) |
 
 “Resolved” applies only to the platform, version, and evidence scope stated in the case. “Partially resolved” means that a verified recovery or workaround exists while the root cause, durable fix, or other environments remain open. “Unresolved” means that no verified solution is currently available; the record provides investigation progress, evidence, and stop conditions.
 
