@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | **English**
 
-<!-- README-SOURCE-SHA256: 75d4770ae04e70d8a04c145f446f709f079b7b02da1196764084c9f654207a1d -->
+<!-- README-SOURCE-SHA256: d21c0ed525e291b208e98835da950b85368e093067dd0092fd33db800199e587 -->
 
 This directory contains sanitized Codex and companion-tool incident records with explicit evidence boundaries. Start with the symptom table. You do not need to understand the directory layout or read every investigation.
 
@@ -15,8 +15,8 @@ This directory contains sanitized Codex and companion-tool incident records with
 | `TRB-003` | Tasks disappear from the list after an account or route switch, although files remain | **Partially resolved: historical workaround verified** | [Split history lists](<02-账号与供应商切换/TRB-003-历史列表分裂/CC Switch 切换账号后无法共享对话——原理、恢复与长期配置.md>) |
 | `TRB-004` | A task remains visible but cannot continue after an account or provider switch and reports ciphertext validation errors | **Partially resolved: no general fix** | [Old task cannot continue](<02-账号与供应商切换/TRB-004-旧对话无法继续/Codex 切换账号后旧对话无法继续.md>) |
 | `TRB-005` | Migration is followed by `invalid paginated history lineage` or an out-of-range cutoff | **Unresolved: real operations suspended** | [Paginated-lineage damage](<02-账号与供应商切换/TRB-005-迁移后分页谱系损坏/分页谱系损坏与迁移工具暂停.md>) |
-| `TRB-006` | Cross-task sending reports success, but the target produces an empty turn, repeats old output, or returns no ACK | **Unresolved: diagnostic and stop rules only** | [Cross-task communication failure](<03-跨任务通信/TRB-006-API登录后通信异常/排查记录与建议.md>) |
-| `TRB-007` | A long task encounters 401, 502, 503, 504, or a dropped stream, and retry safety is unclear | **Partially resolved: triage and recovery flow available** | [Long tasks and HTTP errors](<04-网络与上游错误/TRB-007-长任务断联与HTTP错误/CC Switch 长任务断联与 401 502 503 504 快速处理.md>) |
+| `TRB-006` | Messages between AI tasks receive no reply, repeat an old answer, end in an empty turn, or receive no acknowledgment | **Unresolved: log-based diagnosis and prevention procedures available; automatic interception not implemented** | [AI task messages receive no reply: diagnosis and prevention](<03-跨任务通信/AI任务间消息不回复：排查与预防.md>) |
+| `TRB-007` | A long task reports an explicit conversation-too-long 400, 401, unsupported-model 404, either of two 502 signatures, 503, 504, or a dropped stream | **Partially resolved: triage and recovery available; failures still observed after the reported fix** | [Long tasks and HTTP errors](<04-网络与上游错误/TRB-007-长任务断联与HTTP错误/CC Switch 长任务断联与 401 502 503 504 快速处理.md>) |
 
 “Resolved” applies only to the platform, version, and evidence scope stated in the case. “Partially resolved” means that a verified recovery or workaround exists while the root cause, durable fix, or other environments remain open. “Unresolved” means that no verified solution is currently available; the record provides investigation progress, evidence, and stop conditions.
 

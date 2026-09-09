@@ -6,6 +6,19 @@
 
 This page collects real runtime screenshots that passed a privacy review and were explicitly approved for public display by the repository owner. They are optional visual references, not runtime dependencies; the linked manuals and tools remain usable when a Markdown viewer does not display images. Select an image to view it at its original size.
 
+## Markdown 阅读器与总指挥工作流 / Markdown reader and commander workflow
+
+在本地 Markdown 阅读器中打开总指挥操作手册：左侧切换已选择的文档，中间阅读正文和提示词，右侧按章节定位。手册通过选择原文件加入，不随阅读器内置；浏览器支持且授权有效时，可重新读取保存后的原文。
+
+Open the commander manual in the local Markdown reader: switch selected documents on the left, read content and prompts in the center, and navigate sections on the right. Select the original manual file; the reader does not bundle a snapshot. Rereading saved changes depends on browser support and valid permission.
+
+[阅读器说明 / Reader guide](实用小工具/Markdown阅读器/README.md) | [总指挥操作手册 / Commander manual](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md)
+
+[![Markdown 阅读器展示总指挥操作手册的文档列表、正文和章节目录](实用小工具/Markdown阅读器/assets/workflow-reader-preview.png)](实用小工具/Markdown阅读器/assets/workflow-reader-preview.png)
+
+> 隐私说明：截图由操作者提供并授权公开，展示公开手册及界面，来源附加元数据已清除。画面中的读取状态只代表截图时刻，不证明所有浏览器的授权记忆或同步效果。
+> Privacy: the operator supplied and approved this screenshot of the public manual and interface. Additional source metadata has been removed. The displayed read status is a captured moment, not proof of permission persistence or synchronization in every browser.
+
 ## 场景 2C：按链路逐层排查 / Scene 2C: step-by-step pipeline diagnosis
 
 场景 2C 会把实际执行链拆成可逐步查看的稳定节点，并在同一页面对照输入、处理、输出、失败信号和证据。链路较长时，还可以生成可翻页的本地 HTML，帮助操作者和 AI 一起定位第一处可靠偏差。
