@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Markdown 阅读器</title>
+  <link rel="stylesheet" href="reader.css">
+  <script defer src="vendor/markdown-it.min.js"></script>
+  <script defer src="vendor/lucide.min.js"></script>
+  <script defer src="reader.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-button mobile-toggle" id="toggle-library" title="文档列表" aria-label="文档列表" aria-expanded="false"><i data-lucide="panel-left"></i></button>
+    <div class="brand"><i data-lucide="book-open"></i><span>Markdown 阅读器</span><span class="edition">本地版</span></div>
+    <div class="toolbar">
+      <button id="find-text" class="icon-button" title="查找正文" aria-label="查找正文" aria-expanded="false"><i data-lucide="search"></i></button>
+      <button id="open-files" class="primary"><i data-lucide="folder-open"></i><span>打开文档</span></button>
+      <button id="refresh" class="icon-button" title="重新读取当前文件" aria-label="重新读取当前文件"><i data-lucide="refresh-cw"></i></button>
+      <button id="theme" class="icon-button" title="切换明暗主题" aria-label="切换明暗主题"><i data-lucide="sun-moon"></i></button>
+      <button class="icon-button mobile-toggle" id="toggle-outline" title="章节目录" aria-label="章节目录" aria-expanded="false"><i data-lucide="list-tree"></i></button>
+    </div>
+  </header>
+  <div id="find-bar" hidden><input id="text-search" type="search" placeholder="查找正文" aria-label="查找正文内容"><output id="match-count">0 / 0</output><button id="previous-match" class="icon-button" title="上一个结果" aria-label="上一个结果"><i data-lucide="chevron-up"></i></button><button id="next-match" class="icon-button" title="下一个结果" aria-label="下一个结果"><i data-lucide="chevron-down"></i></button><button id="close-find" class="icon-button" title="关闭查找" aria-label="关闭查找"><i data-lucide="x"></i></button></div>
+  <aside class="library" id="library" aria-label="文档列表">
+    <div class="side-heading"><span>文档</span><span id="document-count">0</span></div>
+    <label class="search-box"><i data-lucide="search"></i><input id="document-search" type="search" placeholder="查找文档" aria-label="查找文档"></label>
+    <div id="documents"></div>
+    <div class="library-footer"><i data-lucide="hard-drive"></i><span>文件保留在本机</span></div>
+  </aside>
+  <main id="reading-pane">
+    <div class="document-meta"><span id="file-name"></span><span id="source-state"></span></div>
+    <div id="notice" role="status" hidden></div>
+    <div id="empty-state" hidden><i data-lucide="files"></i><h1>暂无文档</h1><button id="empty-open" class="primary"><i data-lucide="folder-open"></i><span>打开文档</span></button></div>
+    <article id="content" aria-label="文档正文"></article>
+    <div class="document-end"><span>文档结束</span><button id="back-top" class="icon-button" title="回到顶部" aria-label="回到顶部"><i data-lucide="arrow-up"></i></button></div>
+  </main>
+  <aside class="outline" id="outline" aria-label="章节目录">
+    <div class="side-heading"><span>本页目录</span><span id="heading-count"></span></div>
+    <label class="search-box"><i data-lucide="search"></i><input id="heading-search" type="search" placeholder="查找章节" aria-label="查找章节"></label>
+    <nav id="toc" aria-label="章节跳转"></nav>
+  </aside>
+  <input id="file-input" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple hidden>
+  <dialog id="copy-dialog" aria-labelledby="copy-title"><div class="dialog-heading"><strong id="copy-title">复制文本</strong><button id="close-copy" class="icon-button" title="关闭" aria-label="关闭"><i data-lucide="x"></i></button></div><textarea id="copy-fallback" aria-label="完整原文" readonly></textarea></dialog>
+  <dialog id="link-dialog" aria-labelledby="link-title"><div class="dialog-heading"><strong id="link-title">选择链接对应的文档</strong><button id="close-link" class="icon-button" title="关闭文档选择" aria-label="关闭文档选择"><i data-lucide="x"></i></button></div><p id="link-target"></p><div id="link-choices"></div></dialog>
+  <div id="toast" role="status" hidden></div>
+</body>
+</html>

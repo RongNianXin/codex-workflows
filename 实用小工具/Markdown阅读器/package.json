@@ -1,0 +1,14 @@
+{
+  "name": "local-markdown-reader",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "node build.cjs",
+    "check": "node --check reader.js && node --check build.cjs && node --check browser-check.cjs && node verify.cjs",
+    "test:browser": "node browser-check.cjs"
+  },
+  "devDependencies": {
+    "markdown-it": "14.2.0",
+    "lucide": "0.468.0"
+  }
+}

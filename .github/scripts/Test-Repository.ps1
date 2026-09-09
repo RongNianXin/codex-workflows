@@ -1,8 +1,39 @@
 [CmdletBinding()]
-param()
+param(
+    # Check explicit new files before staging; ignored and out-of-repository inputs are rejected.
+    [string[]]$AdditionalPaths = @()
+)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
+
+$additionalCheckFiles = @(
+    foreach ($path in $AdditionalPaths) {
+        if ([IO.Path]::IsPathRooted($path)) { throw "额外检查路径必须相对仓库根目录：$path" }
+        $fullPath = [IO.Path]::GetFullPath((Join-Path $repoRoot $path))
+        if (-not $fullPath.StartsWith($repoRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "额外检查路径越出仓库：$path"
+        }
+        $relativePath = [IO.Path]::GetRelativePath($repoRoot, $fullPath).Replace('\', '/')
+        if ($relativePath -match '^(其他资料|全局提示词（严禁AI自动修改）)(/|$)' -or
+            ([IO.Path]::GetFileName($relativePath) -match '自用.*\.docx$')) {
+            throw '受保护资料不得作为额外检查输入。'
+        }
+        git -c "safe.directory=$repoRoot" -C $repoRoot check-ignore --no-index --quiet -- $relativePath
+        if ($LASTEXITCODE -eq 0) { throw "额外检查路径属于本地忽略内容：$relativePath" }
+        if ($LASTEXITCODE -ne 1) { throw "无法核验额外路径的忽略状态：$relativePath" }
+        $item = Get-Item -LiteralPath $fullPath -ErrorAction Stop
+        if ($item.PSIsContainer -or $item.LinkType) {
+            throw "额外检查只接受普通文件：$relativePath"
+        }
+        $parent = $item.Directory
+        while ($parent -and $parent.FullName -ne $repoRoot) {
+            if ($parent.LinkType) { throw '额外检查路径不得经过目录链接。' }
+            $parent = $parent.Parent
+        }
+        $relativePath
+    }
+)
 
 function Get-TrackedFiles {
     param([Parameter(Mandatory)][string]$Pattern)
@@ -12,6 +43,15 @@ function Get-TrackedFiles {
         throw "无法读取 Git 跟踪文件：$Pattern"
     }
     return $files
+}
+
+function Get-CheckFiles {
+    param([Parameter(Mandatory)][string]$Pattern)
+
+    # Content checks target the working tree; index membership gates still use Get-TrackedFiles.
+    @((Get-TrackedFiles -Pattern $Pattern) | Where-Object {
+        Test-Path -LiteralPath (Join-Path $repoRoot $_) -PathType Leaf
+    }) + @($additionalCheckFiles | Where-Object { $_ -like $Pattern }) | Sort-Object -Unique
 }
 
 function Test-RepositoryPathPortability {
@@ -26,7 +66,7 @@ function Test-RepositoryPathPortability {
         [StringComparer]::OrdinalIgnoreCase
     )
 
-    foreach ($relativePath in $trackedFiles) {
+    foreach ($relativePath in (@($trackedFiles) + @($additionalCheckFiles) | Sort-Object -Unique)) {
         git -c "safe.directory=$repoRoot" -C $repoRoot check-ignore --no-index --quiet -- $relativePath 2>$null
         if ($LASTEXITCODE -eq 0) {
             $errors.Add("命中 .gitignore 的文件仍被 Git 跟踪：$relativePath")
@@ -36,6 +76,7 @@ function Test-RepositoryPathPortability {
         if (-not $textExtensions.Contains($extension)) { continue }
 
         $fullPath = Join-Path $repoRoot $relativePath
+        if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) { continue }
         $content = [IO.File]::ReadAllText($fullPath)
         if ($content -match '(?i)(?<![A-Za-z0-9])[A-Z]:[\\/](?!\.\.\.|<)') {
             $errors.Add("文本包含机器绑定的 Windows 绝对路径：$relativePath")
@@ -51,12 +92,12 @@ function Test-RepositoryPathPortability {
     if ($errors.Count -gt 0) {
         throw ($errors -join [Environment]::NewLine)
     }
-    Write-Host "Tracked path portability ($($trackedFiles.Count) files): PASS"
+    Write-Host "Tracked path portability (plus explicit new files): PASS"
 }
 
 function Test-MarkdownFiles {
     $errors = [Collections.Generic.List[string]]::new()
-    foreach ($relativePath in (Get-TrackedFiles -Pattern '*.md')) {
+    foreach ($relativePath in (Get-CheckFiles -Pattern '*.md')) {
         $fullPath = Join-Path $repoRoot $relativePath
         $content = Get-Content -LiteralPath $fullPath -Raw
 
@@ -124,10 +165,7 @@ function Get-ReadmeSiblingPath {
 
 function Test-BilingualReadmes {
     $errors = [Collections.Generic.List[string]]::new()
-    $trackedFiles = @(git -c "safe.directory=$repoRoot" -c core.quotepath=false -C $repoRoot ls-files)
-    if ($LASTEXITCODE -ne 0) {
-        throw '无法读取 Git 跟踪文件以核对双语 README。'
-    }
+    $trackedFiles = @(Get-CheckFiles -Pattern '*')
 
     $tracked = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     foreach ($relativePath in $trackedFiles) { [void]$tracked.Add($relativePath) }
@@ -181,7 +219,7 @@ function Test-BilingualReadmes {
 
 function Test-PowerShellFiles {
     $errors = [Collections.Generic.List[string]]::new()
-    foreach ($relativePath in (Get-TrackedFiles -Pattern '*.ps1')) {
+    foreach ($relativePath in (Get-CheckFiles -Pattern '*.ps1')) {
         $tokens = $null
         $parseErrors = $null
         [void][Management.Automation.Language.Parser]::ParseFile(
@@ -228,11 +266,11 @@ function Test-CommanderDurableWorkflowContract {
     $contracts = @(
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
-            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '场景 2F：跨窗口执行与独立审查协作', '两个不同 AI 窗口', '只要求当前窗口自己检查工作，也不自动创建 2F 配对', '专项执行者或独立审查者完成一阶段并把结果交给总指挥后', '已确认接收', '已发送待确认', '尚未送达', '直接发给专项窗口、仍属于当前阶段且不冲突的明确指令照常有效', '只给一个“现在立即做什么”', '换新聊天或归档前：先准备续接材料', '至少一种可续接材料', '准备归档，请先整理续接材料', '当前 AI 可能收不到这个操作', '紧凑文本执行图', '默认不生成矢量图', '单一整图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
+            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '场景 2F：执行与独立审查协作', '内部子 Agent、独立任务窗口或混合配对', '只要求当前窗口自己检查工作，也不自动创建 2F 配对', '专项执行者或独立审查者完成一阶段并把结果交给总指挥后', '已确认接收', '已发送待确认', '尚未送达', '直接发给专项窗口、仍属于当前阶段且不冲突的明确指令照常有效', '只给一个“现在立即做什么”', '换新聊天或归档前：先准备续接材料', '至少一种可续接材料', '准备归档，请先整理续接材料', '当前 AI 可能收不到这个操作', '紧凑文本执行图', '默认不生成矢量图', '单一整图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
-            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '路由回执', '开始自然语言路由前', '当前任务未加载该修订', '自然语言路由别名', '两个不同 AI 窗口分别执行和独立审查', '普通的同窗口自检', '唯一当前行动与跨窗口冲突收敛', '候选建议永远不可直接执行', '当前阶段行动方（执行者或独立审查者）', '兼任收口方', '操作者直接发给专项窗口的有效指令', '已确认接收 / 已发送待确认 / 尚未送达', '消息到达较晚不代表更新', '某一维度相同不能推出完整测试对象相同', '换窗与归档前连续性触发', '不按固定关键词触发', '至少生成一段可直接发给新窗口的精简续接提示词', '使用者直接点击客户端侧栏归档不会形成模型可观察消息', '不能作为该动作的授权', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务', '强制状态回执与空输出兜底', '业务权限不足也返回 `BLOCKED`')
+            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '路由回执', '开始自然语言路由前', '当前任务未加载该修订', '自然语言路由别名', '不同 Agent 实例分别执行和独立审查', '普通的同窗口自检', '唯一当前行动与跨窗口冲突收敛', '候选建议永远不可直接执行', '当前阶段行动方（执行者或独立审查者）', '兼任收口方', '操作者直接发给专项窗口的有效指令', '已确认接收 / 已发送待确认 / 尚未送达', '消息到达较晚不代表更新', '某一维度相同不能推出完整测试对象相同', '换窗与归档前连续性触发', '不按固定关键词触发', '至少生成一段可直接发给新窗口的精简续接提示词', '使用者直接点击客户端侧栏归档不会形成模型可观察消息', '不能作为该动作的授权', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务', '强制状态回执与空输出兜底', '业务权限不足也返回 `BLOCKED`')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/03-专项任务卡模板.md'
@@ -256,7 +294,8 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/docs/PR_SUBMISSION_AND_REVIEW_STANDARD.md'
-            Required = @('并存实现决议与实际运行身份', '规范启动命令及自检输出', '代码已包含', '干净环境可复现')
+            # Documentary presence checks only; these do not classify or approve a release payload.
+            Required = @('并存实现决议与实际运行身份', '规范启动命令及自检输出', '代码已包含', '干净环境可复现', '发布内容筛选：用途、规则与精确载荷', '没有分支保护不等于没有项目规则', '被明确排除的内容仍不纳入', '测试依赖不等于产品运行依赖', '源码也可能内嵌像素', '默认只读分析', '最新 worktree 不等于新目录架构获准', '不得静默删测试、削断言或隐藏失败', '最终树与本次将上传的全部提交历史', '最终确认绑定目标、精确文件和历史范围', '不能借公开 Draft 上传')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/06-复盘与优化规则.md'
@@ -280,7 +319,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/docs/EXECUTION_AND_INDEPENDENT_REVIEW.md'
-            Required = @('跨窗口执行与独立审查协作规范', '逻辑角色，不覆盖窗口原身份', '审查者必须位于执行者之外的另一个 AI 窗口', '最少只需两个窗口', '唯一中央调度者和单写者', '只创建一个独立审查任务', '普通同窗口自检不触发 2F', '仅讨论或模拟场景不创建任务', '唯一当前行动与冲突收敛', '`advice_kind`', '`action_status`', '`affected_resource/conflict_domain`', '当前阶段行动方（执行者或独立审查者）', '兼任阶段行动方与收口方', '候选已由收口方确认接收', '候选已发送待确认', '候选尚未送达', '不削弱操作者直接指令本身', '“谁最后发消息听谁的”无效', '已发送待确认')
+            Required = @('执行与独立审查协作规范', '逻辑角色，不覆盖窗口原身份', '至少两个不同 Agent 实例', '不强制第三个 Agent 或两个独立任务窗口', '唯一中央调度者和单写者', '只创建一个独立审查任务', '普通同窗口自检不触发 2F', '仅讨论或模拟场景不创建任务', '唯一当前行动与冲突收敛', '`advice_kind`', '`action_status`', '`affected_resource/conflict_domain`', '当前阶段行动方（执行者或独立审查者）', '兼任阶段行动方与收口方', '候选已由收口方确认接收', '候选已发送待确认', '候选尚未送达', '不削弱操作者直接指令本身', '“谁最后发消息听谁的”无效', '已发送待确认')
         },
         @{
             Path = 'README.md'
@@ -296,6 +335,24 @@ function Test-CommanderDurableWorkflowContract {
         }
     )
 
+    # Reporting rules apply to ordinary tasks too; task-card gating must not hide them.
+    $ruleRoot = '总指挥工作流/第二代总指挥的工作模式/'
+    $contracts += @(
+        @{ Path = ($ruleRoot + '02-总指挥核心规则.md'); Required = @('通用汇报读取 `03`', '正式履职后的首次实质汇报前') },
+        @{ Path = ($ruleRoot + '03-专项任务卡模板.md'); Required = @('父子关系和编号沿用原记录', '子项实现或取消不自动算父项验收通过', '任务1暂停且剩1.3') },
+        @{ Path = ($ruleRoot + '06-复盘与优化规则.md'); Required = @('隐藏内部编号、代码名和日志链接后', '不要求操作者复述考试') },
+        @{ Path = ($ruleRoot + '总指挥轻量交接启动配置.md'); Required = @('区分完整读取、标题级定点读取和仅比对指纹', '输出截断须补读缺失部分') }
+    )
+    $coreRules = Get-Content -LiteralPath (Join-Path $repoRoot ($ruleRoot + '02-总指挥核心规则.md')) -Raw
+    # Documentary routing and legacy entry checks; no live model or Git synchronization is exercised.
+    $contracts += @(
+        @{ Path = ($ruleRoot + '01-操作者操作手册.md'); Required = @('2B和2D怎么选', '2B和2D可以前后衔接', '场景 2D：按需安全汇合双方成果', '<a id="场景-2d本地与远端长期分叉后的安全同步"></a>', '不因本提示词自动Fetch') },
+        @{ Path = ($ruleRoot + '02-总指挥核心规则.md'); Required = @('发布与同步的共用只读路由', '同 HEAD 不代表工作区相同', '不按文件时间裁定', '远端新提交已包含于本地', '队友未推送成果不可见时标未知', '只有远端有效增量，本地无待汇合增量', '双方有变化但当前暂不汇合', '不预选Merge', '不因通用路由自动Fetch', '<a id="场景-2d长期双边分叉的安全汇合"></a>', '不另建第二套发布卡', '原目标仅同步本地时按该目标收口') }
+    )
+    if ($coreRules.Contains('`03` 只有专项任务净收益门禁通过后才读取')) {
+        throw '通用汇报入口被专项任务创建门禁遮蔽'
+    }
+
     foreach ($contract in $contracts) {
         $fullPath = Join-Path $repoRoot $contract.Path
         $content = Get-Content -LiteralPath $fullPath -Raw
@@ -310,17 +367,17 @@ function Test-CommanderDurableWorkflowContract {
 
 function Test-CommanderScene2FRoutingCases {
     $cases = @(
-        @{ Name = 'current window executes, create one reviewer'; Request = 'execute'; DistinctWindow = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $true; Expected = '2F:create-one-reviewer' },
-        @{ Name = 'two commanders reuse existing pair'; Request = 'execute'; DistinctWindow = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $true; CreateAuthorized = $false; Expected = '2F:reuse-pair' },
-        @{ Name = 'commander coordinates two existing tasks'; Request = 'execute'; DistinctWindow = $true; IndependentReview = $true; CurrentCanExecute = $false; PairReady = $true; CreateAuthorized = $false; Expected = '2F:reuse-pair' },
-        @{ Name = 'same-window self-check'; Request = 'execute'; DistinctWindow = $false; IndependentReview = $false; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $false; Expected = 'not-2F' },
-        @{ Name = 'explain scene only'; Request = 'explain'; DistinctWindow = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $false; Expected = 'not-2F' },
-        @{ Name = 'pair requested but creation not authorized'; Request = 'execute'; DistinctWindow = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $false; Expected = '2F:prepare-only' }
+        @{ Name = 'current window executes, create one reviewer'; Request = 'execute'; DistinctAgent = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $true; Expected = '2F:create-one-reviewer' },
+        @{ Name = 'two commanders reuse existing pair'; Request = 'execute'; DistinctAgent = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $true; CreateAuthorized = $false; Expected = '2F:reuse-pair' },
+        @{ Name = 'commander coordinates two existing tasks'; Request = 'execute'; DistinctAgent = $true; IndependentReview = $true; CurrentCanExecute = $false; PairReady = $true; CreateAuthorized = $false; Expected = '2F:reuse-pair' },
+        @{ Name = 'same-window self-check'; Request = 'execute'; DistinctAgent = $false; IndependentReview = $false; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $false; Expected = 'not-2F' },
+        @{ Name = 'explain scene only'; Request = 'explain'; DistinctAgent = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $false; Expected = 'not-2F' },
+        @{ Name = 'pair requested but creation not authorized'; Request = 'execute'; DistinctAgent = $true; IndependentReview = $true; CurrentCanExecute = $true; PairReady = $false; CreateAuthorized = $false; Expected = '2F:prepare-only' }
     )
 
     foreach ($case in $cases) {
         $actual = 'not-2F'
-        if ($case.Request -eq 'execute' -and $case.DistinctWindow -and $case.IndependentReview) {
+        if ($case.Request -eq 'execute' -and $case.DistinctAgent -and $case.IndependentReview) {
             if ($case.PairReady) {
                 $actual = '2F:reuse-pair'
             }
@@ -338,7 +395,37 @@ function Test-CommanderScene2FRoutingCases {
             throw "场景 2F 虚构路由失败：$($case.Name)；expected=$($case.Expected) actual=$actual"
         }
     }
-    Write-Host "Commander scene 2F routing: PASS ($($cases.Count) synthetic cases)"
+    # Synthetic policy walkthroughs, not live Agent creation or lifecycle tests.
+    $carrierCases = @(
+        @{ Name = 'parent executes, internal reviewer'; Requested = 'internal'; Available = $true; Authorized = $true; Independent = $true; Direct = $true; Relay = $false; Expected = 'internal:direct' },
+        @{ Name = 'coordinator with internal executor and reviewer'; Requested = 'internal'; Available = $true; Authorized = $true; Independent = $true; Direct = $false; Relay = $true; Expected = 'internal:relay' },
+        @{ Name = 'reuse independent windows'; Requested = 'window'; Available = $true; Authorized = $true; Independent = $true; Direct = $true; Relay = $false; Expected = 'window:direct' },
+        @{ Name = 'mixed pair uses authorized relay'; Requested = 'mixed'; Available = $true; Authorized = $true; Independent = $true; Direct = $false; Relay = $true; Expected = 'mixed:relay' },
+        @{ Name = 'requested window unavailable: no substitution'; Requested = 'window'; Available = $false; Authorized = $true; Independent = $true; Direct = $true; Relay = $false; Expected = 'prepare-only' },
+        @{ Name = 'missing authority'; Requested = 'internal'; Available = $true; Authorized = $false; Independent = $true; Direct = $true; Relay = $false; Expected = 'prepare-only' },
+        @{ Name = 'same Agent cannot independently review'; Requested = 'internal'; Available = $true; Authorized = $true; Independent = $false; Direct = $true; Relay = $false; Expected = 'prepare-only' },
+        @{ Name = 'unknown carrier'; Requested = 'unknown'; Available = $true; Authorized = $true; Independent = $true; Direct = $true; Relay = $false; Expected = 'prepare-only' },
+        @{ Name = 'no authorized communication route'; Requested = 'mixed'; Available = $true; Authorized = $true; Independent = $true; Direct = $false; Relay = $false; Expected = 'prepare-only' }
+    )
+    foreach ($case in $carrierCases) {
+        $actual = 'prepare-only'
+        if ($case.Requested -in @('internal', 'window', 'mixed') -and $case.Available -and $case.Authorized -and $case.Independent) {
+            if ($case.Direct) { $actual = "$($case.Requested):direct" }
+            elseif ($case.Relay) { $actual = "$($case.Requested):relay" }
+        }
+        if ($actual -ne $case.Expected) { throw "2F carrier walkthrough failed: $($case.Name)" }
+    }
+    $contractPath = Join-Path $repoRoot '总指挥工作流/第二代总指挥的工作模式/docs/EXECUTION_AND_INDEPENDENT_REVIEW.md'
+    $contract = Get-Content -LiteralPath $contractPath -Raw -Encoding utf8
+    foreach ($phrase in @('同一 Agent 换口吻自审不算独立审查', '不以子 Agent 或 Fork 偷换', '不能保证不可视、空白上下文、独立文件系统或永久可恢复', '同一冲突域只有一个写入负责人', '共享文件变化只使受影响审查失效', '不能假定原助手仍存活或自动恢复', '不能重复执行、丢掉成果或清零失败次数', '不因换角色重置轮次', '方案共识不能代签最终产物', '不自动迁移在途专项', '不降格为作者自审', '资料可读不等于可向子 Agent 传递')) {
+        if (-not $contract.Contains($phrase)) { throw "2F carrier contract missing: $phrase" }
+    }
+    foreach ($obsolete in @('审查者必须位于执行者之外的另一个 AI 窗口', '最少只需两个窗口')) {
+        if ($contract.Contains($obsolete)) { throw "2F obsolete carrier gate: $obsolete" }
+    }
+    $manual = Get-Content -LiteralPath (Join-Path $repoRoot '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md') -Raw -Encoding utf8
+    if (-not $manual.Contains('<a id="场景-2f跨窗口执行与独立审查协作"></a>')) { throw '2F legacy anchor missing' }
+    Write-Host "Commander scene 2F routing: PASS ($($cases.Count) route cases, $($carrierCases.Count) carrier cases; documentary boundary checks; no live Agent tests)"
 }
 
 function Test-CommanderNextActionConvergenceCases {
@@ -982,7 +1069,7 @@ function Test-TroubleshootingKnowledgeBase {
         @{ Id = 'TRB-003'; Path = '02-账号与供应商切换/TRB-003-历史列表分裂/CC Switch 切换账号后无法共享对话——原理、恢复与长期配置.md'; Status = '部分解决' },
         @{ Id = 'TRB-004'; Path = '02-账号与供应商切换/TRB-004-旧对话无法继续/Codex 切换账号后旧对话无法继续.md'; Status = '部分解决' },
         @{ Id = 'TRB-005'; Path = '02-账号与供应商切换/TRB-005-迁移后分页谱系损坏/分页谱系损坏与迁移工具暂停.md'; Status = '未解决' },
-        @{ Id = 'TRB-006'; Path = '03-跨任务通信/TRB-006-API登录后通信异常/排查记录与建议.md'; Status = '未解决' },
+        @{ Id = 'TRB-006'; Path = '03-跨任务通信/AI任务间消息不回复：排查与预防.md'; Status = '未解决' },
         @{ Id = 'TRB-007'; Path = '04-网络与上游错误/TRB-007-长任务断联与HTTP错误/CC Switch 长任务断联与 401 502 503 504 快速处理.md'; Status = '部分解决' }
     )
 
@@ -1013,7 +1100,7 @@ function Test-TroubleshootingKnowledgeBase {
         }
     }
 
-    $tracked = @(Get-TrackedFiles -Pattern '故障排查与解决经验/*')
+    $tracked = @(Get-CheckFiles -Pattern '故障排查与解决经验/*')
     if ($tracked -match 'stage-a-report\.json$') { throw '本地扫描报告不得被 Git 跟踪。' }
     $forbiddenPatterns = @(
         @{ Pattern = '(?i)[A-Z]:\\Users\\(?!<)'; Label = '真实 Windows 用户路径' },

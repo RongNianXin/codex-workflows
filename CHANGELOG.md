@@ -2,6 +2,71 @@
 
 本文件记录 ChatGPT Workflows 的重要变更。
 
+## 2026-09-10：离线 Markdown 阅读器与工作流展示
+
+- 新增离线阅读入口，支持选择原始文档、多文档切换、目录定位、正文搜索、代码复制、明暗主题和打印；首次无已记住的文件时显示空列表，不内置操作手册快照。
+- 已选择的原文件可在切换文档、返回窗口或主动刷新时尝试重读；记忆取决于浏览器接口和权限。普通文件选择需重新选择，没有后台监听或目录扫描。所有条目均可移除，只清除列表和保存的文件引用，不修改或删除原文件。
+- 展示页新增阅读器打开总指挥操作手册的真实截图；图片归入阅读器资产目录，仅作可选说明，不成为工具运行依赖。根规则明确小工具对工作流文件默认只读，限定放行不替代其他权限门禁。
+- 将 Markdown 解析器锁定为 14.2.0 并同步离线资源，修复依赖公告 [GHSA-38c4-r59v-3vqw](https://github.com/advisories/GHSA-38c4-r59v-3vqw) 和 [GHSA-6v5v-wf23-fmfq](https://github.com/advisories/GHSA-6v5v-wf23-fmfq) 涉及的特制文本解析耗时问题。
+- 解析器、图标和许可证随工具分发，不上传正文、不加载外部图片。暂不渲染公式、Mermaid和图片；真实系统剪贴板、文件选择器授权记忆及其他操作系统仍待验证。Windows无头浏览器检查不代替这些人工验收。
+
+### English summary
+
+- Add an offline Markdown reader with user-selected documents, outline navigation, text search, code copying, printing and light/dark themes. Start with an empty list when no files are remembered; no manual snapshot is bundled.
+- Selected original files can be reread on selection, return or refresh when browser permissions allow. Session imports require reselection. There is no background watcher or directory scan. Removing any entry only clears its list record and saved reference; source files are never modified or deleted.
+- Add an approved screenshot of the reader displaying the commander manual to the showcase, stored with reader assets as an optional visual reference. Root rules make workflow files read-only to tools by default; scoped exceptions do not replace other permission requirements.
+- Pin the Markdown parser to 14.2.0 and rebuild offline assets to address crafted-input parsing slowdowns described in GHSA-38c4-r59v-3vqw and GHSA-6v5v-wf23-fmfq.
+- Parser, icons and licenses ship locally. Documents are not uploaded and external images are not loaded. Formulas, Mermaid and images are not rendered; native clipboard, picker permission persistence and other operating systems remain unverified.
+
+## 2026-09-09：统一2B发布准备与2D按需汇合
+
+- 保留2B/2D编号与旧锚点：2B承载本地实现、验收和发布准备，2D是可由2B调用、也可独立使用的安全汇合子流程，不按长期未同步自动触发。
+- 共用只读路由区分单侧、双侧、已包含、未提交增量及未知归属；远端单侧更新不自动发布，查询不可靠不预设Merge。只读查询、Fetch和工作区变更分别核权限。
+- 汇合沿原工作项和执行卡推进，变化后只重验受影响证据并更新同一有效发布卡；旧基线授权不自动沿用。验证采用十类静态场景、旧入口兼容与仓库质量检查，未运行真实同步或验证所有AI的自然语言路由。
+
+### English summary
+
+- Preserve scene numbers and legacy anchors. Scene 2B covers development and release preparation; 2D provides on-demand integration for 2B or a standalone synchronization goal.
+- A shared read-only routing guide distinguishes one-sided changes, uncommitted work and uncertain ownership. Fetch and working-tree changes require their applicable permissions; remote-only changes do not imply publication.
+- Reuse the work item and execution cards, revalidate affected evidence and renew invalidated authorization. Validation is documentary and does not establish live synchronization or model routing behavior.
+
+## 2026-09-09：按用途筛选发布内容
+
+- PR手册统一核对项目事实、仓库规则、本轮排除和文件用途；个人/团队项目、代码扩展名或AI合成都不自动决定能否提交。展示素材与获准测试数据可为交付物，秘密及明确排除项仍受原门禁约束。
+- 区分产品、测试、展示与临时取证依赖，检查源码内嵌数据和诊断工具副作用；检查最终树及全部待上传历史，不靠后续删除或忽略规则掩盖历史内容，不自动削测试、改架构或清理原成果。
+- 验证为十类反例静态走读及仓库质量检查；新增脚本约束只检查文档条文存在，不是自动内容审核器，也不证明真实项目发布或跨机复现已通过。
+
+### English summary
+
+- Select release content by its purpose, repository rules and explicit exclusions. Project type, file extension or AI generation does not establish permission; approved presentation assets and test data can be deliverables.
+- Distinguish runtime, test, presentation and temporary diagnostic dependencies. Inspect embedded data, tool side effects, the final tree and all history to be uploaded without silently weakening tests or changing project structure.
+- Validation covers ten documentary counterexamples and repository checks. Added assertions check policy text, not actual content approval or cross-machine reproducibility.
+
+## 2026-09-09：下一步明确由谁执行
+
+- 现有规则已要求行动方、预填授权和人工操作包；本次将03汇报出口按AI执行、人工操作、交替、等待/停止及剩余任务澄清，避免只给抽象建议。
+- 02重型步骤摘要区分缺少授权与已有有效授权；06增加行动方表达核验。保留原授权、资源、跨窗口收口和失败停止门禁，不增加每轮确认或必填表。
+- 验证采用七类文档静态场景和仓库质量检查；规则文本不保证所有窗口已加载或今后必然正确执行。
+
+### English summary
+
+- Clarify who performs the next action, what the user must confirm or do, and when to wait. Existing reporting requirements remain the basis.
+- Distinguish missing authorization from valid existing authorization for resource-intensive steps. Preserve permission, resource, coordination and failure-stop boundaries without repeated confirmation forms.
+- Validation uses seven documentary scenarios and repository checks; it does not establish that every task has loaded or will correctly apply the rules.
+
+## 2026-09-09：分层汇报与正式履职加载
+
+- 澄清阶段汇报：当前任务展开剩余子项，其他关联任务概括状态；跳转不丢暂停主线，父任务完成取决于验收，不按子项实现或取消自动判完成。
+- 技术结论先解释对象职责、实际发现和证据边界；不看内部编号和日志也应知道结论及下一动作。
+- 轻量候选与正式履职分开：首次实质汇报加载03/06出口，复用既有加载记录；指纹一致不等于全文已读或理解正确，不增加每轮全文阅读。
+- 验证范围：三个虚构用户例及17个边界场景静态走读、仓库质量检查；实际跨任务效果和长期收益仍未验证。来源项目、真实服务、产品与远端操作不在本批范围。
+
+### English summary
+
+- Reports expand remaining steps for the current task and summarize other related tasks. Switching topics preserves paused work; parent completion requires acceptance evidence.
+- Explain the object's purpose, findings and evidence limits before internal identifiers or logs. First substantive reporting after handoff loads the relevant reporting rules; matching fingerprints do not prove reading or understanding.
+- Validation covers documentary scenarios and repository checks, not live cross-task reliability or long-term benefits.
+
 ## 2026-09-08：成果连续性、协作收口与故障知识库
 
 - 将交接成果身份拆为 Git、工作区增量、依赖构建、实际运行、输入验收五层；明确同机同 worktree、新 worktree、跨机及 PR 合并后的不同核验路径。保留未提交成果，不承诺远端自动传递；文本规范化与二进制精确校验分开，未知和未验证不记为通过。
