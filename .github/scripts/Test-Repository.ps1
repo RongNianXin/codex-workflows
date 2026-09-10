@@ -266,7 +266,7 @@ function Test-CommanderDurableWorkflowContract {
     $contracts = @(
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
-            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '场景 2F：执行与独立审查协作', '内部子 Agent、独立任务窗口或混合配对', '只要求当前窗口自己检查工作，也不自动创建 2F 配对', '专项执行者或独立审查者完成一阶段并把结果交给总指挥后', '已确认接收', '已发送待确认', '尚未送达', '直接发给专项窗口、仍属于当前阶段且不冲突的明确指令照常有效', '只给一个“现在立即做什么”', '换新聊天或归档前：先准备续接材料', '至少一种可续接材料', '准备归档，请先整理续接材料', '当前 AI 可能收不到这个操作', '紧凑文本执行图', '默认不生成矢量图', '单一整图', '静态 HTML 模板', '本步骤输出效果', '真实阶段结果尚未采集', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
+            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '场景 2F：执行与独立审查协作', '内部子 Agent、独立任务窗口或混合配对', '只要求当前窗口自己检查工作，也不自动创建 2F 配对', '专项执行者或独立审查者完成一阶段并把结果交给总指挥后', '已确认接收', '已发送待确认', '尚未送达', '直接发给专项窗口、仍属于当前阶段且不冲突的明确指令照常有效', '只给一个“现在立即做什么”', '换新聊天或归档前：先准备续接材料', '至少一种可续接材料', '准备归档，请先整理续接材料', '当前 AI 可能收不到这个操作', '等宽文本图', '默认不生成矢量图', '完整单图', '静态模板和构建器', '区分无直观样例和尚未采集', '不伪造效果', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
@@ -274,7 +274,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/03-专项任务卡模板.md'
-            Required = @('中断恢复身份：保持本专项任务身份', '执行入口：沿用母任务场景', '恢复提示词不改变本任务身份', '不得执行总指挥接管', '待授权的单一可见浏览器', '待授权的 Computer Use', '给出出口前先回读 `02` 的活跃请求清单', '候选建议标明“候选、不可执行”', '候选不得包装成可直接复制执行的提示词', '候选已由收口方确认接收', '候选已发送待确认', '候选尚未送达', '操作者直接发给本专项窗口的明确指令', '现在只给一个最先动作', '换窗与归档前连续性门禁', '至少一种可续接材料')
+            Required = @('恢复提示词不改变本任务身份', '执行入口：沿用母任务场景', '恢复提示词不改变本任务身份', '不得执行总指挥接管', '默认无头单 worker', '前台控制须精确授权', '给出出口前先回读 `02` 的活跃请求清单', '候选建议标明“候选、不可执行”', '候选不得包装成可直接复制执行的提示词', '候选已由收口方确认接收', '候选已发送待确认', '候选尚未送达', '操作者直接发给本专项窗口的明确指令', '现在只给一个最先动作', '换窗与归档前连续性门禁', '至少一种可续接材料')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/04-状态、目标变更与交接规范.md'
@@ -363,6 +363,108 @@ function Test-CommanderDurableWorkflowContract {
         }
     }
     Write-Host 'Commander durable workflow contract: PASS'
+}
+
+function Test-CommanderBoundedExecutionCases {
+    # Synthetic decisions and document regression guards, not enforcement on live Agents.
+    $ruleRoot = Join-Path $repoRoot '总指挥工作流/第二代总指挥的工作模式'
+    $guards = @(
+        @{ File='01-操作者操作手册.md'; Required=@('不把这一选择设为继续排查的前提'); Forbidden=@('AI 在首次交付执行图和每个阶段报告结束时都会询问') },
+        @{ File='04-状态、目标变更与交接规范.md'; Required=@('核心状态必需', '不为无 GitHub 的本地工作包生成空远端账'); Forbidden=@('最小状态记录必须包含：') },
+        @{ File='09-自动化授权与风险分级.md'; Required=@('授权内连续执行与局部停止', '不要求每项各发一条人工消息', '修复和运行额度', '画像外发双重确认'); Forbidden=@('或修改受保护分支；', '场景 2A、3A、3B 或单窗口长任务结束时') },
+        @{ File='03-专项任务卡模板.md'; Required=@('核心字段和实际触发的条件段', '没有 GitHub 对象', '默认沿用当前配置', '操作目的：', '异常反馈：'); Forbidden=@('中断恢复身份：保持本专项任务身份', '场景 2B 必须在通用任务卡基础上增加') },
+        @{ File='10-自动状态索引规范.md'; Required=@('下一项实质动作前回读', '指纹证明内容身份', '完整读取受影响标题', '当前授权明确覆盖全量范围'); Forbidden=@('无法唯一恢复时自动切换全量推进') },
+        @{ File='总指挥轻量交接启动配置.md'; Required=@('可可靠定位时完整读取受影响标题', '候选阶段只读', '旧远端授权'); Forbidden=@('只完整读取受影响文件并记录差异') },
+        @{ File='docs/PIPELINE_DIAGNOSIS_AND_ALGORITHM_TUNING_STANDARD.md'; Required=@('不每阶段重复询问', '已有有效授权内的后续动作'); Forbidden=@('只有操作者重新发送建议文本后', 'AI 还必须询问') },
+        @{ File='docs/PR_SUBMISSION_AND_REVIEW_STANDARD.md'; Required=@('尚未通读时只允许本地草稿', '没有代码变化无需制造新 Commit'); Forbidden=@('给出新的精确 Head') },
+        @{ File='docs/EXECUTION_AND_INDEPENDENT_REVIEW.md'; Required=@('不等于一条命令', '实质失效', '正常修订和新增验证', '绝对上限三轮'); Forbidden=@('证据、权限、范围、中央暂停/停止、收口状态或互斥资源发生变化时') },
+        @{ File='docs/AUTOMATED_TESTING_LESSONS.md'; Required=@('正式运行所用解析路径', '人工认可绑定具体阶段', '枚举测试、配置检查及 AI 汇总另用输出位置', '先核对实际 schema', '可选工具失败只限制该工具'); Forbidden=@() },
+        @{ File='06-复盘与优化规则.md'; Required=@('等量删字不能替代收益证据', '重建须另获'); Forbidden=@('用等量删减抵消') },
+        @{ File='11-操作者协作画像规范.md'; Required=@('不自动删除、移动、复制或清空实例'); Forbidden=@('删除或隔离本地实例并清除索引指针') },
+        @{ File='docs/SECURITY_BOUNDARY.md'; Required=@('已有 remote 不等于违规', '前台 FIFO 顺序'); Forbidden=@('确认没有 remote') }
+    )
+    foreach ($guard in $guards) {
+        $content = [IO.File]::ReadAllText((Join-Path $ruleRoot $guard.File))
+        foreach ($phrase in $guard.Required) {
+            if (-not $content.Contains($phrase)) { throw "Bounded workflow obligation missing: $($guard.File): $phrase" }
+        }
+        foreach ($phrase in $guard.Forbidden) {
+            if ($content.Contains($phrase)) { throw "Obsolete conflicting rule: $($guard.File): $phrase" }
+        }
+    }
+
+    function Get-SyntheticBoundedDecision([hashtable]$Fact) {
+        switch ($Fact.Kind) {
+            'execution' {
+                if ($Fact.HardStop) { return 'stop-package' }
+                if ($Fact.UnknownResult) { return 'audit-first' }
+                if (-not $Fact.Authorized) { return 'prepare-delta' }
+                if ($Fact.DependencyFailed) { return 'stop-dependent' }
+                return 'continue-authorized'
+            }
+            'budget' {
+                if ($Fact.Used -ge $Fact.Limit) { return "stop-$($Fact.Counter)" }
+                return "continue-$($Fact.Counter)"
+            }
+            'load' {
+                if ($Fact.NewTask) { return 'load-own-rules' }
+                if ($Fact.Compressed -or -not $Fact.SemanticsAvailable) { return 'read-state-and-key-sections' }
+                if ($Fact.Changed) {
+                    if ($Fact.Locatable) { return 'read-complete-section' }
+                    return 'read-affected-file'
+                }
+                return 'reuse'
+            }
+            'remote' {
+                if ($Fact.Forbidden) { return 'reject' }
+                if (-not $Fact.ExactAuthorization) { return 'prepare-delta' }
+                if (-not $Fact.BaselineValid) { return 'recheck-affected' }
+                return 'execute-and-readback'
+            }
+            'review' {
+                if ($Fact.MaterialContractChange) { return 'candidate-to-coordinator' }
+                if ($Fact.Round -ge $Fact.Limit) { return 'close-or-report-unresolved' }
+                return 'continue-bounded-review'
+            }
+            'pr' {
+                if (-not $Fact.HumanRead) { return 'local-or-authorized-draft' }
+                if (-not $Fact.CodeChanged) { return 'current-head-with-evidence' }
+                return 'new-evidence-and-current-head'
+            }
+            default { throw 'Unknown synthetic case kind' }
+        }
+    }
+    $cases = @(
+        @{ Id='T01'; Fact=@{Kind='execution'; Authorized=$true}; Expected='continue-authorized' },
+        @{ Id='T02'; Fact=@{Kind='execution'; Authorized=$false}; Expected='prepare-delta' },
+        @{ Id='T03'; Fact=@{Kind='execution'; Authorized=$true}; Expected='continue-authorized' },
+        @{ Id='T05-dependent'; Fact=@{Kind='execution'; Authorized=$true; DependencyFailed=$true}; Expected='stop-dependent' },
+        @{ Id='T05-independent'; Fact=@{Kind='execution'; Authorized=$true; DependencyFailed=$false}; Expected='continue-authorized' },
+        @{ Id='T06'; Fact=@{Kind='execution'; Authorized=$true; HardStop=$true}; Expected='stop-package' },
+        @{ Id='T07'; Fact=@{Kind='budget'; Counter='repair'; Used=2; Limit=2}; Expected='stop-repair' },
+        @{ Id='T08-budget'; Fact=@{Kind='budget'; Counter='runtime'; Used=900; Limit=900}; Expected='stop-runtime' },
+        @{ Id='T08-unknown'; Fact=@{Kind='execution'; Authorized=$true; UnknownResult=$true}; Expected='audit-first' },
+        @{ Id='T09'; Fact=@{Kind='remote'; ExactAuthorization=$true; BaselineValid=$true}; Expected='execute-and-readback' },
+        @{ Id='T10'; Fact=@{Kind='remote'; ExactAuthorization=$false; BaselineValid=$true}; Expected='prepare-delta' },
+        @{ Id='T14'; Fact=@{Kind='load'; Compressed=$true; SemanticsAvailable=$false}; Expected='read-state-and-key-sections' },
+        @{ Id='T15'; Fact=@{Kind='load'; NewTask=$true}; Expected='load-own-rules' },
+        @{ Id='T16-local'; Fact=@{Kind='load'; Changed=$true; Locatable=$true; SemanticsAvailable=$true}; Expected='read-complete-section' },
+        @{ Id='T16-unknown'; Fact=@{Kind='load'; Changed=$true; Locatable=$false; SemanticsAvailable=$true}; Expected='read-affected-file' },
+        @{ Id='T16-reuse'; Fact=@{Kind='load'; SemanticsAvailable=$true}; Expected='reuse' },
+        @{ Id='T18-draft'; Fact=@{Kind='pr'; HumanRead=$false}; Expected='local-or-authorized-draft' },
+        @{ Id='T18-unchanged'; Fact=@{Kind='pr'; HumanRead=$true; CodeChanged=$false}; Expected='current-head-with-evidence' },
+        @{ Id='T19-normal'; Fact=@{Kind='review'; Round=1; Limit=2}; Expected='continue-bounded-review' },
+        @{ Id='T19-change'; Fact=@{Kind='review'; MaterialContractChange=$true}; Expected='candidate-to-coordinator' },
+        @{ Id='T21-review'; Fact=@{Kind='review'; Round=3; Limit=3}; Expected='close-or-report-unresolved' },
+        @{ Id='T21-runtime'; Fact=@{Kind='budget'; Counter='runtime'; Used=2; Limit=2}; Expected='stop-runtime' },
+        @{ Id='T22/T23'; Fact=@{Kind='remote'; Forbidden=$true; ExactAuthorization=$true; BaselineValid=$true}; Expected='reject' },
+        @{ Id='remote-drift'; Fact=@{Kind='remote'; ExactAuthorization=$true; BaselineValid=$false}; Expected='recheck-affected' }
+    )
+    foreach ($case in $cases) {
+        $actual = Get-SyntheticBoundedDecision $case.Fact
+        if ($actual -ne $case.Expected) { throw "Synthetic bounded decision failed: $($case.Id): $actual" }
+    }
+    Write-Host "Bounded execution: PASS ($($guards.Count) document guards, $($cases.Count) synthetic decisions; not live Agent behavior)"
 }
 
 function Test-CommanderScene2FRoutingCases {
@@ -775,7 +877,8 @@ function Test-TextFlowchartTemplateContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
-            Required = @($templatePath, 'template_id: text-flowchart-renderer', 'interface_version: 1', '我不需要另行打开或复制该模板', '文字版流程图模块不可用')
+            # The operator entry routes to the detailed contract; do not duplicate its interface constants.
+            Required = @('首次完整读取对应专项手册', '指定文字版流程图模板并核对接口', '模板不可用时明确报告', '只暂停图及其直接依赖交付')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
@@ -1152,6 +1255,7 @@ Test-PowerShellFiles
 & (Join-Path $PSScriptRoot 'Test-SessionDeskOrder.ps1')
 Test-CommanderRuleVersion
 Test-CommanderDurableWorkflowContract
+Test-CommanderBoundedExecutionCases
 Test-CommanderScene2FRoutingCases
 Test-CommanderNextActionConvergenceCases
 Test-CommanderContinuityRoutingCases
