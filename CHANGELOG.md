@@ -2,6 +2,16 @@
 
 本文件记录 ChatGPT Workflows 的重要变更。
 
+## 未发布：明确更新介绍的双语输出规则
+
+- 默认要求每次更新介绍、变更摘要或发布说明同时提供中文和英文。
+- 已集成翻译按钮或语言切换的页面默认只维护中文源；英文由读者点击翻译查看，除非翻译功能失效或验收明确要求静态英文文本。
+
+### English summary
+
+- Require Chinese and English for every update description, change summary, or release note by default.
+- On pages with a working translation or language-switch button, maintain only the Chinese source by default; readers can click to view English, unless the feature is unavailable or static English is explicitly required.
+
 ## 未发布：强化“无需回传”消息的双通道反馈门禁
 
 - 将“无需向来源回传”和“必须向操作者可见反馈”拆成收到消息后的强制双通道分流步骤。
