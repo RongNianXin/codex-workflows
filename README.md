@@ -8,8 +8,8 @@
 
 **简体中文** | [English](README.en.md)
 
-[![Repository quality](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml)
-[![Last commit](https://img.shields.io/github/last-commit/RongNianXin/codex-workflows?label=last%20commit)](https://github.com/RongNianXin/codex-workflows/commits/main)
+[![Repository quality](https://github.com/RongNianXin/ChatGPT-Workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/ChatGPT-Workflows/actions/workflows/repository-quality.yml)
+[![Last commit](https://img.shields.io/github/last-commit/RongNianXin/ChatGPT-Workflows?label=last%20commit)](https://github.com/RongNianXin/ChatGPT-Workflows/commits/main)
 ![License: MIT](https://img.shields.io/badge/license-MIT-2F855A.svg)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4.svg?logo=windows11&logoColor=white)
 
@@ -109,6 +109,10 @@
 
 > [!IMPORTANT]
 > 请在真正要处理的项目中打开 Codex，再登记这套规则目录。只有维护工作流本身时，才把本仓库作为目标项目。
+
+### 面向英语用户的轻量入口
+
+详细规则仍以中文文档为唯一规范源；面向英语用户的稳定导读、术语和最小使用路径见 [English entry](总指挥工作流/第二代总指挥的工作模式/docs/ENGLISH_ENTRY.md)。它不是完整英文镜像，规则发生变化时应回到中文源文件核对。
 
 ## 仓库里有什么
 

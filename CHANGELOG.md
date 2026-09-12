@@ -2,6 +2,94 @@
 
 本文件记录 ChatGPT Workflows 的重要变更。
 
+## 未发布：强化“无需回传”消息的双通道反馈门禁
+
+- 将“无需向来源回传”和“必须向操作者可见反馈”拆成收到消息后的强制双通道分流步骤。
+- 明确要求立即输出已收到、实际状态和下一步；把空输出、仅工具卡片或平台完成标记列为反馈缺失，避免新任总指挥将“无需回执”误解为“无需任何输出”。
+
+### English summary
+
+- Turn the distinction between “no reply to the source” and “visible feedback to the operator is still required” into a mandatory two-channel routing step.
+- Require an immediate received/status/next-step message and classify empty output, tool cards alone, or a platform completion flag as missing feedback, preventing new commanders from interpreting “no ACK” as “no output”.
+
+## 未发布：会话交接评分第二道警戒线与十格滑条
+
+- 将交接参考分扩展为 0～10 分：文件体积与自动压缩次数各贡献 0～5 分，3 分进入“建议交接”，8 分（含 8）进入“必须交接”。
+- 任务卡片新增 10 格静态滑条、3/8 细刻度、悬停与键盘聚焦提示，并保留旧快照无评分字段时的兼容显示。
+- 上下文占用不混入会倒退的总分，85% 和 95% 改为独立提醒；这些档位是本地经验规则，不是官方限制。
+
+### English summary
+
+- Extend the handoff reference score to 0–10: file size and automatic compaction each contribute 0–5 points, with 3 entering **Handoff recommended** and 8 (inclusive) entering **Handoff required**.
+- Add a static 10-segment task-card slider with subtle 3/8 ticks and hover/focus text, while keeping legacy snapshots without score fields compatible.
+- Keep sawtooth context usage out of the cumulative score and show separate 85% and 95% reminders. These bands are local heuristics, not official limits.
+
+## 未发布：heartbeat工具结果关联失败400的证据分流
+
+- 在TRB-007补充heartbeat后持续工具结果关联失败的来源样本、匿名错误及快速处置分流，与会话过长400和自动化实例更新失败分别判断。
+- 区分来源方日志复核、本窗口报告指纹核验及官方API契约；保留请求转换与实际运行版本缺口，不把新分支可用、社区方案或曝光目标当作修复通过。
+- 反馈优先检索已有同类报告，仅在最终授权后补充最小证据；本轮未发布、修改代理、重放业务或重建自动化。
+
+### English summary
+
+- Add a source-reported case of persistent tool-output association errors after a heartbeat to TRB-007, with an anonymized signature and a separate HTTP 400 routing entry.
+- Distinguish source-side log inspection, report fingerprint verification, and the public API contract. Runtime versions and request transformations remain unverified; a working branch or community workaround does not establish a fix.
+- Prefer relevant existing reports and require final authorization before sharing minimal evidence. No publishing, proxy changes, business replay, or automation recreation was performed.
+
+## 未发布：明确总指挥交接附件与标准模板
+
+- 场景6交付明确默认主附件、补充材料条件、接收窗口及场景6A完整标准模板位置，避免操作者在多个材料入口间猜测。
+- 自动创建受阻时提供同一标准流程的人工路径；保留候选只读、停止旧写者、最终确认和必要成果可访问的门禁，不将一个快照当作跨位置源码包。
+
+### English summary
+
+- Identify the primary handoff attachment, when additional materials are required, the recipient, and the full Scene 6A template instead of leaving users to choose among multiple links.
+- Provide the same standard manual path when automated task creation is unavailable. Preserve read-only candidate verification, stopping the previous writer, final confirmation, and access to required artifacts; a snapshot is not a source transfer package.
+
+## 未发布：补齐长会话长度400的路线对照边界
+
+- 补充同一旧任务在操作者报告切换官方账号后短回复成功、切回中转后再次长度拒绝的观察；区分平台可见结果、操作者说明和未核验的实际出站路线。
+- 不再把新建任务作为唯一恢复方式；保留停止故障路线重复投递、保护未提交成果及有限验收边界，不将短回复成功当作完整业务恢复。
+
+### English summary
+
+- Record a successful short reply in the same existing task after a user-reported switch to direct account sign-in, followed by another length rejection after switching back to a relay. Separate observed outcomes, user reports, and unverified outbound routing.
+- Keep recovery options open while stopping repeated submissions on the failing route. Preserve uncommitted work and require scoped validation; a short reply does not establish full workflow recovery.
+
+## 未发布：PR审阅修复与合并后本地接续
+
+- PR标准第8节补充审阅、CI与冲突修复的影响分析和定向复验，核对隔离发布分支与未提交开发成果的包含关系，不因提交号不同就认定内容分叉。
+- 第10.1节明确按实际合并结果选择本地接续方式，不默认反向合并或覆盖工作区；补充回归留证、定位、修复与回退边界，并分开报告合并、接续和运行验收状态。
+- 沿用既有成果契约和发布/同步路由，不新增场景、提示词或长表，不扩大本地、远端和部署授权。
+
+### English summary
+
+- Add impact analysis and targeted revalidation for review, CI, and conflict fixes, including content mapping between release branches and uncommitted development work.
+- Clarify local continuation after the actual merge result, without automatic reverse integration or overwriting working trees. Preserve regression evidence and distinguish code, deployment, and data recovery.
+- Reuse existing artifact and synchronization contracts without adding prompt entry points or granting new permissions.
+
+## 未发布：合并操作手册重复提示词
+
+- 2B 与 4A 共用人工反馈模板，允许如实填写未执行或不确定，并保留对象匹配、验收证据和返工权限边界。
+- 2F 的补充反馈与收口后返工共用一个入口，由 AI 核对批次及有限返工条件；3A/3B 共用协作队列模板，保留全量、增量及不可靠截点升级规则。旧编号和定位链接继续可用。
+- 精简 2B/2D 选择说明、2C 预期结果和 6B 恢复说明；交接准备、候选核验、正式切换及其他不同权限入口仍分开，不以合并模板扩大授权。
+
+### English summary
+
+- Share one manual feedback prompt between 2B and 4A, preserving unperformed and uncertain results, evidence matching, and rework permissions.
+- Consolidate ongoing and post-completion feedback in 2F, and share one queue prompt between 3A and 3B. Keep bounded rework, full and incremental scans, checkpoint validation, and legacy navigation.
+- Shorten repeated explanations while keeping handoff preparation, candidate verification, formal switching, and distinct permission boundaries separate.
+
+## 未发布：场景 6 默认接续未提交成果
+
+- 合并重复的交接补充提示词，场景 6 单一入口明确覆盖未提交修改、必要新文件与详细证据；场景 6A 要求候选回读实际成果，不以摘要或提交号代替。
+- 区分同工作区保留、跨位置恢复和编辑器未保存内容。交接快照不等于代码传输，不新增创建任务、通信、打包、覆盖或远端权限；无法取得的必要内容继续标为缺口。
+
+### English summary
+
+- Consolidate the duplicate handoff prompt. Scene 6 includes uncommitted changes, required new files and evidence by default; Scene 6A requires reading the actual artifacts rather than relying on a summary or commit identifier.
+- Distinguish keeping files in the same worktree, restoring them elsewhere and unsaved editor buffers. A handoff snapshot does not transfer code or grant task creation, messaging, packaging, overwrite or remote permissions. Required content that cannot be obtained remains an explicit gap.
+
 ## 2026-09-10：离线 Markdown 阅读器与工作流展示
 
 - 新增离线阅读入口，支持选择原始文档、多文档切换、目录定位、正文搜索、代码复制、明暗主题和打印；首次无已记住的文件时显示空列表，不内置操作手册快照。

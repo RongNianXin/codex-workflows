@@ -39,7 +39,18 @@ The Windows desk saves task IDs, detects names and projects, and provides orderi
 
 [打开工具说明 / Open the tool guide](实用小工具/Codex会话交接评估/README.md)
 
-[![Windows 会话工作台 dev.6 脱敏真实运行截图](实用小工具/Codex会话交接评估/运行效果截图.png)](实用小工具/Codex会话交接评估/运行效果截图.png)
+[![Windows 会话工作台更新版脱敏真实运行截图](实用小工具/Codex会话交接评估/运行效果截图.png)](实用小工具/Codex会话交接评估/运行效果截图.png)
 
-> 隐私说明：所有可见任务 ID、会话路径与报告路径均已实色遮挡。项目名、任务名、时间和统计值经操作者确认保留；图片仅用于本页功能展示，不构成当前状态或统计准确性的独立证明。
-> Privacy: visible task IDs, session paths and report paths are covered with opaque masks. Project/task names, times and statistics are retained with the operator’s approval. This screenshot illustrates the interface; it is not independent proof of current state or statistical accuracy.
+> 隐私说明：所有可见任务 ID、项目/任务名称、时间、会话路径与报告路径均已实色遮挡；通用统计结构保留用于说明界面。图片仅用于本页功能展示，不构成当前状态或统计准确性的独立证明。
+> Privacy: visible task IDs, project/task names, time, session paths and report paths are covered with opaque masks. Generic statistical structure is retained to explain the interface. This screenshot illustrates the interface; it is not independent proof of current state or statistical accuracy.
+
+## Codex 归档路径修复工具 / Codex archive-path repair tool
+
+该工具用于只读扫描已知的 Codex 任务路径异常，并在确认后执行修复；截图展示发现异常后的人工确认界面。
+
+This utility scans known Codex task-path anomalies and asks for confirmation before repair. The screenshot shows the manual confirmation state after an anomaly is detected.
+
+[![Codex 归档路径修复工具的脱敏真实运行截图](故障排查与解决经验/01-会话与归档/TRB-001-Windows归档路径异常/assets/codex-archive-repair-preview.png)](故障排查与解决经验/01-会话与归档/TRB-001-Windows归档路径异常/assets/codex-archive-repair-preview.png)
+
+> 隐私说明：截图未显示真实任务 ID、个人联系方式、凭据或本机路径；仅保留工具名称、通用提示和人工确认流程。
+> Privacy: no real task ID, personal contact, credential or local path is visible; the tool name, generic messages and manual confirmation flow are retained.

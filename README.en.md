@@ -8,8 +8,8 @@ Connect natural-language goals, execution evidence, and resumable checkpoints, a
 
 [简体中文](README.md) | **English**
 
-[![Repository quality](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/codex-workflows/actions/workflows/repository-quality.yml)
-[![Last commit](https://img.shields.io/github/last-commit/RongNianXin/codex-workflows?label=last%20commit)](https://github.com/RongNianXin/codex-workflows/commits/main)
+[![Repository quality](https://github.com/RongNianXin/ChatGPT-Workflows/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/RongNianXin/ChatGPT-Workflows/actions/workflows/repository-quality.yml)
+[![Last commit](https://img.shields.io/github/last-commit/RongNianXin/ChatGPT-Workflows?label=last%20commit)](https://github.com/RongNianXin/ChatGPT-Workflows/commits/main)
 ![License: MIT](https://img.shields.io/badge/license-MIT-2F855A.svg)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4.svg?logo=windows11&logoColor=white)
 
@@ -105,6 +105,10 @@ The detailed manuals are currently written in Chinese. This page is an evaluatio
 
 Use the target project's workspace, not this repository's workspace, unless you are maintaining the workflow itself.
 
+### A lightweight English entry
+
+The detailed rules remain canonical in Chinese. Use the [English entry](总指挥工作流/第二代总指挥的工作模式/docs/ENGLISH_ENTRY.md) for stable orientation, terminology, and the minimum route into the workflow. It is intentionally not a full parallel translation; when a rule matters, re-check the current Chinese source.
+
 ## What is included
 
 - [ChatGPT-Web](ChatGPT-Web/README.en.md): reviewable userscripts, installation steps, and browser-permission notes for ChatGPT on the web.
@@ -154,4 +158,4 @@ The privacy claims are auditable: the real profile stays in an exact `.gitignore
 
 Released under the [MIT License](LICENSE).
 
-<!-- README-SOURCE-SHA256: 389664c526c145dfe6f6de91ca72472d3b44c9fd88a172cb62aebe2998a9c81c -->
+<!-- README-SOURCE-SHA256: f3a5a7a89d2546d3874c19c2a9e6c164fdb087aef2a234097fbe689bc4449827 -->
