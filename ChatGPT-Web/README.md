@@ -13,8 +13,8 @@
 
 | 脚本 | 功能 | 安装 |
 | --- | --- | --- |
-| [ChatGPT 新聊天默认选择“聊天”](./ChatGPT%20%E6%96%B0%E8%81%8A%E5%A4%A9%E9%BB%98%E8%AE%A4%E9%80%89%E6%8B%A9%E2%80%9C%E8%81%8A%E5%A4%A9%E2%80%9D.user.js) | 新建普通对话时默认选择“聊天”，之后不干涉手动切换到“工作”。 | [直接安装](https://raw.githubusercontent.com/RongNianXin/codex-workflows/main/ChatGPT-Web/ChatGPT%20%E6%96%B0%E8%81%8A%E5%A4%A9%E9%BB%98%E8%AE%A4%E9%80%89%E6%8B%A9%E2%80%9C%E8%81%8A%E5%A4%A9%E2%80%9D.user.js) |
-| [ChatGPT 左侧栏自由拖动宽度 V2](./ChatGPT%20%E5%B7%A6%E4%BE%A7%E6%A0%8F%E8%87%AA%E7%94%B1%E6%8B%96%E5%8A%A8%E5%AE%BD%E5%BA%A6%20V2.user.js) | 拖动左侧栏右边缘调整宽度，松开后自动保存；双击拖动线恢复默认宽度。 | [直接安装](https://raw.githubusercontent.com/RongNianXin/codex-workflows/main/ChatGPT-Web/ChatGPT%20%E5%B7%A6%E4%BE%A7%E6%A0%8F%E8%87%AA%E7%94%B1%E6%8B%96%E5%8A%A8%E5%AE%BD%E5%BA%A6%20V2.user.js) |
+| [ChatGPT 新聊天默认选择“聊天”](./ChatGPT%20%E6%96%B0%E8%81%8A%E5%A4%A9%E9%BB%98%E8%AE%A4%E9%80%89%E6%8B%A9%E2%80%9C%E8%81%8A%E5%A4%A9%E2%80%9D.user.js) | 新建普通对话时默认选择“聊天”，之后不干涉手动切换到“工作”。 | [直接安装](https://raw.githubusercontent.com/RongNianXin/ChatGPT-Workflows/main/ChatGPT-Web/ChatGPT%20%E6%96%B0%E8%81%8A%E5%A4%A9%E9%BB%98%E8%AE%A4%E9%80%89%E6%8B%A9%E2%80%9C%E8%81%8A%E5%A4%A9%E2%80%9D.user.js) |
+| [ChatGPT 左侧栏自由拖动宽度 V2](./ChatGPT%20%E5%B7%A6%E4%BE%A7%E6%A0%8F%E8%87%AA%E7%94%B1%E6%8B%96%E5%8A%A8%E5%AE%BD%E5%BA%A6%20V2.user.js) | 拖动左侧栏右边缘调整宽度，松开后自动保存；双击拖动线恢复默认宽度。 | [直接安装](https://raw.githubusercontent.com/RongNianXin/ChatGPT-Workflows/main/ChatGPT-Web/ChatGPT%20%E5%B7%A6%E4%BE%A7%E6%A0%8F%E8%87%AA%E7%94%B1%E6%8B%96%E5%8A%A8%E5%AE%BD%E5%BA%A6%20V2.user.js) |
 
 ## 安装
 

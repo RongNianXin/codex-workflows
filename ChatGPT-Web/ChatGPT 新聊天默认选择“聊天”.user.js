@@ -4,10 +4,10 @@
 // @version      1.0.0
 // @description  每次新建 ChatGPT 对话时默认选择“聊天”，之后不干涉用户手动切换到“工作”
 // @license      MIT
-// @homepageURL  https://github.com/RongNianXin/codex-workflows/tree/main/ChatGPT-Web
-// @supportURL   https://github.com/RongNianXin/codex-workflows/issues
-// @updateURL    https://raw.githubusercontent.com/RongNianXin/codex-workflows/main/ChatGPT-Web/ChatGPT%20%E6%96%B0%E8%81%8A%E5%A4%A9%E9%BB%98%E8%AE%A4%E9%80%89%E6%8B%A9%E2%80%9C%E8%81%8A%E5%A4%A9%E2%80%9D.user.js
-// @downloadURL  https://raw.githubusercontent.com/RongNianXin/codex-workflows/main/ChatGPT-Web/ChatGPT%20%E6%96%B0%E8%81%8A%E5%A4%A9%E9%BB%98%E8%AE%A4%E9%80%89%E6%8B%A9%E2%80%9C%E8%81%8A%E5%A4%A9%E2%80%9D.user.js
+// @homepageURL  https://github.com/RongNianXin/ChatGPT-Workflows/tree/main/ChatGPT-Web
+// @supportURL   https://github.com/RongNianXin/ChatGPT-Workflows/issues
+// @updateURL    https://raw.githubusercontent.com/RongNianXin/ChatGPT-Workflows/main/ChatGPT-Web/ChatGPT%20%E6%96%B0%E8%81%8A%E5%A4%A9%E9%BB%98%E8%AE%A4%E9%80%89%E6%8B%A9%E2%80%9C%E8%81%8A%E5%A4%A9%E2%80%9D.user.js
+// @downloadURL  https://raw.githubusercontent.com/RongNianXin/ChatGPT-Workflows/main/ChatGPT-Web/ChatGPT%20%E6%96%B0%E8%81%8A%E5%A4%A9%E9%BB%98%E8%AE%A4%E9%80%89%E6%8B%A9%E2%80%9C%E8%81%8A%E5%A4%A9%E2%80%9D.user.js
 // @match        https://chatgpt.com/*
 // @run-at       document-start
 // @grant        none

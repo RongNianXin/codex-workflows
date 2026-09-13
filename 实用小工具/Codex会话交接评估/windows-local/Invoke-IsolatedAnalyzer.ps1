@@ -8,7 +8,11 @@ try {
     $script = Join-Path $PSScriptRoot 'isolated-analyzer.ps1'
     $output = . $script -TaskId $TaskId -ReportPath $ReportPath -Language $Language | Out-String -Width 180
     if ($MetadataPath) {
-        $metadata = @{name=$taskNameInfo.TaskName;found=$taskNameInfo.IndexFound;warnings=$taskNameInfo.ParseWarnings}
+        # The analyzer owns the score and the warning level; this wrapper only passes them through.
+        $score = if ($null -ne $totalScore) { [int]$totalScore } else { $null }
+        $level = if ($handoffLevel -in @('continue','recommended','required')) { [string]$handoffLevel } else { 'unknown' }
+        $contextPercent = if ($null -ne $contextPercent) { [double]$contextPercent } else { $null }
+        $metadata = @{name=$taskNameInfo.TaskName;found=$taskNameInfo.IndexFound;warnings=$taskNameInfo.ParseWarnings;score=$score;level=$level;contextPercent=$contextPercent}
         [IO.File]::WriteAllText($MetadataPath, ($metadata | ConvertTo-Json), (New-Object Text.UTF8Encoding($false)))
     }
     [Console]::Out.Write($output)

@@ -1,5 +1,5 @@
 [中文](README.md)
-<!-- README-SOURCE-SHA256: be7332d97cba5d2c5ebfd43492d615aa5dd5377c2db1895100065ab0e7dea657 -->
+<!-- README-SOURCE-SHA256: 46ea5fa7944ea07098b4b05b57b8e2e2511dfdab9920dcc2ede587ddcb69e839 -->
 
 # Markdown Reader
 
@@ -10,6 +10,8 @@ Double-click [index.html](index.html) to read Markdown in a browser. Select sour
 1. Double-click `index.html`. The first visit shows “暂无文档” (No documents) and an Open documents button. Remembered files restore the library on later visits. Once loaded, documents appear in the library on the left, with content in the center and an outline on the right. On narrow screens, use the toolbar buttons to open the library and outline. If the page is blank, check that `reader.js`, `reader.css`, and `vendor/` are kept alongside `index.html`, and record the browser and any error shown.
 2. Select “打开文档” (Open documents) and choose the manual's original `.md` file or any other document. Expect a new or selected entry labeled as an original file or session import. The old bundled snapshot no longer appears; existing saved file references remain in use.
 3. Continue opening Markdown from other locations. Each document has its own content and outline. Filter the library using its search field. Identical filenames receive sequence labels; removing an entry does not delete the file.
+
+Drag document entries up or down to reorder the library. Remembered original files keep this order. Dragging changes only the reader list; it never moves or renames files on disk.
 
 The toolbar has one Open documents control. It first requests access that allows rereading the source file. If the browser does not support or cannot provide that access, it automatically falls back to ordinary file selection, labeled “本次载入” (Session import). Canceling selection does not import a file or open another picker.
 
@@ -33,11 +35,11 @@ First, save the Markdown in its original editor. You normally do not need to clo
 
 | Displayed state | Refresh behavior | After reopening |
 | --- | --- | --- |
-| Original file, remembered | Attempts to reread when selected, when returning to the reader's window or tab, or on refresh; requires valid read permission | Restores the saved library and attempts to read the last selected document if present, or the first entry otherwise. Other entries are read when selected |
+| Original file, remembered | Attempts to reread when selected, when returning to the reader's window or tab, or on refresh; requires valid read permission | Restores the saved library and the last successfully read content; attempts to read the last selected document if present, or the first entry otherwise. Other entries are read when selected |
 | Original file, current authorization | Can reread in the current page | Requires selecting again |
 | Session import | Refresh asks for the same-name original and updates the current entry. Check its directory: the tool cannot verify that a same-name file comes from the same location | Requires selecting the file again |
 
-Persistence depends on the browser's file system access API. A saved handle is a reference the browser uses to access the source; it does not guarantee permanent permission. Document text is not stored in the browser database. If permission is missing, the page displays “重新授权 / 重试” (Authorize again / Retry); clicking it requests permission. Whether a reference remains valid after a file is moved depends on the browser and file system. If the source cannot be read or permission has expired, the reader displays an error and clears the affected content instead of presenting old text as current.
+Persistence depends on the browser's file system access API. A saved handle is a reference the browser uses to access the source; it does not guarantee permanent permission. To avoid a blank page when permission is temporarily unavailable after reopening, the reader stores each original file's last successfully read content in the browser's local database. It does not upload, modify, or delete the source file. If permission is missing, the page still displays “重新授权 / 重试” (Authorize again / Retry), but shows the cached content when available and clearly states that it may not be current. Whether a reference remains valid after a file is moved depends on the browser and file system. The reader shows an empty document only when the source cannot be read and no cache exists.
 
 Select an original-file entry in the library and press refresh to reread the latest disk content through that reference, without entering a path again. Ordinary selection only provides a file snapshot for the current session, without reusable path access, so it still requires selecting the same-name source again. A library filename alone cannot locate a disk file. Refresh is disabled when no document is open or a document switch is still loading.
 
@@ -45,13 +47,13 @@ This is not a background file watcher. When the reader stays in the foreground, 
 
 Expected result: saved text changes appear, and new headings are added to the outline. If rereading succeeds but the content has not changed, the read time is still updated. A manual refresh displays “已重新读取，内容没有变化” (Reread complete; content unchanged); an automatic reread shows no notification. If the expected content is missing, first check that the Markdown was saved and that the selected entry is the original file from the correct directory. Then record the loading status, browser, and error text. A read failure does not prevent switching to another document.
 
-Storage is isolated by browser, profile, and entry address. Changing browsers, moving the reader, or clearing browser data may require selecting again. Modern browsers on Windows/macOS can display content; persistence depends on browser support and permission. Browsers lacking the API, including applicable Safari/Firefox versions, use ordinary selection and cannot be assumed to match Chromium behavior.
+Storage is isolated by browser, profile, and entry address. Changing browsers, moving the reader, or clearing browser data may require selecting again; clearing browser data also removes cached content. Modern browsers on Windows/macOS can display content; persistence depends on browser support and permission. Browsers lacking the API, including applicable Safari/Firefox versions, use ordinary selection and cannot be assumed to match Chromium behavior.
 
 ## Content and Security Boundaries
 
 The reader supports headings, paragraphs, lists, tables, links, and fenced code. It uses a Markdown parser and never executes document code, commands, or prompts. Raw HTML is text except for the narrowly specified empty anchors. Formulas, Mermaid, and attached image rendering are not supported. Images display alternative text without automatically reading local resources or fetching external images. External pages open only on explicit link clicks.
 
-All interface assets ship locally: no CDN, document uploads, AI integration, or third-party analytics. Browser storage holds file references, names, scroll positions, and the theme, not persistent document text or search terms. Browser extensions, system synchronization, and host privacy settings are outside this tool's control.
+All interface assets ship locally: no CDN, document uploads, AI integration, or third-party analytics. Browser storage holds file references, names, scroll positions, the theme, and the last successfully read content for remembered source files; it does not store search terms. Browser extensions, system synchronization, and host privacy settings are outside this tool's control.
 
 Reading permission does not authorize publication or sending. Do not embed private documents into a distribution package. Open documents through runtime file selection.
 
@@ -61,7 +63,7 @@ Headless Chrome and Edge on Windows validated exact source agreement for 43 head
 
 The successful clipboard path uses a test receiver to compare text. The rejected path checks complete text in the read-only area. Handle persistence, reopening, updates, deletion, and permission states use a local HTTP test page with browser-private fixture files or test doubles; this is not operating system picker acceptance.
 
-**Still requires manual confirmation:** real permission persistence from the double-click `file:` entry, the system clipboard, and macOS/Safari/Firefox. Select an editable test Markdown, save a changed heading in the editor, then return to the reader and check its status and content. Close/reopen to check restoration or authorization messaging. Paste a copied block into a local editor and compare its content. For failures, record the OS, browser, loading mode, error text, and target heading.
+**Still requires manual confirmation:** real permission persistence from the double-click `file:` entry, the system clipboard, and macOS/Safari/Firefox. Select an editable test Markdown, save a changed heading in the editor, then return to the reader and check its status and content. Close/reopen to confirm that content is restored; if permission is unavailable, confirm that cached content and the authorization prompt appear together. Paste a copied block into a local editor and compare its content. For failures, record the OS, browser, loading mode, error text, and target heading.
 
 ## Maintenance and Checks
 

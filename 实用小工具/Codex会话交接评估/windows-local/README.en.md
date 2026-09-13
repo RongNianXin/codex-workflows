@@ -2,18 +2,20 @@
 
 [简体中文](README.md)
 
-<!-- README-SOURCE-SHA256: ffe4b444e4549800e7e2a7c3aa4a033a1160b2e96bd226bcc55645ebc02e6734 -->
+<!-- README-SOURCE-SHA256: 6ce8255b72fc2cadf65edcc7d023ec91d2c32650decf42fce880642c82c3c463 -->
 
-Version: `0.2.0-dev.9`. **Real local session queries are enabled.** Enter a task ID, save it, and query to view the original analyzer's statistics and report. Source sessions are read-only. No data is uploaded and no dependencies are installed.
+Version: `0.2.0-dev.10`. **Real local session queries are enabled.** Enter a task ID, save it, and query to view the original analyzer's statistics and report. Source sessions are read-only. No data is uploaded and no dependencies are installed.
 
 ## Usage
 
 1. Extract the complete package to a short path and double-click the root `Start-SessionDesk.cmd`; in a checkout, use the launcher in this directory. Do not open HTML directly. Windows PowerShell 5.1 starts the background service and opens the default browser; Windows Edge was tested.
 2. Enter the required task ID and save. Names and projects are no longer entered manually. There is no fixed task-count limit; regression covers 20 tasks, not very large lists. Duplicate IDs are rejected without replacing saved records.
 3. Click Query / Refresh, then read the output or View detailed report. Only local log files matching that ID and passing session-identity checks are analyzed, across active and archived directories. Cloud tasks are not queried; missing local logs produce an explicit failure.
-4. Search by project, name or ID, view existing results, or remove list entries. Each row displays project on the left, name on the right and ID below.
+4. Search by project, name or ID, view existing results, or remove list entries. Each row displays project on the left, name on the right and ID below. Sort all changes only the complete-list order; Refresh all updates every saved task in the current language.
 5. Choose Simplified Chinese or English at the top. Prompts, statistics and reports switch together; names, projects, paths and log content are not translated. Switching is unavailable during a running query. Each task retains per-language results and reports in this page. Returning to an available language restores its original snapshot; a missing language queries only the selected task. Other tasks retain their results. Viewing a result in the other language shows a notice. Manual Query / Refresh clears both old language variants for that task, and a failure does not restore old success. Successful output and detailed reports are saved as local per-task, per-language snapshots and restored after page reload or service restart, with the original query time and a non-live notice.
-6. Click Exit tool at the top when finished. Close the page after the prominent “You can now close this page” message appears. Closing the page alone does not stop the service; exiting does not delete saved tasks or results.
+6. Click Exit tool at the top when finished. A persistent reminder to its left reads “Closing this page leaves the service running. Click Exit tool to stop it.” Close the page after the prominent “You can now close this page” message appears. Closing the page alone does not stop the service; exiting does not delete saved tasks or results.
+
+If you closed the page without exiting, double-click `Start-SessionDesk.cmd` in the same directory to reopen the existing service page, then click Exit tool. A file lock allows only one service per data directory. A repeated launch briefly creates a launcher process, opens the existing service page, and exits without leaving a second service running. Separate extracted copies or explicit `-Instance` values run independently and must be stopped separately. An idle service still uses memory and periodically checks query status; CPU use depends on actual work, so a running process does not necessarily mean sustained high CPU use. If reopening fails, provide the launcher directory and error message. Do not terminate PowerShell processes indiscriminately.
 
 Share startup error text, not real logs. Do not change global execution policy or elevate privileges. Deep paths may cause file-not-found errors in legacy PowerShell; extract to a shorter path.
 
@@ -21,7 +23,13 @@ View result is enabled only for a successful cached result with output. It is di
 
 ## List ordering
 
-Group by project keeps projects in first-appearance order. Within each project, commanders come first, ordinary tasks retain their order, and paired specialist tasks follow. A title containing 总指挥 or the word Commander receives display priority only; this grants no authority. Pairs require matching topics and numbers, exactly one `【topic】专项审查者1号` and one `【topic】专项执行者1号`; square brackets are also accepted. Pairs follow first-appearance order and retain their internal order. Missing, duplicate or unrecognized roles remain ordinary tasks. Unresolved projects are not combined across tasks.
+Sort all retains the former Group by project algorithm. Projects stay in first-appearance order. Within each project, commanders come first, ordinary tasks retain their order, and paired specialist tasks follow. A title containing 总指挥 or the word Commander receives display priority only; this grants no authority. Pairs require matching topics and numbers, exactly one `【topic】专项审查者1号` and one `【topic】专项执行者1号`; square brackets are also accepted. Pairs follow first-appearance order and retain their internal order. Missing, duplicate or unrecognized roles remain ordinary tasks. Unresolved projects are not combined across tasks. Sorting applies to the complete list and starts no query.
+
+Refresh all queries the complete list with at most two tasks running concurrently. One failure does not stop the remaining tasks or overwrite that task's previous successful snapshot. The task selected before refresh remains selected afterward; an empty selection stays empty. Operations that could change list or query context are disabled during refresh.
+
+When the latest successful snapshot reaches an analyzer score line, the task row uses pale-yellow/orange styling with **Handoff recommended** or pink/red styling with **Handoff required**. A selected row keeps a teal border. Each scored row also shows a static 10-segment slider with subtle ticks at 3 and 8; hover or keyboard focus exposes the score. Continue and unknown states keep their ordinary style. The marker reflects the latest successful query; it is not live monitoring and does not change analyzer statistics.
+
+The total score is 0–10: file size contributes 0–5 points at 30, 50, 100, 200 and 400 MiB, and automatic compaction contributes 0–5 points at 4, 7, 10, 15 and 20 events. Scores 0–2 mean continue, 3–7 recommend handoff, and 8–10 require handoff. Context usage is not scored and does not create a handoff reminder on task cards; the terminal and report retain the metric for diagnosis. These are local heuristics, not official OpenAI limits. Legacy snapshots without score fields show **No score data**.
 
 Arrow moves retain selection and bring the moved task into view, without automatically regrouping. Desktop columns align at the bottom; narrow screens retain a vertical layout.
 
@@ -37,7 +45,7 @@ These are locally observed desktop formats, not a guaranteed stable public inter
 
 Instance data lives in this directory's `.local/`, with `main` as the default instance:
 
-- `main/tasks.json` stores IDs, last-known names/projects and language. Writes use atomic replacement; corrupt files are not cleared.
+- `main/tasks.json` stores IDs, last-known names/projects and language. Writes use atomic replacement; corrupt files are not cleared. Successful snapshots may include a `continue`, `recommended` or `required` level, a 0–10 score and a context reminder. Legacy snapshots without these fields remain compatible and use the ordinary style.
 - Schema 1 and 2 lists are accepted. Schema 1 is copied exactly to `tasks.schema1.<random-id>.bak` before migration. Old manual labels are historical values until replaced by detected metadata. Manual metadata editing is removed.
 - Before upgrading, stop the old service and copy its `.local` to the new package's `windows-local/.local`. Do not overwrite an existing new list. Independently retained backups may also be restored. To roll back, stop the service and restore the pre-migration backup; later additions are not automatically merged into that backup.
 - `main/reports/` contains original analyzer reports and metadata. Reports may include complete user inputs from high-usage turns and local paths. They stay local; removing a task entry does not remove its reports.
@@ -77,9 +85,13 @@ Automated regression uses isolated synthetic data. The operator reported success
 
 ## List order
 
-Each task’s ↑ / ↓ moves it one position in the full list and saves the order to disk. The first item cannot move up, and the last cannot move down. The selected task has a pale blue background and border without shifting its content.
+Each task’s ↑ / ↓ moves it one position in the full list and saves the order to disk. “Move to top” moves a task to the first position in the full list and saves the order; it is disabled for the first item. The first item cannot move up, and the last cannot move down. The selected task has a pale blue background and border without shifting its content.
 
-Group by project, beside Saved tasks, groups projects in first-appearance order while preserving their internal order. For example, 2, 4, 3, 1, 5 becomes 2, 1, 4, 3, 5. Grouping uses verified project identifiers: distinct projects with the same name remain separate, and unresolved tasks remain separate. Search filtering does not change the scope; grouping applies to the full list. Hovering or focusing the button shows help in the current language; it disappears after hover and focus leave.
+Sort all, beside Saved tasks, groups projects in first-appearance order while preserving their internal order. For example, 2, 4, 3, 1, 5 becomes 2, 1, 4, 3, 5. Grouping uses verified project identifiers: distinct projects with the same name remain separate, and unresolved tasks remain separate. Search filtering does not change the scope; sorting applies to the full list and starts no query.
+
+Refresh all updates every saved task in the current language, with at most two queries running concurrently. One failure does not stop the rest or overwrite a previous successful snapshot. The previous selection remains selected; an empty selection stays empty. Query, delete, move, sort and language controls are disabled during refresh. The two buttons share one row and provide separate bilingual hover and keyboard-focus help.
+
+If the latest successful snapshot is `recommended` or `required`, the row shows the matching recommendation styling and a 10-segment score slider. A selected row retains a teal border. `continue` and unknown states keep the ordinary style. The marker is not live monitoring and does not change analyzer scoring.
 
 This release adds synthetic regression for multi-task results and reports across language round trips, aligned name values, selection without shifting, arrow ordering across restart, stable and repeated grouping, invalid sort requests, and bilingual hover help.
 

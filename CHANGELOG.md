@@ -2,6 +2,81 @@
 
 本文件记录 ChatGPT Workflows 的重要变更。
 
+## 未发布：跨任务经验吸收与交接回执边界强化
+
+- 将跨任务交流中可复用的经验纳入研发侧工作流：回执先区分可复用规则、项目特定约定和未证实建议，只有完成适用性、冲突和隐私核验后，才能写入规范源或质量契约。
+- 强化自动化交接快照：存在已登记、待恢复、暂停或替代中的自动化时，逐项记录用途、逻辑任务、世代、频率/时区、配置或提示词指纹、通知设置、授权范围、最后可靠成功截点、平台核验、来源、核验时间和失效条件；不复制完整提示词、凭据或私有目标。
+- 明确平台任务 ID 只是运行时定位线索；回执、成果、授权和平台完成标记分开登记，“已发送”不等于“已确认”，接口不可见不等于目标未收到。
+- 本批同时记录了对操作者操作手册整体重排、场景迁移和提示词格式统一的维护背景；上述手册及联动规则已完成本地提交，远端分支与 PR 状态以发布后的实际回读为准。
+
+### English summary
+
+- Incorporate reusable cross-task experience into the development workflow: classify incoming findings as reusable rules, project-specific conventions, or unverified suggestions, and update canonical rules or quality contracts only after applicability, conflict, and privacy checks.
+- Strengthen automation handoff snapshots. When an automation is registered, pending recovery, paused, or replaced, record its purpose, logical task, generation, cadence/time zone, configuration or prompt fingerprint, notification settings, authorization scope, last reliable success checkpoint, platform verification, source, verification time, and invalidation conditions—without copying full prompts, credentials, or private targets.
+- Treat platform task IDs as runtime locators only. Track acknowledgements, artifacts, authorization, and platform completion separately: “sent” is not “confirmed,” and an invisible read result is not proof of non-delivery.
+- This batch also records the maintenance context of the broader operator-manual reorganization, scene migration, and prompt-format normalization. The manual and linked rules remain authoritative only after the actual repository changes are committed; this entry currently records local changes and has not been published remotely.
+
+## 未发布：重排操作者手册场景编号与入口
+
+- 重新建立“场景一至六”和可选场景的注册表，补充普通任务交接、无上下文故障接管、项目初步分析、队友工作接手、独立模块规划、PR/Issue 操作及资料查询的初版提示词。
+- 删除旧的“本地连续开发”独立编号：本地开发、验收和交付准备归入普通场景 2；旧 2D 的安全汇合改为场景 4I，并明确不等于开发、人工验收或 GitHub Merge。
+- 将执行—独立审查协作从旧 2F 简化为场景五四个子场景；画像改为“可选场景一：个性化定制”的可开关子场景。
+- 旧编号保留兼容映射，不产生新授权；本条记录的本地文档改动已随本地提交保存，远端状态以发布后的实际回读为准。
+
+### English summary
+
+- Rebuilt the operator-manual registry for Scenes 1–6 and optional scenes, adding initial prompts for ordinary task handoff, context-free recovery, project analysis, teammate takeover, independent module planning, PR/Issue work, and reference research.
+- Removed the standalone local-development number: local development, acceptance, and delivery preparation now belong to Scene 2; the former 2D safe-convergence flow is Scene 4I and does not imply development, human acceptance, or GitHub Merge.
+- Simplified execution plus independent review from legacy 2F into four sub-scenes under Scene 5; moved the profile feature under optional “Personalization.”
+- Legacy numbers remain compatibility aliases and grant no authorization; this entry records local documentation changes only and has not been committed or published remotely.
+
+## 未发布：移除任务卡片上的单轮上下文交接提示
+
+- 删除任务卡片中仅由单轮上下文占比触发的 85%/95% 交接提示，避免把不参与累计评分的指标误读为交接等级。
+- 终端和报告继续保留上下文占比，用于诊断自动压缩原因；评分仍只使用文件体积和自动压缩次数。
+
+### English summary
+
+- Remove task-card handoff reminders triggered only by single-turn context usage, so a non-scored metric is not mistaken for the cumulative handoff level.
+- Keep context usage in terminal and report output for diagnosing automatic compaction; scoring still uses only file size and compaction count.
+
+## 研发历程与后续计划 / Development history and roadmap
+
+本节把分散在历史提交、工具文档和工作记录中的信息汇总为可维护索引；逐条变更的细节仍以本文件后续条目和实际产物为准。
+
+### 已确认的演进 / Confirmed evolution
+
+- **会话交接评估工具**：从本地任务查询与保存，逐步扩展到 Windows 工作台、历史结果与报告、交接评分和分级提醒；评分算法、页面视觉样式及兼容旧数据的显示逻辑均有研发记录。
+- **故障解除与恢复能力**：增加归档路径异常修复工具，并持续沉淀跨窗口交接、自动化结果关联、会话过长和客户端异常等排查案例。
+- **工作流与展示入口**：补充离线 Markdown 阅读、脱敏展示图、中文规范源与英文入口，逐步把规则、操作手册和公开展示材料分层维护。
+
+以上是根据当前可见的历史提交、变更日志和仓库文件交叉核对出的事实；“未发布”条目仍表示研发记录，不自动表示已合并或已验证通过。
+
+### 当前状态 / Current status
+
+- 已发布的文档与展示入口继续以仓库现状为准；本轮脚本、工具文档和工作流规则修改已形成本地提交，是否进入远端发布以分支和 PR 回读结果为准。
+- 仓库质量检查仍存在既有的编码、链接和 Markdown 结构告警；这些问题与本节路线图相关，但尚未在本次变更中解决。
+
+### 候选路线图 / Candidate roadmap
+
+以下是暂存的研发想法，不是承诺、排期或已授权执行项：
+
+1. 修正质量检查器对 UTF-8 路径、Markdown 代码围栏和跨平台路径的误报，并补充可复现测试。
+2. 为展示入口增加轻量的中英内容同步检查；页面已有翻译按钮时继续以中文为源，避免维护重复静态译文。
+3. 补齐 Windows 以外环境的运行验证和关键界面人工验收，明确哪些能力仍是平台特定实现。
+4. 将当前工作区的混合修改按功能拆分、逐项验证后再形成独立提交，避免把未验证实验混入发布。
+
+### 维护规则 / Maintenance rule
+
+- 每次 commit 前，先梳理并更新本文件：记录变更范围、证据、验证结果和未验证限制，并按现有语言规则提供中英说明；纯内部 commit 至少记录其范围或明确标注无用户可见变化。
+- “已讨论”“计划执行”“已执行”“已验证”必须分开写；候选想法不得写成完成事实。远端状态、提交和发布状态以实际回读结果为准。
+
+### English overview
+
+This section indexes the evolution reconstructed from visible commits, tool documentation, and repository records. Detailed entries below and the current files remain authoritative. The handoff evaluator grew from local task lookup and saving into a Windows desk with history, reports, scoring, tiered reminders, algorithm changes, visual redesign, and legacy-data compatibility. Recovery work added archive-path repair and troubleshooting records for cross-window handoff, automation-result association, long sessions, and client failures. Offline Markdown reading, redacted showcases, a Chinese source of truth, and an English entry were added to keep rules and public material maintainable.
+
+The roadmap items above are candidates only. Before every commit, update this changelog with scope, evidence, verification, and limits; for internal-only commits, at least record the scope or state that there is no user-visible change. Clearly separate discussed, planned, executed, and verified work.
+
 ## 未发布：明确更新介绍的双语输出规则
 
 - 默认要求每次更新介绍、变更摘要或发布说明同时提供中文和英文。

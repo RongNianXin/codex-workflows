@@ -123,6 +123,8 @@ function Read-Snapshot([string]$Id) {
         $seen=@{}
         foreach($item in $items){
             if($item.id -cne $Id -or $item.state -ne 'done' -or $item.language -notin @('zh-CN','en-US') -or $seen.ContainsKey($item.language) -or $item.output -isnot [string] -or $item.reportText -isnot [string] -or -not $item.run){throw 'Invalid snapshot'}
+            if ($item.level -and $item.level -notin @('continue','recommended','required','unknown')) { throw 'Invalid snapshot level' }
+            if ($null -ne $item.score -and ([int]$item.score -lt 0 -or [int]$item.score -gt 10)) { throw 'Invalid snapshot score' }
             [void][DateTime]::Parse([string]$item.finished);$seen[$item.language]=$true
         }
         return $items
@@ -136,7 +138,7 @@ function Write-Snapshot([string]$Id, $Items) {
 function Persist-Job($Job) {
     try {
         $previous=@();try{$previous=@(Read-Snapshot $Job.id)}catch{}
-        $item=@{id=$Job.id;run=$Job.run;language=$Job.language;state='done';output=$Job.output;error='';finished=$Job.finished;reportText=[IO.File]::ReadAllText($Job.report);restored=$true}
+        $item=@{id=$Job.id;run=$Job.run;language=$Job.language;state='done';output=$Job.output;error='';finished=$Job.finished;reportText=[IO.File]::ReadAllText($Job.report);level=$Job.level;score=$Job.score;contextPercent=$Job.contextPercent;restored=$true}
         Write-Snapshot $Job.id (@($previous|Where-Object {$_.language -ne $Job.language})+@($item))
         $Job.historySaved=$true
     } catch {$Job.historySaved=$false}
@@ -157,12 +159,21 @@ function Update-Job($Job) {
             $Job.error = if ($Job.timedOut) { '查询超过 120 秒，已终止。' } else { $errorText.Trim() }
             $Job.finished = [DateTime]::UtcNow.ToString('o')
             $Job.process.Dispose()
-            if($Job.state -eq 'done'){Persist-Job $Job}
+            if($Job.state -eq 'done'){
+                try {
+                    $analysisMetadata=[IO.File]::ReadAllText($Job.metadata)|ConvertFrom-Json
+                    if ($analysisMetadata.level -in @('continue','recommended','required')) { $Job.level=[string]$analysisMetadata.level }
+                    else { $Job.metadataWarning=$true }
+                    if ($null -ne $analysisMetadata.score) { $Job.score=[int]$analysisMetadata.score }
+                    if ($null -ne $analysisMetadata.contextPercent) { $Job.contextPercent=[double]$analysisMetadata.contextPercent }
+                } catch { $Job.metadataWarning=$true }
+                Persist-Job $Job
+            }
             if ($Job.timedOut -and $Job.language -eq 'en-US') { $Job.error='Query exceeded 120 seconds and was stopped.' }
 
         }
     }
-    return @{id=$Job.id;run=$Job.run;language=$Job.language;state=$Job.state;output=$Job.output;error=$Job.error;finished=$Job.finished;nameChange=$Job.nameChange;metadataWarning=$Job.metadataWarning;historySaved=$Job.historySaved;reportAvailable=($Job.state -eq 'done')}
+    return @{id=$Job.id;run=$Job.run;language=$Job.language;state=$Job.state;output=$Job.output;error=$Job.error;finished=$Job.finished;nameChange=$Job.nameChange;metadataWarning=$Job.metadataWarning;level=$Job.level;score=$Job.score;contextPercent=$Job.contextPercent;historySaved=$Job.historySaved;reportAvailable=($Job.state -eq 'done')}
 }
 try {
     try { $lock = [IO.File]::Open((Join-Path $data 'server.lock'), 'OpenOrCreate', 'ReadWrite', 'None'); $lockOwned=$true }
@@ -215,6 +226,9 @@ try {
             @{timestamp='2025-01-01T00:00:03Z';type='event_msg';payload=@{type='token_count';info=@{total_token_usage=@{input_tokens=(100*$number);output_tokens=30;total_tokens=(100*$number+30)}}}},
             @{timestamp='2025-01-01T00:00:04Z';type='event_msg';payload=@{type='task_complete';turn_id='fictional-turn'}}
         )
+        if ($number -eq 2) {
+            for ($compact=1;$compact -le 10;$compact++) { $records += @{timestamp=('2025-01-01T00:00:{0:D2}Z' -f (4+$compact));type='compacted';payload=@{synthetic_test=$true}} }
+        }
         $lines = @($records | ForEach-Object { $_ | ConvertTo-Json -Depth 10 -Compress })
         [IO.File]::WriteAllText((Join-Path $sessions ('fictional-' + $id + '.jsonl')), ($lines -join "`n")+"`n", $utf8)
         $indexLines += (@{id=$id;thread_name=('虚构会话 '+$number);updated_at='2025-01-01T00:01:00Z'} | ConvertTo-Json -Compress)
@@ -273,7 +287,7 @@ try {
             $route=$request.Url.AbsolutePath
             if ($route -eq '/' -and $request.HttpMethod -eq 'GET') { Send-Body $context 200 ([IO.File]::ReadAllText((Join-Path $PSScriptRoot 'desk.html'))) 'text/html; charset=utf-8';continue }
             if ($request.Headers['X-SessionDesk'] -cne $token) { Send-Json $context @{error='连接凭证无效，请双击启动入口重新打开。'} 403;continue }
-            if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/tasks') { Sync-Metadata;Send-Json $context @{tasks=@($script:taskList);language=$script:language;mode=$mode;version='0.2.0-dev.9'};continue }
+            if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/tasks') { Sync-Metadata;Send-Json $context @{tasks=@($script:taskList);language=$script:language;mode=$mode;version='0.2.0-dev.10'};continue }
             if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/history') {
                 $id=$request.QueryString['id']
                 if(-not (Valid-Id $id) -or -not @($script:taskList|Where-Object {$_.id -eq $id}).Count){Send-Json $context @{error='请先保存该任务。'} 404;continue}
@@ -313,6 +327,11 @@ try {
                     if($body.direction -notin @('up','down')){throw '不支持的清单操作。'}
                     $target=$index+$(if($body.direction -eq 'up'){-1}else{1})
                     if($target -ge 0 -and $target -lt $newList.Count){$swap=$newList[$target];$newList[$target]=$newList[$index];$newList[$index]=$swap}
+                } elseif ($body.action -eq 'top') {
+                    $newList=@($script:taskList);$index=-1
+                    for($i=0;$i -lt $newList.Count;$i++){if($newList[$i].id -eq $id){$index=$i;break}}
+                    if($index -lt 0){throw '请先保存该任务。'}
+                    if($index -gt 0){$item=$newList[$index];$newList=@($item)+@($newList | Where-Object {$_.id -ne $id})}
                 } elseif ($body.action -eq 'group') {
                     Sync-Metadata
                     $groups=[Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
@@ -342,6 +361,7 @@ try {
                 if ($active -ge 2) { Send-Json $context @{error='已有两个查询正在运行，请稍后重试。'} 409;continue }
                 $report=Join-Path $reports ($id+'.md')
                 $metadata=Join-Path $reports ($id+'.metadata.json')
+                if ([IO.File]::Exists($metadata)) { [IO.File]::Delete($metadata) }
                 $info=New-Object Diagnostics.ProcessStartInfo
                 $info.FileName=$powershell
                 $info.Arguments='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+(Join-Path $runtime 'Invoke-IsolatedAnalyzer.ps1')+'" -TaskId "'+$id+'" -ReportPath "'+$report+'"'
@@ -350,7 +370,7 @@ try {
                 $info.StandardOutputEncoding=$utf8;$info.StandardErrorEncoding=$utf8
                 $process=New-Object Diagnostics.Process;$process.StartInfo=$info;[void]$process.Start()
                 $job=@{id=$id;run=[guid]::NewGuid().ToString();state='running';output='';error='';finished=$null;started=[DateTime]::UtcNow;process=$process;stdout=$process.StandardOutput.ReadToEndAsync();stderr=$process.StandardError.ReadToEndAsync();report=$report;timedOut=$false}
-                $job.language=$queryLanguage;$job.metadata=$metadata;$job.nameChange=$null;$job.metadataWarning=$false
+                $job.language=$queryLanguage;$job.metadata=$metadata;$job.nameChange=$null;$job.metadataWarning=$false;$job.level='unknown';$job.score=$null;$job.contextPercent=$null
                 $jobs[$id]=$job;Send-Json $context (Update-Job $job);continue
             }
             if ($request.HttpMethod -eq 'GET' -and $route -eq '/api/job') {
