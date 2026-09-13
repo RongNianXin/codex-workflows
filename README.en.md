@@ -35,14 +35,14 @@ The public content currently falls into five groups: ChatGPT web enhancements, t
 
 Most of the repository is Markdown and PowerShell rather than a hosted service or opaque automation layer. Public files are designed not to contain local identities, real task IDs, credentials, or private prompts.
 
-## What's new: preserve handoff results and coordinate next actions
+## What's new: evolving assessment, interface, and recovery capabilities
 
-- **Five evidence layers for handoffs:** check the Git baseline, uncommitted changes, dependencies and builds, actual runtime identity, and inputs and acceptance separately. The same HEAD does not prove that uncommitted results match. Compare text using explicit Git content rules across systems, rather than a raw hash of the entire directory.
-- **Continue uncommitted work:** reuse results in the same worktree after verifying a match. A new worktree or computer must first restore required files and assets, then verify them. `git pull` does not transfer uncommitted changes, and matching source code does not prove output or timing acceptance.
-- **Clearer cross-window collaboration:** scenario 2F supports executors and independent reviewers with different original roles. The coordinating role consolidates the next user action. Handoffs, moving ongoing work to a new conversation, and archiving retain continuation material; delivery, receipt, and completed processing are separate states.
-- **Find troubleshooting notes by symptom:** the [troubleshooting knowledge base](故障排查与解决经验/README.en.md) uses stable identifiers, explicit statuses, and reusable templates. Real installation and rollback in the migration tool are suspended because of paginated-history lineage risk; research source and synthetic tests remain available.
+- **The session handoff evaluator keeps growing:** what began as task lookup and saving now includes a Windows desk, historical results and reports, handoff scoring, tiered reminders, and legacy-data compatibility. Its algorithm and visual style have both been revised.
+- **More recovery and troubleshooting capability:** an archive-path repair tool was added, while cross-window handoff, automation-result association, long sessions, and client failures were organized into searchable troubleshooting material.
+- **A more complete delivery surface:** offline Markdown reading, redacted real-run previews, a Chinese source of truth, and an English entry now let rules, tools, and showcase material evolve separately.
+- **Tighter evidence boundaries:** handoff checks separate the Git baseline, uncommitted changes, dependencies and builds, runtime identity, and input acceptance; the rules also distinguish research notes from verified results.
 
-The new identity checks include 7 synthetic Git/file experiments and 6 documentary boundary checks. They do not replace actual patch-restoration, cross-platform, or model-output validation. See the [changelog](CHANGELOG.md).
+This is a concise synthesis of the visible history and current files. See the [changelog](CHANGELOG.md) for exact status, unverified limits, and candidate roadmap items.
 
 ## Earlier improvements: evidence-backed simplification and reproducible delivery
 
@@ -50,12 +50,12 @@ Establish the current baseline before deciding what to simplify, how to verify i
 
 | Improvement | What it means for users |
 | --- | --- |
-| [Code simplification: scenario 2G](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md#场景-2g保持功能不变精简现有代码) | Establish that code can safely be removed or consolidated, then demonstrate a practical benefit while meeting non-regression requirements. Fewer lines are not enough; a higher aggregate score cannot hide worse results on critical cases. Leaving code unchanged is valid when the benefit is insufficient. |
+| [Code simplification: scenario 2B (legacy 2G)](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md#场景-2b保持功能不变精简现有代码) | Establish that code can safely be removed or consolidated, then demonstrate a practical benefit while meeting non-regression requirements. Fewer lines are not enough; a higher aggregate score cannot hide worse results on critical cases. Leaving code unchanged is valid when the benefit is insufficient. |
 | [PR descriptions and delivery](总指挥工作流/第二代总指挥的工作模式/docs/PR_SUBMISSION_AND_REVIEW_STANDARD.md) | Explain why the change is needed, what changed, and which inputs, steps, and expected results verify it. Standard test commands remain useful but do not replace evidence specific to the change. |
 | [Cross-machine reproduction and performance diagnosis](总指挥工作流/第二代总指挥的工作模式/docs/PIPELINE_DIAGNOSIS_AND_ALGORITHM_TUNING_STANDARD.md#跨机器效果与速度差异对照) | Check the actual code, configuration, models, inputs, and access to required resources. Separate output differences from timing differences, and verify the actual delivered result after merging rather than relying on “it works on my machine.” |
 | [Natural-language entry](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md#统一入口描述目标由-ai-核对场景) | Once the rule directory is registered, describe your goal without memorizing scenario numbers or fixed phrases. The AI selects the workflow using the goal, current state, and permissions. Publishing requests load delivery checks without forcing a PR when none is needed. |
 
-Scenario 2B covers local development and acceptance, 2G covers code simplification, and 2F covers implementation with independent review. The old 2B-1 reference still leads to 2G. These rules do not guarantee equal speed on arbitrary machines or correct execution by every AI; actual outcomes require verification, and team rules and authorization boundaries still take precedence. See the [change log (Chinese)](CHANGELOG.md). The linked detailed guides are currently in Chinese.
+Scene 2 is the ordinary target entry; 2B covers behavior-preserving code simplification, and Scene 5 covers execution with independent review. Legacy numbering remains only as compatibility aliases and grants no new authorization. These rules do not guarantee equal speed on arbitrary machines or correct execution by every AI; actual outcomes require verification, and team rules and authorization boundaries still take precedence. See the [change log (Chinese)](CHANGELOG.md). The linked detailed guides are currently in Chinese.
 
 ## What the commander workflow provides
 
@@ -96,7 +96,7 @@ The detailed manuals are currently written in Chinese. This page is an evaluatio
 ### Use the Codex commander workflow
 
 1. Download or clone this repository.
-2. Open the [operator manual](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md).
+2. Open the [operator manual](总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md). The bundled Markdown reader exposes a left sidebar tree; expand Scene 1–6 and click a child scene to jump directly to its prompt.
 3. In the project you actually want Codex to work on, start a new Codex task and adapt this instruction:
 
    ```text
@@ -158,4 +158,4 @@ The privacy claims are auditable: the real profile stays in an exact `.gitignore
 
 Released under the [MIT License](LICENSE).
 
-<!-- README-SOURCE-SHA256: f3a5a7a89d2546d3874c19c2a9e6c164fdb087aef2a234097fbe689bc4449827 -->
+<!-- README-SOURCE-SHA256: b3c5fbefa711980625a85a24aead94415800dec386ce9114af857c891ae18ee1 -->

@@ -4,10 +4,10 @@
 // @version      2.0
 // @description  自动识别 ChatGPT 左侧栏边缘，拖动改变宽度并自动保存
 // @license      MIT
-// @homepageURL  https://github.com/RongNianXin/codex-workflows/tree/main/ChatGPT-Web
-// @supportURL   https://github.com/RongNianXin/codex-workflows/issues
-// @updateURL    https://raw.githubusercontent.com/RongNianXin/codex-workflows/main/ChatGPT-Web/ChatGPT%20%E5%B7%A6%E4%BE%A7%E6%A0%8F%E8%87%AA%E7%94%B1%E6%8B%96%E5%8A%A8%E5%AE%BD%E5%BA%A6%20V2.user.js
-// @downloadURL  https://raw.githubusercontent.com/RongNianXin/codex-workflows/main/ChatGPT-Web/ChatGPT%20%E5%B7%A6%E4%BE%A7%E6%A0%8F%E8%87%AA%E7%94%B1%E6%8B%96%E5%8A%A8%E5%AE%BD%E5%BA%A6%20V2.user.js
+// @homepageURL  https://github.com/RongNianXin/ChatGPT-Workflows/tree/main/ChatGPT-Web
+// @supportURL   https://github.com/RongNianXin/ChatGPT-Workflows/issues
+// @updateURL    https://raw.githubusercontent.com/RongNianXin/ChatGPT-Workflows/main/ChatGPT-Web/ChatGPT%20%E5%B7%A6%E4%BE%A7%E6%A0%8F%E8%87%AA%E7%94%B1%E6%8B%96%E5%8A%A8%E5%AE%BD%E5%BA%A6%20V2.user.js
+// @downloadURL  https://raw.githubusercontent.com/RongNianXin/ChatGPT-Workflows/main/ChatGPT-Web/ChatGPT%20%E5%B7%A6%E4%BE%A7%E6%A0%8F%E8%87%AA%E7%94%B1%E6%8B%96%E5%8A%A8%E5%AE%BD%E5%BA%A6%20V2.user.js
 // @match        https://chatgpt.com/*
 // @match        https://www.chatgpt.com/*
 // @grant        none

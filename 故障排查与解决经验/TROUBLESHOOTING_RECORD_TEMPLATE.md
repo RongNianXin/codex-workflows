@@ -2,6 +2,8 @@
 
 Copy this file when opening a new record. Keep evidence-free reports as local drafts. Do not present an inference as a verified fix.
 
+Naming convention: `TRB-xxx` is a stable troubleshooting-record ID, not a severity level or an error code. HTTP cases use `HTTP-<three-digit status>-TRB-<three-digit case ID>-topic.md`; other system/protocol signatures use `ERR-...` or `SYS-...`. Sort multiple codes numerically and omit unconfirmed codes.
+
 | Field | Record |
 | --- | --- |
 | Case ID | `TRB-<three digits>` |

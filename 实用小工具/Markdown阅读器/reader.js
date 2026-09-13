@@ -56,7 +56,15 @@ async function persist(entry, remove = false) {
       const tx = database.transaction('files', 'readwrite');
       const store = tx.objectStore('files');
       if (remove) store.delete(entry.id);
-      else store.put({ id: entry.id, name: entry.name, handle: entry.handle });
+      else store.put({
+        id: entry.id,
+        name: entry.name,
+        handle: entry.handle,
+        text: entry.text || '',
+        modified: entry.modified || 0,
+        readAt: entry.readAt || null,
+        order: entry.order ?? 0
+      });
       tx.oncomplete = resolve;
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error);
@@ -76,6 +84,27 @@ function statusLabel(entry) {
   if (entry.error) return entry.error;
   return entry.saved ? '原文件 · 已记住' : '原文件 · 本次授权';
 }
+async function persistDocumentOrder() {
+  const jobs = [];
+  [...documents.values()].forEach((entry, index) => {
+    entry.order = index;
+    if (entry.saved) jobs.push(persist(entry));
+  });
+  await Promise.all(jobs);
+}
+function moveDocument(id, beforeId) {
+  if (id === beforeId) return;
+  const entries = [...documents.values()];
+  const moving = documents.get(id);
+  if (!moving) return;
+  const remaining = entries.filter(entry => entry.id !== id);
+  const targetIndex = beforeId ? remaining.findIndex(entry => entry.id === beforeId) : remaining.length;
+  remaining.splice(targetIndex < 0 ? remaining.length : targetIndex, 0, moving);
+  documents.clear();
+  remaining.forEach(entry => documents.set(entry.id, entry));
+  renderDocuments();
+  persistDocumentOrder();
+}
 function renderDocuments() {
   const search = $('document-search').value.trim().toLocaleLowerCase();
   $('documents').replaceChildren();
@@ -84,6 +113,21 @@ function renderDocuments() {
     if (!entry.name.toLocaleLowerCase().includes(search)) continue;
     const row = document.createElement('div');
     row.className = 'document-row' + (entry.id === activeId ? ' active' : '');
+    row.draggable = true;
+    row.title = '拖动调整文档顺序';
+    row.dataset.documentId = entry.id;
+    row.addEventListener('dragstart', (event) => {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', entry.id);
+      row.classList.add('dragging');
+    });
+    row.addEventListener('dragend', () => row.classList.remove('dragging'));
+    row.addEventListener('dragover', (event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; row.classList.add('drag-over'); });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', (event) => {
+      event.preventDefault(); row.classList.remove('drag-over');
+      moveDocument(event.dataTransfer.getData('text/plain'), entry.id);
+    });
     const button = document.createElement('button');
     button.className = 'document-button';
     button.setAttribute('aria-current', String(entry.id === activeId));
@@ -336,7 +380,7 @@ async function refreshEntry(entry, requestPermission = false) {
     ? await entry.handle.requestPermission({ mode: 'read' })
     : await entry.handle.queryPermission({ mode: 'read' });
   if (permission !== 'granted') {
-    if (entry.readRevision === revision) { entry.error = '需要重新授权'; entry.text = ''; }
+    if (entry.readRevision === revision) entry.error = '需要重新授权';
     return false;
   }
   const file = await entry.handle.getFile();
@@ -346,10 +390,10 @@ async function refreshEntry(entry, requestPermission = false) {
   entry.modified = file.lastModified;
   entry.readAt = new Date();
   entry.error = '';
+  await persist(entry);
   return true;
   } catch (error) {
     if (entry.readRevision === revision) {
-      entry.text = '';
       entry.error = error.name === 'NotFoundError' ? '原文件已移动或删除，请重新选择' : '读取失败：' + error.message;
     }
     return false;
@@ -359,7 +403,7 @@ function showEntryState(entry) {
   $('file-name').textContent = entry.name;
   $('source-state').textContent = statusLabel(entry) + (entry.readAt ? ' · ' + entry.readAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' 读取' : '');
   $('refresh').disabled = false;
-  if (entry.error) note(entry.error, () => refreshCurrent(true), '重新授权 / 重试');
+  if (entry.error) note(entry.error + (entry.text ? '；当前显示上次成功读取的内容。' : ''), () => refreshCurrent(true), '重新授权 / 重试');
   else if (entry.kind === 'session') note('本次载入的文件副本；读取最新版本需重新选择文件。', () => chooseReplacement(entry.id), '重新选择');
   else if (!entry.saved) note('浏览器未能记住文件授权，关闭页面后需要重新选择。');
   else note('');
@@ -459,7 +503,7 @@ async function openFiles() {
         const entry = existing || { id: crypto.randomUUID(), name: handle.name, handle, kind: 'handle' };
         await refreshEntry(entry);
         entry.saved = await persist(entry);
-        documents.set(entry.id, entry); last = entry.id;
+        documents.set(entry.id, entry); await persistDocumentOrder(); last = entry.id;
       } catch (error) { notify(handle.name + '：' + error.message); }
     }
     if (last) await selectDocument(last);
@@ -515,8 +559,8 @@ async function init() {
   const initialVersion = renderVersion;
   try {
     database = await openDatabase();
-    const entries = await restoredEntries();
-    for (const entry of entries) documents.set(entry.id, { ...entry, kind: 'handle', saved: true, text: '', error: '等待读取原文件' });
+    const entries = (await restoredEntries()).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    for (const entry of entries) documents.set(entry.id, { ...entry, kind: 'handle', saved: true, text: entry.text || '', error: '' });
     if (renderVersion === initialVersion && documents.size) {
       await selectDocument(documents.has(remembered) ? remembered : documents.keys().next().value);
     }

@@ -83,7 +83,29 @@ try {
     ['squash mapping and first divergence preserve causal uncertainty', ['squash/rebase 不一定生成 merge commit', '第一处分叉是定位线索']],
   ];
   for (const [name, phrases] of documentary) check(`document contract: ${name}`, () => phrases.forEach(p => assert.ok(contract.includes(p), p)));
-  console.log(`Handoff identity: PASS (${passed} cases; 7 Git/file fixtures, 6 documentary boundaries)`);
+  const schedulerGuide = readFileSync(join(root, '总指挥工作流/第二代总指挥的工作模式/templates/SCHEDULER_REBUILD_GUIDE.md'), 'utf8');
+  check('scheduler guide is non-sensitive and references the canonical prompt entry', () => {
+    assert.match(schedulerGuide, /source_prompt_entry:/);
+    assert.match(schedulerGuide, /不复制正文/);
+    assert.match(schedulerGuide, /完整提示词/);
+    assert.doesNotMatch(schedulerGuide, /^task_id:/m);
+    assert.doesNotMatch(schedulerGuide, /^credential:/m);
+  });
+  const schedulerDecision = ({ exists, duplicate = false, fingerprintMatch = false, ambiguous = false }) => {
+    if (ambiguous || duplicate) return 'BLOCKED';
+    if (exists && fingerprintMatch) return 'VERIFY_ONLY';
+    if (exists) return 'STOP_AND_REVIEW';
+    return 'REBUILD_CANDIDATE_ONLY';
+  };
+  check('existing automation is verification-only', () => {
+    assert.equal(schedulerDecision({ exists: true, fingerprintMatch: true }), 'VERIFY_ONLY');
+  });
+  check('missing automation yields an authorization-gated rebuild candidate', () => {
+    assert.equal(schedulerDecision({ exists: false }), 'REBUILD_CANDIDATE_ONLY');
+    assert.equal(schedulerDecision({ exists: false, ambiguous: true }), 'BLOCKED');
+    assert.equal(schedulerDecision({ exists: false, duplicate: true }), 'BLOCKED');
+  });
+  console.log(`Handoff identity: PASS (${passed} cases; 7 Git/file fixtures, 9 documentary boundaries)`);
 } finally {
   const child = relative(resolve(tmpdir()), resolve(temp));
   if (!child.startsWith('..') && !isAbsolute(child) && child.startsWith('workflow-identity-')) rmSync(temp, { recursive: true, force: true });

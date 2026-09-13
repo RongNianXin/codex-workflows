@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     # Check explicit new files before staging; ignored and out-of-repository inputs are rejected.
     [string[]]$AdditionalPaths = @()
@@ -266,11 +266,11 @@ function Test-CommanderDurableWorkflowContract {
     $contracts = @(
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md'
-            Required = @('场景 2E：把本轮成果运行起来，交给我检查', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '场景 2F：执行与独立审查协作', '内部子 Agent、独立任务窗口或混合配对', '只要求当前窗口自己检查工作，也不自动创建 2F 配对', '专项执行者或独立审查者完成一阶段并把结果交给总指挥后', '已确认接收', '已发送待确认', '尚未送达', '直接发给专项窗口、仍属于当前阶段且不冲突的明确指令照常有效', '只给一个“现在立即做什么”', '换新聊天或归档前：先准备续接材料', '至少一种可续接材料', '准备归档，请先整理续接材料', '当前 AI 可能收不到这个操作', '等宽文本图', '默认不生成矢量图', '完整单图', '静态模板和构建器', '区分无直观样例和尚未采集', '不伪造效果', '场景 6B：任务中断后恢复并继续', '不必使用场景 6B', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
+            Required = @('场景 2D：展示最新修改的运行效果', '【具体目标】', '低信息部署请求与运行身份交付门禁', '效果是否通过，由我实际查看后确认', '场景判断：场景编号', '场景五：一个 AI 负责执行，另一个 AI 独立检查', '内部子 Agent、独立任务窗口或混合配对', '普通自检或只读解释不自动建立配对', '专项执行者或独立审查者完成一阶段并把结果交给总指挥后', '已确认接收', '已发送待确认', '尚未送达', '直接发给专项窗口、仍属于当前阶段且不冲突的明确指令照常有效', '只给一个“现在立即做什么”', '换新聊天或归档前准备续接材料', '至少一种可续接材料', '准备归档，请先整理续接材料', '当前 AI 可能收不到这个操作', '等宽文本图', '默认不生成矢量图', '完整单图', '静态模板和构建器', '区分无直观样例和尚未采集', '不伪造效果', '场景 1G：任务意外中断后恢复', '不必使用场景 1G', '不得因为本提示词而改变身份', '恢复收益门禁', '直接重做 / 快速恢复 / 深度恢复 / 必须先核账', '不超过 150 字介绍一次', '不会创建定时任务或后台监控')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/02-总指挥核心规则.md'
-            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '路由回执', '开始自然语言路由前', '当前任务未加载该修订', '自然语言路由别名', '不同 Agent 实例分别执行和独立审查', '普通的同窗口自检', '唯一当前行动与跨窗口冲突收敛', '候选建议永远不可直接执行', '当前阶段行动方（执行者或独立审查者）', '兼任收口方', '操作者直接发给专项窗口的有效指令', '已确认接收 / 已发送待确认 / 尚未送达', '消息到达较晚不代表更新', '某一维度相同不能推出完整测试对象相同', '换窗与归档前连续性触发', '不按固定关键词触发', '至少生成一段可直接发给新窗口的精简续接提示词', '使用者直接点击客户端侧栏归档不会形成模型可观察消息', '不能作为该动作的授权', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务', '强制状态回执与空输出兜底', '业务权限不足也返回 `BLOCKED`')
+            Required = @('为其他任务窗口准备提示词', '唯一模板选择规则', '参数自动核实与人工输入边界', '统一入口的场景与参数核验', '路由回执', '开始自然语言路由前', '当前任务未加载该修订', '自然语言路由别名', '不同 Agent 实例分别执行和独立审查', '普通的同窗口自检', '唯一当前行动与跨窗口冲突收敛', '候选建议永远不可直接执行', '当前阶段行动方（执行者或独立审查者）', '兼任收口方', '操作者直接发给专项窗口的有效指令', '已确认接收 / 已发送待确认 / 尚未送达', '消息到达较晚不代表更新', '某一维度相同不能推出完整测试对象相同', '换窗与归档前连续性触发', '不按固定关键词触发', '至少生成一段可直接发给新窗口的精简续接提示词', '使用者直接点击客户端侧栏归档不会形成模型可观察消息', '不能作为该动作的授权', '需要多个设备访问时', '低信息部署请求与运行身份交付门禁', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：KEY_NODE', '并存实现决议矩阵', '紧凑文本执行图', '可翻页的本地静态 HTML', '先恢复原任务身份', '恢复提示词本身不得被解释为总指挥任命', '恢复收益门禁', '前台控制授权门禁', '不自动授权 Computer Use', '本地协作画像的一次询问与节点触发', '不再重复询问', '不创建定时任务、后台轮询或独立自动化', '克隆可移植性', '相对路径不是所有场景的强制格式', '下一步提示词和单项确认卡不得重置活跃请求清单', '不能关闭整轮任务', '强制状态回执与空输出兜底', '业务权限不足也返回 `BLOCKED`', '用户手册变更后的全工作流联动核验', '复杂度判定命中复杂工作门禁', '自动结果验收只做最小充分复核', '不要求操作者复制新的提示词', '跨任务回执的改进闭环与最终出口硬门禁', '跨项目经验吸收', '可复用规则', '项目特定约定', '未证实建议', '未完成事项', '下一步行动建议')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/03-专项任务卡模板.md'
@@ -278,19 +278,23 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/04-状态、目标变更与交接规范.md'
-            Required = @('耐久 Commit 台账与关键节点', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：ROUTINE / KEY_NODE', '通用任务中断恢复与无正式总指挥交接', '不是所有中断任务的必经步骤', '恢复任务”不等于“接管项目', '执行恢复收益门禁', '换窗与归档前连续性门禁', '精简续接提示词的最小字段', '已完成且不得重复', '结果未知', '无待续任务', '使用者未通过消息表达而直接点击客户端归档', '未更新/待复核', '首个主回复末尾介绍一次', 'RECEIVED / BLOCKED / COMPLETED / FAILED', '读取接口不可见与目标没有收到分别记录')
+            Required = @('耐久 Commit 台账与关键节点', '规范启动命令及自检输出', 'COMMIT-LEDGER', '保留级别：ROUTINE / KEY_NODE', '通用任务中断恢复与无正式总指挥交接', '不是所有中断任务的必经步骤', '恢复任务”不等于“接管项目', '执行恢复收益门禁', '换窗与归档前连续性门禁', '精简续接提示词的最小字段', '已完成且不得重复', '结果未知', '无待续任务', '使用者未通过消息表达而直接点击客户端归档', '未更新/待复核', '首个主回复末尾介绍一次', 'RECEIVED / BLOCKED / COMPLETED / FAILED', '读取接口不可见与目标没有收到分别记录', '调度任务核验与重建说明', '自动化交接清单', '最后可靠成功截点', '平台任务 ID 仅作为获准运行时的定位线索', 'VERIFY_ONLY', 'REBUILD_CANDIDATE_ONLY', '说明指纹一致只证明说明未漂移')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/10-自动状态索引规范.md'
-            Required = @('COMMIT-LEDGER', '人工核验运行身份清单', '规范启动命令及自检输出', '并存实现决议矩阵', '节点覆盖状态', 'TASK-RESUME', 'CONTINUITY-PACK', '触发类型（总指挥交接 / 主线分支 / 归档）', '送达状态', '恢复提示词不能把普通或专项任务升级为总指挥', '恢复收益门禁', 'unasked / enabled / paused / disabled / unavailable', 'not-shown / shown / answered / ignored', 'profile_revision', '不发送画像正文', '不创建定时任务或后台轮询', '重新绑定到当前仓库根目录', '活跃请求清单中每项的来源', '单项卡完成后不得据此删除未覆盖项')
+            Required = @('COMMIT-LEDGER', '人工核验运行身份清单', '规范启动命令及自检输出', '并存实现决议矩阵', '节点覆盖状态', 'TASK-RESUME', 'CONTINUITY-PACK', '触发类型（总指挥交接 / 主线分支 / 归档）', '送达状态', '恢复提示词不能把普通或专项任务升级为总指挥', '恢复收益门禁', 'unasked / enabled / paused / disabled / unavailable', 'not-shown / shown / answered / ignored', 'profile_revision', '不发送画像正文', '不创建定时任务或后台轮询', '重新绑定到当前仓库根目录', '活跃请求清单中每项的来源', '单项卡完成后不得据此删除未覆盖项', '自动化交接清单指针', '调度重建说明指针', 'VERIFY_ONLY / REBUILD_CANDIDATE_ONLY / BLOCKED / EXPIRED')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/07-总指挥交接记录模板.md'
-            Required = @('KEY_NODE', '运行身份', '规范启动命令及自检输出', '并存实现决议', '当前分步展示产物', '节点维护结果', '新总指挥不会重新询问', '统一接管汇报模板', '固定四段标题与字段')
+            Required = @('KEY_NODE', '运行身份', '规范启动命令及自检输出', '并存实现决议', '当前分步展示产物', '节点维护结果', '新总指挥不会重新询问', '统一接管汇报模板', '固定四段标题与字段', '调度重建说明', '自动化交接清单（如存在', '任务存在时只登记核验')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/总指挥轻量交接启动配置.md'
-            Required = @('KEY_NODE', 'canonical_start_command', 'startup_check', 'commit_ledger', 'step_deck_pointer_and_hash', '场景 6B 是角色中立的任务中断恢复入口', '候选阶段不得询问是否启用', 'introduction: not-shown / shown / answered / ignored', '旧机器绝对路径', '## 7. 统一接管汇报模板', '1. 总指挥身份', '2. 交接结论', '3. 接续断点', '4. 下一步与边界', '当前任务 ID：', '当前范围交接条件：', '没有证据支持遗漏时写“无”', '不得承诺任意账号或窗口凭 ID 即可跨权限访问')
+            Required = @('KEY_NODE', 'canonical_start_command', 'startup_check', 'commit_ledger', 'step_deck_pointer_and_hash', '场景 1G 是角色中立的任务中断恢复入口', '候选阶段不得询问是否启用', 'introduction: not-shown / shown / answered / ignored', '旧机器绝对路径', '## 7. 统一接管汇报模板', '1. 总指挥身份', '2. 交接结论', '3. 接续断点', '4. 下一步与边界', '当前任务 ID：', '当前范围交接条件：', '没有证据支持遗漏时写“无”', '不得承诺任意账号或窗口凭 ID 即可跨权限访问', 'scheduler_rebuild:', 'existing_task_check', 'authorization_required')
+        },
+        @{
+            Path = '总指挥工作流/第二代总指挥的工作模式/templates/SCHEDULER_REBUILD_GUIDE.md'
+            Required = @('VERIFY_ONLY', 'REBUILD_CANDIDATE_ONLY', 'STOP_AND_REVIEW', 'source_prompt_entry:', 'schedule_cadence:', 'timezone:', 'target_binding_abstract:', 'preflight_read_only_checks:', 'creation_or_recovery_authorization:', 'pause_conditions:', 'verification_commands:', '不复制正文', '完整提示词', '指纹一致只证明说明内容未漂移')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/docs/PR_SUBMISSION_AND_REVIEW_STANDARD.md'
@@ -307,7 +311,7 @@ function Test-CommanderDurableWorkflowContract {
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/09-自动化授权与风险分级.md'
-            Required = @('已有授权随委派传递', '一次确认，范围内执行', '不能单独证明授权成立', '原始要求的最小必要摘录及可访问来源', '任务名称和原文摘录本身不是身份或授权证明', '不重复执行有副作用的动作', '不得代理', '前台控制的独立授权门禁', '不得为方便观察而升级', '不自动授权控制已有个人浏览器会话')
+            Required = @('已有授权随委派传递', '一次确认，范围内执行', '不能单独证明授权成立', '原始要求的最小必要摘录及可访问来源', '任务名称和原文摘录本身不是身份或授权证明', '不重复执行有副作用的动作', '不得代理', '前台控制的独立授权门禁', '不得为方便观察而升级', '不自动授权控制已有个人浏览器会话', '复杂任务的完成后自动结果验收按 `02-总指挥核心规则.md`')
         },
         @{
             Path = '总指挥工作流/第二代总指挥的工作模式/docs/AUTOMATED_TESTING_LESSONS.md'
@@ -346,7 +350,7 @@ function Test-CommanderDurableWorkflowContract {
     $coreRules = Get-Content -LiteralPath (Join-Path $repoRoot ($ruleRoot + '02-总指挥核心规则.md')) -Raw
     # Documentary routing and legacy entry checks; no live model or Git synchronization is exercised.
     $contracts += @(
-        @{ Path = ($ruleRoot + '01-操作者操作手册.md'); Required = @('2B和2D怎么选', '2B和2D可以前后衔接', '场景 2D：按需安全汇合双方成果', '<a id="场景-2d本地与远端长期分叉后的安全同步"></a>', '不因本提示词自动Fetch') },
+        @{ Path = ($ruleRoot + '01-操作者操作手册.md'); Required = @('4H 和 4I 的区别', '场景 4I：按需安全汇合双方成果', '<a id="场景-2d本地与远端长期分叉后的安全同步"></a>', '不因本提示词自动 Fetch') },
         @{ Path = ($ruleRoot + '02-总指挥核心规则.md'); Required = @('发布与同步的共用只读路由', '同 HEAD 不代表工作区相同', '不按文件时间裁定', '远端新提交已包含于本地', '队友未推送成果不可见时标未知', '只有远端有效增量，本地无待汇合增量', '双方有变化但当前暂不汇合', '不预选Merge', '不因通用路由自动Fetch', '<a id="场景-2d长期双边分叉的安全汇合"></a>', '不另建第二套发布卡', '原目标仅同步本地时按该目标收口') }
     )
     if ($coreRules.Contains('`03` 只有专项任务净收益门禁通过后才读取')) {
@@ -527,7 +531,46 @@ function Test-CommanderScene2FRoutingCases {
     }
     $manual = Get-Content -LiteralPath (Join-Path $repoRoot '总指挥工作流/第二代总指挥的工作模式/01-操作者操作手册.md') -Raw -Encoding utf8
     if (-not $manual.Contains('<a id="场景-2f跨窗口执行与独立审查协作"></a>')) { throw '2F legacy anchor missing' }
+    foreach ($phrase in @('让 AI 交叉审查', '只说“对抗式审查”“你再自查一下”默认由当前 AI 做结构化自审', '只询问或讨论 2F 时不启动配对', '默认只用一名独立审查者')) {
+        if (-not $manual.Contains($phrase)) { throw "2F natural-language routing contract missing: $phrase" }
+    }
+    foreach ($phrase in @('平台支持精简上下文就优先使用不复制完整历史的方式', '审查分为两种范围', '首轮无实质问题即收口', '不得把“讨论到一致”作为开启新轮次或通过的理由')) {
+        if (-not $contract.Contains($phrase)) { throw "2F minimum-sufficient review contract missing: $phrase" }
+    }
     Write-Host "Commander scene 2F routing: PASS ($($cases.Count) route cases, $($carrierCases.Count) carrier cases; documentary boundary checks; no live Agent tests)"
+}
+
+function Test-PublicUsageCasePrivacyContract {
+    $ruleRoot = Join-Path $repoRoot '总指挥工作流/第二代总指挥的工作模式'
+    $strategyPath = Join-Path $ruleRoot '05-模型选择与资源策略.md'
+    $reviewPath = Join-Path $ruleRoot 'docs/EXECUTION_AND_INDEPENDENT_REVIEW.md'
+    $casePath = Join-Path $ruleRoot 'docs/ANONYMIZED_USAGE_CASE_STUDY.md'
+
+    $strategy = Get-Content -LiteralPath $strategyPath -Raw -Encoding utf8
+    foreach ($phrase in @('严重错配才提示', '先完成已授权任务，再在原最终回复末尾', '不用两分钟等待', 'Token、费用分别使用同一单位计算', '场景 1D：新候选接收')) {
+        if (-not $strategy.Contains($phrase)) { throw "Model/resource contract missing: $phrase" }
+    }
+    $review = Get-Content -LiteralPath $reviewPath -Raw -Encoding utf8
+    foreach ($phrase in @('默认配置是一名执行者', '聚焦审查', '完整独立审查', '首轮无实质问题即收口', '不得把“讨论到一致”作为开启新轮次或通过的理由')) {
+        if (-not $review.Contains($phrase)) { throw "Independent-review cost contract missing: $phrase" }
+    }
+    if (-not (Test-Path -LiteralPath $casePath -PathType Leaf)) { throw 'Anonymized usage case is missing' }
+    $case = Get-Content -LiteralPath $casePath -Raw -Encoding utf8
+    foreach ($phrase in @('本案例只保留聚合统计和通用活动分类', '不能证明某个模型或交接时点普遍最优', 'Token 与费用分别核算')) {
+        if (-not $case.Contains($phrase)) { throw "Anonymized usage case contract missing: $phrase" }
+    }
+    $forbiddenPatterns = @(
+        '(?i)api[_ -]?key\s*[:=]',
+        '(?i)authorization\s*[:=]',
+        '(?i)cookie\s*[:=]',
+        '(?i)password\s*[:=]',
+        '[A-Za-z]:\\Users\\',
+        '(?i)\b(?:sk|ghp|github_pat)_[A-Za-z0-9_-]{12,}\b'
+    )
+    foreach ($pattern in $forbiddenPatterns) {
+        if ($case -match $pattern) { throw "Anonymized usage case contains a forbidden sensitive pattern: $pattern" }
+    }
+    Write-Host 'Public usage case privacy contract: PASS'
 }
 
 function Test-CommanderNextActionConvergenceCases {
@@ -1167,13 +1210,13 @@ function Test-ArchiveRepairLauncher {
 function Test-TroubleshootingKnowledgeBase {
     $root = Join-Path $repoRoot '故障排查与解决经验'
     $cases = @(
-        @{ Id = 'TRB-001'; Path = '01-会话与归档/TRB-001-Windows归档路径异常/Codex 对话无法归档：thread-store 文件路径缺失.md'; Status = '已解决' },
-        @{ Id = 'TRB-002'; Path = '01-会话与归档/TRB-002-thread-not-found/thread-not-found-恢复方案.md'; Status = '部分解决' },
-        @{ Id = 'TRB-003'; Path = '02-账号与供应商切换/TRB-003-历史列表分裂/CC Switch 切换账号后无法共享对话——原理、恢复与长期配置.md'; Status = '部分解决' },
-        @{ Id = 'TRB-004'; Path = '02-账号与供应商切换/TRB-004-旧对话无法继续/Codex 切换账号后旧对话无法继续.md'; Status = '部分解决' },
-        @{ Id = 'TRB-005'; Path = '02-账号与供应商切换/TRB-005-迁移后分页谱系损坏/分页谱系损坏与迁移工具暂停.md'; Status = '未解决' },
-        @{ Id = 'TRB-006'; Path = '03-跨任务通信/AI任务间消息不回复：排查与预防.md'; Status = '未解决' },
-        @{ Id = 'TRB-007'; Path = '04-网络与上游错误/TRB-007-长任务断联与HTTP错误/CC Switch 长任务断联与 401 502 503 504 快速处理.md'; Status = '部分解决' }
+        @{ Id = 'TRB-001'; Path = '01-会话与归档/TRB-001-Windows归档路径异常/TRB-001-2-thread-store-归档路径缺失.md'; Status = '已解决' },
+        @{ Id = 'TRB-002'; Path = '01-会话与归档/TRB-002-thread-not-found/TRB-002-thread-not-found-恢复方案.md'; Status = '部分解决' },
+        @{ Id = 'TRB-003'; Path = '02-账号与供应商切换/TRB-003-历史列表分裂/TRB-003-历史列表分裂-账号切换后无法共享对话.md'; Status = '部分解决' },
+        @{ Id = 'TRB-004'; Path = '02-账号与供应商切换/TRB-004-旧对话无法继续/TRB-004-旧对话无法继续-账号切换后无法继续.md'; Status = '部分解决' },
+        @{ Id = 'TRB-005'; Path = '02-账号与供应商切换/TRB-005-迁移后分页谱系损坏/TRB-005-invalid-paginated-history-lineage-分页谱系损坏与迁移暂停.md'; Status = '未解决' },
+        @{ Id = 'TRB-006'; Path = '03-跨任务通信/TRB-006-AI任务间消息不回复-排查与预防.md'; Status = '未解决' },
+        @{ Id = 'TRB-007'; Path = '04-网络与上游错误/TRB-007-长任务断联与HTTP错误/TRB-007-总索引-跨错误码证据与共用流程.md'; Status = '部分解决' }
     )
 
     $index = Get-Content -LiteralPath (Join-Path $root 'README.md') -Raw -Encoding utf8
@@ -1257,6 +1300,7 @@ Test-CommanderRuleVersion
 Test-CommanderDurableWorkflowContract
 Test-CommanderBoundedExecutionCases
 Test-CommanderScene2FRoutingCases
+Test-PublicUsageCasePrivacyContract
 Test-CommanderNextActionConvergenceCases
 Test-CommanderContinuityRoutingCases
 & node (Join-Path $PSScriptRoot 'Test-HandoffIdentity.mjs')

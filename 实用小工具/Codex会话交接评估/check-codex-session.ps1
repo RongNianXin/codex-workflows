@@ -74,14 +74,19 @@ $uiCatalog = @{
         RangeSeparator = ' 至 '
         AdditionalSegments = '（另有 {0} 个分段）'
         Unavailable = '无法取得'
-        ContextUnavailableBasis = '未取得最近上下文占比；该指标不参与综合评分。'
-        ContextHighBasis = '最近输入占窗口 {0}，达到 85% 观察线；建议自动压缩后复查。'
-        ContextNormalBasis = '最近输入占窗口 {0}，尚未达到 85% 观察线。'
-        SizeBasis = '聚合文件为 {0}，大小评分 {1} 分；分级线为 30、50、100 和 200 MiB。'
-        CompressionBasis = '已自动压缩 {0} 次，压缩评分 {1} 分；分级线为 4、7 和 10 次。'
-        AdviceHandoff = '建议交接：当前技术指标已达到交接线。请确定当前阶段的任务已完成，或至少处在一个可交接的断点处。'
-        AdvicePrepare = '建议准备交接：当前技术指标已进入观察区，但不必打断正在执行的复杂步骤。'
+        ContextUnavailableBasis = '未取得最近上下文占比；该提醒不参与综合评分。'
+        ContextCriticalBasis = '最近输入占窗口 {0}，达到 95%；随时可能触发自动压缩，建议现在交接。'
+        ContextHighBasis = '最近输入占窗口 {0}，达到 85% 提醒线；建议准备交接，并在自动压缩前完成断点收尾。'
+        ContextNormalBasis = '最近输入占窗口 {0}，尚未达到 85% 提醒线。'
+        SizeBasis = '聚合文件为 {0}，大小评分 {1}/5 分；档位为 30、50、100、200 和 400 MiB。'
+        CompressionBasis = '已自动压缩 {0} 次，压缩评分 {1}/5 分；档位为 4、7、10、15 和 20 次。压缩是有损的，建议在压缩前交接。'
+        AdviceHandoff = '建议交接：综合评分已进入第一道警戒线。请确认当前阶段已完成，或至少处在一个可交接的断点处。'
+        AdviceRequired = '必须交接：综合评分已达到第二道警戒线。请先收尾当前断点，再在新任务中继续。'
         AdviceContinue = '暂不建议交接：可以继续当前任务。'
+        LevelContinue = '继续'
+        LevelRecommended = '建议交接'
+        LevelRequired = '必须交接'
+        LevelUnknown = '无评分数据'
         ReportTitle = '# Codex 会话详细分析报告'
         ReportTaskId = '- 任务 ID：{0}'
         ReportTaskName = '- 任务名称：{0}'
@@ -92,6 +97,8 @@ $uiCatalog = @{
         ReportGeneratedAt = '- 生成时间：{0}'
         ReportEncoding = '- 编码：UTF-8 BOM'
         ReportPrivacy = '> 本报告包含完整用户输入，可能带有本地路径、内部信息或其他敏感内容；请只在本地受控范围内使用。'
+        ReportHandoffLine = '- 交接参考评分：{0}/10 分（{1}）；文件大小 {2}/5 分，压缩次数 {3}/5 分。'
+        ReportHandoffContext = '- 上下文提醒（不计入评分）：{0}'
         ReportTokenHeading = '## Token 消耗最高回合'
         ReportTokenExplanation = '按本地累计 Token 快照增量排序。M tokens 表示百万 Token；MiB 表示本地文件字节，二者不能固定换算。'
         RankNames = @('第一', '第二', '第三')
@@ -134,10 +141,11 @@ $uiCatalog = @{
         ValueNoTurns = '未识别到回合；{0}'
         LabelReport = '详细分析报告：'
         SectionAdvice = '三、交接建议'
-        ScoreSummary = '交接参考综合评分：{0} 分（0～1 分继续，2 分准备交接，3 分及以上建议交接。）'
+        ScoreSummary = '交接参考综合评分：{0}/10 分（0～2 分继续，3～7 分建议交接，8 分及以上必须交接。）'
         AdviceSummary = '交接建议：{0}'
         BasisHeading = '参考依据：'
-        ExperienceRule = '  4. 上述分级和 85% 观察线都是本地经验规则，并非 OpenAI 官方限制。'
+        ExperienceRule = '  3. 上述评分档位、85% 与 95% 提醒线都是本地经验规则，并非 OpenAI 官方限制。'
+        ContextReminderHeading = '上下文提醒（不计入评分）：'
         HumanReminderHeading = '人工判断提醒：'
         HumanReminder = '请主动判断 AI 是否已出现明显理解不足，例如忘记约束、重复执行或前后矛盾；如已出现，应提高交接优先级。'
         ScanWarningsHeading = '扫描提醒：'
@@ -201,14 +209,19 @@ $uiCatalog = @{
         RangeSeparator = ' to '
         AdditionalSegments = ' ({0} more segment(s))'
         Unavailable = 'Unavailable'
-        ContextUnavailableBasis = 'Recent context usage is unavailable, so it is not included in the score.'
-        ContextHighBasis = 'Recent input uses {0} of the context window, reaching the 85% observation threshold. Recheck after automatic compaction.'
-        ContextNormalBasis = 'Recent input uses {0} of the context window, below the 85% observation threshold.'
-        SizeBasis = 'Aggregate session size is {0}, for a size score of {1}. Thresholds: 30, 50, 100, and 200 MiB.'
-        CompressionBasis = 'Automatic compaction occurred {0} time(s), for a compaction score of {1}. Thresholds: 4, 7, and 10.'
-        AdviceHandoff = 'Handoff recommended: the technical indicators have reached the handoff threshold. Finish the current stage or stop at a clear handoff point first.'
-        AdvicePrepare = 'Prepare for handoff: the technical indicators are in the observation range, but there is no need to interrupt a complex step.'
+        ContextUnavailableBasis = 'Recent context usage is unavailable. This reminder is not scored.'
+        ContextCriticalBasis = 'Recent input uses {0} of the context window, reaching 95%. Automatic compaction may trigger at any moment; hand off now.'
+        ContextHighBasis = 'Recent input uses {0} of the context window, reaching the 85% reminder line. Prepare to hand off and close the current stage before automatic compaction.'
+        ContextNormalBasis = 'Recent input uses {0} of the context window, below the 85% reminder line.'
+        SizeBasis = 'Aggregate session size is {0}, for a size score of {1}/5. Steps: 30, 50, 100, 200, and 400 MiB.'
+        CompressionBasis = 'Automatic compaction occurred {0} time(s), for a compaction score of {1}/5. Steps: 4, 7, 10, 15, and 20. Compaction is lossy; hand off before it happens.'
+        AdviceHandoff = 'Handoff recommended: the score has crossed the first warning line. Confirm the current stage is done, or stop at a clear handoff point.'
+        AdviceRequired = 'Handoff required: the score has crossed the second warning line. Close the current breakpoint first, then continue in a new task.'
         AdviceContinue = 'No handoff recommended yet. Continue in the current task.'
+        LevelContinue = 'continue'
+        LevelRecommended = 'handoff recommended'
+        LevelRequired = 'handoff required'
+        LevelUnknown = 'no score'
         ReportTitle = '# Codex session detailed analysis report'
         ReportTaskId = '- Task ID: {0}'
         ReportTaskName = '- Task name: {0}'
@@ -219,6 +232,8 @@ $uiCatalog = @{
         ReportGeneratedAt = '- Generated at: {0}'
         ReportEncoding = '- Encoding: UTF-8 BOM'
         ReportPrivacy = '> This report may contain complete user input, local paths, internal information, or other sensitive content. Keep it in a controlled local environment.'
+        ReportHandoffLine = '- Handoff reference score: {0}/10 ({1}); size {2}/5, compaction {3}/5.'
+        ReportHandoffContext = '- Context reminder (not scored): {0}'
         ReportTokenHeading = '## Turns with the highest token usage'
         ReportTokenExplanation = 'Ranked by increases in local cumulative token snapshots. M tokens means one million tokens; MiB measures local file bytes and cannot be converted to tokens at a fixed ratio.'
         RankNames = @('First', 'Second', 'Third')
@@ -261,10 +276,11 @@ $uiCatalog = @{
         ValueNoTurns = 'no turns identified; {0}'
         LabelReport = 'Detailed report:'
         SectionAdvice = '3. Handoff recommendation'
-        ScoreSummary = 'Handoff reference score: {0} (0-1 continue, 2 prepare, 3 or more handoff recommended).'
+        ScoreSummary = 'Handoff reference score: {0}/10 (0-2 continue, 3-7 handoff recommended, 8 or more handoff required).'
         AdviceSummary = 'Recommendation: {0}'
         BasisHeading = 'Basis:'
-        ExperienceRule = '  4. These thresholds and the 85% observation level are local heuristics, not official OpenAI limits.'
+        ExperienceRule = '  3. These score bands and the 85% and 95% reminder lines are local heuristics, not official OpenAI limits.'
+        ContextReminderHeading = 'Context reminder (not scored):'
         HumanReminderHeading = 'Manual review reminder:'
         HumanReminder = 'Check whether the AI is forgetting constraints, repeating work, or contradicting itself. If so, raise the handoff priority.'
         ScanWarningsHeading = 'Scan warnings:'
@@ -1911,37 +1927,60 @@ else {
 }
 $startedTurnCount = $maximumTurnIndex
 
-if ($sizeMiB -ge 200) {
-    $sizeScore = 4
-}
-elseif ($sizeMiB -ge 100) {
-    $sizeScore = 3
-}
-elseif ($sizeMiB -ge 50) {
-    $sizeScore = 2
-}
-elseif ($sizeMiB -ge 30) {
-    $sizeScore = 1
-}
-else {
+function Get-HandoffAssessmentScore {
+    # 单一评分来源：文件体积 0-5 分 + 压缩次数 0-5 分，合计 0-10 分。
+    # 上下文档位不参与评分，由调用方单独提示。
+    param(
+        [Parameter(Mandatory)][double]$SizeMiB,
+        [Parameter(Mandatory)][int]$CompactCount
+    )
+
     $sizeScore = 0
+    foreach ($sizeStep in @(30, 50, 100, 200, 400)) {
+        if ($SizeMiB -ge $sizeStep) { $sizeScore++ }
+    }
+
+    $compressionScore = 0
+    foreach ($compactStep in @(4, 7, 10, 15, 20)) {
+        if ($CompactCount -ge $compactStep) { $compressionScore++ }
+    }
+
+    $totalScore = $sizeScore + $compressionScore
+    $level = 'continue'
+    if ($totalScore -ge 8) { $level = 'required' }
+    elseif ($totalScore -ge 3) { $level = 'recommended' }
+
+    return [pscustomobject]@{
+        SizeScore        = $sizeScore
+        CompressionScore = $compressionScore
+        TotalScore       = $totalScore
+        Level            = $level
+    }
 }
 
-if ($compactCount -ge 10) {
-    $compressionScore = 3
+$handoffScore = Get-HandoffAssessmentScore `
+    -SizeMiB $sizeMiB `
+    -CompactCount $compactCount
+$sizeScore = $handoffScore.SizeScore
+$compressionScore = $handoffScore.CompressionScore
+$totalScore = $handoffScore.TotalScore
+$handoffLevel = $handoffScore.Level
+
+if ($handoffLevel -eq 'required') {
+    $levelText = Get-UiText 'LevelRequired'
 }
-elseif ($compactCount -ge 7) {
-    $compressionScore = 2
-}
-elseif ($compactCount -ge 4) {
-    $compressionScore = 1
+elseif ($handoffLevel -eq 'recommended') {
+    $levelText = Get-UiText 'LevelRecommended'
 }
 else {
-    $compressionScore = 0
+    $levelText = Get-UiText 'LevelContinue'
 }
 
 if ($null -eq $contextPercent) {
     $contextBasis = Get-UiText 'ContextUnavailableBasis'
+}
+elseif ($contextPercent -ge 95) {
+    $contextBasis = Get-UiText 'ContextCriticalBasis' @($contextText)
 }
 elseif ($contextPercent -ge 85) {
     $contextBasis = Get-UiText 'ContextHighBasis' @($contextText)
@@ -1950,18 +1989,17 @@ else {
     $contextBasis = Get-UiText 'ContextNormalBasis' @($contextText)
 }
 
-$totalScore = $sizeScore + $compressionScore
 $sizeBasis = Get-UiText 'SizeBasis' @($sizeText, $sizeScore)
 $compressionBasis = Get-UiText 'CompressionBasis' @(
     $compactCount,
     $compressionScore
 )
 
-if ($totalScore -ge 3) {
-    $advice = Get-UiText 'AdviceHandoff'
+if ($handoffLevel -eq 'required') {
+    $advice = Get-UiText 'AdviceRequired'
 }
-elseif ($totalScore -eq 2) {
-    $advice = Get-UiText 'AdvicePrepare'
+elseif ($handoffLevel -eq 'recommended') {
+    $advice = Get-UiText 'AdviceHandoff'
 }
 else {
     $advice = Get-UiText 'AdviceContinue'
@@ -2027,6 +2065,17 @@ Add-ReportLine -Builder $reportBuilder -Value (
         (Format-Integer $latestLength),
         $sizeText
     )
+)
+Add-ReportLine -Builder $reportBuilder -Value (
+    Get-UiText 'ReportHandoffLine' @(
+        $totalScore,
+        $levelText,
+        $sizeScore,
+        $compressionScore
+    )
+)
+Add-ReportLine -Builder $reportBuilder -Value (
+    Get-UiText 'ReportHandoffContext' @($contextBasis)
 )
 Add-ReportLine -Builder $reportBuilder -Value (
     Get-UiText 'ReportTimeRange' @($segmentTimeRangeText)
@@ -2257,9 +2306,11 @@ Get-UiText 'AdviceSummary' @($advice)
 ''
 Get-UiText 'BasisHeading'
 "  1. $sizeBasis"
-"  2. $contextBasis"
-"  3. $compressionBasis"
+"  2. $compressionBasis"
 Get-UiText 'ExperienceRule'
+''
+Get-UiText 'ContextReminderHeading'
+"  - $contextBasis"
 ''
 Get-UiText 'HumanReminderHeading'
 Get-UiText 'HumanReminder'
